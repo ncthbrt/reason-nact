@@ -1,0 +1,26 @@
+{
+  "name": "reason-nact",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "bsb -make-world",
+    "start": "bsb -make-world -w",
+    "clean": "bsb -clean-world",
+    "test": "jest --coverage",
+    "test-watch": "jest --coverage --watch",
+    "pretest": "yarn run build",
+    "prepublish": "yarn run clean && yarn run build"
+  },
+  "keywords": [
+    "BuckleScript"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "bs-jest": "^0.2.0",
+    "bs-platform": "2.0.0",
+    "husky": "^0.14.3",
+    "jest": "^21.2.1"
+  },
+  "dependencies": {
+    "nact": "^3.1.5"
+  }
+}

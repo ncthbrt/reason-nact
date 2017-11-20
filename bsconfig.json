@@ -1,0 +1,24 @@
+// This is the configuration file used by BuckleScript's build system bsb. Its documentation lives here: http://bucklescript.github.io/bucklescript/docson/#build-schema.json
+// BuckleScript comes with its own parser for bsconfig.json, which is normal JSON, with the extra support of comments and trailing commas.
+{
+  "name": "reason-nact",
+  "version": "0.1.0",
+  "sources": [
+    {
+      "dir": "src"
+    },
+    {
+      "dir": "__tests__",
+      "type": "dev"
+    }
+  ],
+  "refmt": 3,
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "bs-dependencies": [],
+  "bs-dev-dependencies": ["bs-jest"],
+  "bsc-flags": ["-bs-no-version-header"],
+  "namespace": true
+}
