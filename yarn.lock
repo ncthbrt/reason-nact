@@ -377,6 +377,10 @@ bs-platform@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-2.0.0.tgz#17ee607fa829f67b8b920438ebca5ec1deab3276"
 
+bs-platform@^1.7.1:
+  version "1.10.3"
+  resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-1.10.3.tgz#da5aaba2e0507f5f85a5f662818b7f8734156f84"
+
 bser@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/bser/-/bser-2.0.0.tgz#9ac78d3ed5d915804fd87acb158bc797147a1719"
@@ -989,6 +993,12 @@ husky@^0.14.3:
 iconv-lite@0.4.19:
   version "0.4.19"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.19.tgz#f7468f60135f5e5dad3399c0a81be9a1603a082b"
+
+immutable-re@^0.0.15:
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/immutable-re/-/immutable-re-0.0.15.tgz#56a99ad76479a5ffd3fccec13ec2b853d1ebce31"
+  dependencies:
+    bs-platform "^1.7.1"
 
 imurmurhash@^0.1.4:
   version "0.1.4"

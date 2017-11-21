@@ -21,6 +21,7 @@
     "jest": "^21.2.1"
   },
   "dependencies": {
+    "immutable-re": "^0.0.15",
     "nact": "^3.1.5"
   }
 }
