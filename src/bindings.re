@@ -1,8 +1,8 @@
 type actorPath;
 type actorRef = {.
-  parent: actorRef,
-  path: actorPath,
-  name: string
+  "parent": actorRef,
+  "path": actorPath,
+  "name": string
 };
 
 module JsMap {
