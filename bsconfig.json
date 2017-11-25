@@ -17,7 +17,7 @@
     "module": "commonjs",
     "in-source": true
   },
-  "bs-dependencies": [],
+  "bs-dependencies": ["immutable-re"],
   "bs-dev-dependencies": ["bs-jest"],
   "bsc-flags": ["-bs-no-version-header"],
   "namespace": true

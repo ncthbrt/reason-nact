@@ -30,25 +30,25 @@ type ctx = {.
     "children": JsMap.map(string, actorRef)
 };
 
-type persistentCtx = {.    
+type persistentCtx('msgType) = {.
     "sender": actorRef,
     "parent": actorRef,
     "path": actorPath,
     "self": actorRef,
     "name": string,
     "children": JsMap.map(string, actorRef),
-    "persist": string,
+    "persist": 'msgType => Js.Promise.t(unit),
     "recovering": bool
 };
 
-type statefulSignature('state, 'msgType) = ('state, 'msgType, ctx) => 'state;
-type statelessSignature('msgType) = ('msgType, ctx) => unit;
-type persistentSignature('state, 'msgType) = ('state, 'msgType, persistentCtx) => 'state;
+type statefulActor('state, 'msgType) = ('state, 'msgType, ctx) => 'state;
+type statelessActor('msgType) = ('msgType, ctx) => unit;
+type persistentActor('state, 'msgType) = ('state, 'msgType, persistentCtx('msgType)) => 'state;
 
-[@bs.module "nact"] external spawn : (actorRef,  statefulSignature('state, 'msgType), string) => actorRef = "spawn";
-[@bs.module "nact"] external spawnStateless : (actorRef, statelessSignature('msgType), string) => actorRef = "spawnStateless";
+[@bs.module "nact"] external spawn : (actorRef,  statefulActor('state, 'msgType), string) => actorRef = "spawn";
+[@bs.module "nact"] external spawnStateless : (actorRef, statelessActor('msgType), string) => actorRef = "spawnStateless";
+[@bs.module "nact"] external spawnPersistent : (actorRef, persistentActor('state, 'msgType), string, string) => actorRef = "spawnPersistent";
 
-[@bs.module "nact"] external spawnPersistent : (actorRef, persistentSignature('state, 'msgType), string, string) => actorRef = "spawnPersistent";
 [@bs.module "nact"] external configurePersistence : 'engine => actorRef => unit = "configurePersistence";
 
 [@bs.module "nact"] external stop : (actorRef) => unit = "stop";
