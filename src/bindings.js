@@ -1,7 +1,1 @@
-'use strict';
-
-
-var JsMap = /* module */[];
-
-exports.JsMap = JsMap;
-/* No side effect */
+/* This output is empty. Its source's type definitions, externals and/or unused code got optimized away. */

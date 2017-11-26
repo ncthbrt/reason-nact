@@ -1,14 +1,20 @@
+open JsMap;
+
 type actorPath =
   | ActorPath(Bindings.actorPath);
 
 type actorRef('incoming, 'outgoing) =
   | ActorRef(Bindings.actorRef);
 
+type untypedActorRef = 
+  | UntypedActorRef(Bindings.actorRef);
+
 type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
   sender: option(actorRef('outgoing, 'senderOutgoing)),
   parent: actorRef('parentIncoming, 'parentOutgoing),
   path: actorPath,
   self: actorRef('incoming, 'outgoing),
+  children: Immutable.Map.t(string, untypedActorRef),
   name: string
 };
 
@@ -17,9 +23,10 @@ type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'send
   parent: actorRef('parentIncoming, 'parentOutgoing),
   path: actorPath,
   self: actorRef('incoming, 'outgoing),
-  name: string,
+  name: string,  
   persist: 'incoming => Js.Promise.t(unit),
-  recovering: bool
+  children: Immutable.Map.t(string, untypedActorRef),
+  recovering: bool    
 };
 
 let mapSender = (sender) =>
@@ -28,12 +35,17 @@ let mapSender = (sender) =>
   | None => None
   };
 
+let createUntypedRef = x => UntypedActorRef(x);
 let mapCtx = (untypedCtx: Bindings.ctx) => {
   name: untypedCtx##name,
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   sender: mapSender(untypedCtx##sender),
-  path: ActorPath(untypedCtx##path)
+  path: ActorPath(untypedCtx##path),
+  children: untypedCtx##children 
+    |> JsMap.mapValues(createUntypedRef)
+    |> toImmutableHashMap 
+    |> Immutable.HashMap.toMap
 };
 
 let mapPersist = (persist, msg) => persist(msg);
@@ -45,8 +57,13 @@ let mapPersistentCtx = (untypedCtx: Bindings.persistentCtx('incoming)) => {
   sender: mapSender(untypedCtx##sender),
   path: ActorPath(untypedCtx##path),
   recovering: untypedCtx##recovering,
-  persist: mapPersist(untypedCtx##persist)
+  persist: mapPersist(untypedCtx##persist),
+  children: untypedCtx##children 
+            |> JsMap.mapValues(createUntypedRef) 
+            |> toImmutableHashMap 
+            |> Immutable.HashMap.toMap
 };
+
 
 type statefulActor('state, 'incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) =
   (
@@ -150,7 +167,7 @@ let dispatch = (~sender=?, ActorRef(actor), msg) =>
 
 exception QueryTimeout(int);
 
-let query: (actorRef('incoming, 'outgoing), 'incoming, int) => Js.Promise.t('outgoing) =
-  (ActorRef(actor), msg, timeout) =>
+let query: (~timeout:int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing) =
+  (~timeout, ActorRef(actor), msg) =>
     Bindings.query(actor, msg, timeout)
     |> Js.Promise.catch((_) => Js.Promise.reject(QueryTimeout(timeout)));

@@ -1,4 +1,5 @@
 type actorPath;
+type untypedActorRef;
 type actorRef('incoming, 'outgoing);
 
 type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
@@ -6,9 +7,9 @@ type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing
     parent: actorRef('parentIncoming, 'parentOutgoing),
     path: actorPath,
     self: actorRef('incoming, 'outgoing),
+    children: Immutable.Map.t(string, untypedActorRef),
     name: string
 };
-  
 
 type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
     sender: option(actorRef('outgoing, 'senderOutgoing)),
@@ -17,6 +18,7 @@ type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'send
     self: actorRef('incoming, 'outgoing),
     name: string,  
     persist: 'incoming => Js.Promise.t(unit),
+    children: Immutable.Map.t(string, untypedActorRef),
     recovering: bool    
 };
 
@@ -36,4 +38,4 @@ let stop : (actorRef('incoming, 'outgoing)) => unit;
 let start : unit => actorRef(unit, unit);
 let dispatch : (~sender:actorRef('senderIncoming, 'senderOutgoing)=?, actorRef('incoming, 'outgoing), 'incoming) => unit;
 exception QueryTimeout(int);
-let query: (actorRef('incoming, 'outgoing), 'incoming, int) => Js.Promise.t('outgoing);
+let query: (~timeout:int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing);

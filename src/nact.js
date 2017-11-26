@@ -1,8 +1,10 @@
 'use strict';
 
-var Nact            = require("nact");
-var Curry           = require("bs-platform/lib/js/curry.js");
-var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
+var Nact             = require("nact");
+var Curry            = require("bs-platform/lib/js/curry.js");
+var Immutable        = require("immutable-re/src/Immutable.js");
+var Caml_exceptions  = require("bs-platform/lib/js/caml_exceptions.js");
+var JsMap$ReasonNact = require("./jsMap.js");
 
 function mapSender(sender) {
   if (sender == null) {
@@ -12,12 +14,17 @@ function mapSender(sender) {
   }
 }
 
+function createUntypedRef(x) {
+  return /* UntypedActorRef */[x];
+}
+
 function mapCtx(untypedCtx) {
   return /* record */[
           /* sender */mapSender(untypedCtx.sender),
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
+          /* children */Curry._1(Immutable.HashMap[/* toMap */29], JsMap$ReasonNact.toImmutableHashMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children))),
           /* name */untypedCtx.name
         ];
 }
@@ -31,6 +38,7 @@ function mapPersistentCtx(untypedCtx) {
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
+          /* children */Curry._1(Immutable.HashMap[/* toMap */29], JsMap$ReasonNact.toImmutableHashMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children))),
           /* recovering */untypedCtx.recovering
         ];
 }
@@ -85,7 +93,7 @@ function dispatch(sender, param, msg) {
 
 var QueryTimeout = Caml_exceptions.create("Nact-ReasonNact.QueryTimeout");
 
-function query(param, msg, timeout) {
+function query(timeout, param, msg) {
   return Nact.query(param[0], msg, timeout).catch((function () {
                 return Promise.reject([
                             QueryTimeout,

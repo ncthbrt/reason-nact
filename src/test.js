@@ -8,7 +8,7 @@ var ping = Nact$ReasonNact.spawnStateless(/* Some */["ping"], system, (function 
         console.log(msg);
         var match = ctx[/* sender */0];
         if (match) {
-          return Nact$ReasonNact.dispatch(/* Some */[ctx[/* self */3]], match[0], ctx[/* name */4]);
+          return Nact$ReasonNact.dispatch(/* Some */[ctx[/* self */3]], match[0], ctx[/* name */5]);
         } else {
           console.log("Saying goodbye now");
           return /* () */0;
@@ -19,7 +19,7 @@ var pong = Nact$ReasonNact.spawnStateless(/* Some */["pong"], system, (function 
         console.log(msg);
         var match = ctx[/* sender */0];
         if (match) {
-          return Nact$ReasonNact.dispatch(/* Some */[ctx[/* self */3]], match[0], ctx[/* name */4]);
+          return Nact$ReasonNact.dispatch(/* Some */[ctx[/* self */3]], match[0], ctx[/* name */5]);
         } else {
           console.log("Saying goodbye now");
           return /* () */0;
@@ -27,6 +27,10 @@ var pong = Nact$ReasonNact.spawnStateless(/* Some */["pong"], system, (function 
       }));
 
 Nact$ReasonNact.dispatch(/* Some */[pong], ping, "hello");
+
+setTimeout((function () {
+        return Nact$ReasonNact.stop(system);
+      }), 1000);
 
 exports.system = system;
 exports.ping   = ping;
