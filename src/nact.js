@@ -1,10 +1,10 @@
 'use strict';
 
-var Nact             = require("nact");
-var Curry            = require("bs-platform/lib/js/curry.js");
-var Immutable        = require("immutable-re/src/Immutable.js");
-var Caml_exceptions  = require("bs-platform/lib/js/caml_exceptions.js");
-var JsMap$ReasonNact = require("./jsMap.js");
+var Nact                 = require("nact");
+var Curry                = require("bs-platform/lib/js/curry.js");
+var Caml_exceptions      = require("bs-platform/lib/js/caml_exceptions.js");
+var JsMap$ReasonNact     = require("./jsMap.js");
+var StringMap$ReasonNact = require("./stringMap.js");
 
 function mapSender(sender) {
   if (sender == null) {
@@ -24,7 +24,7 @@ function mapCtx(untypedCtx) {
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
-          /* children */Curry._1(Immutable.HashMap[/* toMap */29], JsMap$ReasonNact.toImmutableHashMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children))),
+          /* children */StringMap$ReasonNact.fromJsMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children)),
           /* name */untypedCtx.name
         ];
 }
@@ -38,7 +38,7 @@ function mapPersistentCtx(untypedCtx) {
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
-          /* children */Curry._1(Immutable.HashMap[/* toMap */29], JsMap$ReasonNact.toImmutableHashMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children))),
+          /* children */StringMap$ReasonNact.fromJsMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children)),
           /* recovering */untypedCtx.recovering
         ];
 }

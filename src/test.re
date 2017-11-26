@@ -20,4 +20,4 @@ let pong = spawnStateless(~name="pong", system, (msg, ctx) => {
 
 dispatch(~sender=pong, ping, "hello");
 
-Js.Global.setTimeout(_ => stop(system), 1000);
+Js.Global.setTimeout(() => stop(system), 1000);

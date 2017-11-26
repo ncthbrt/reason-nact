@@ -1,6 +1,12 @@
 {
   "name": "reason-nact",
   "version": "0.1.0",
+  "repository": "https://github.com/ncthbrt/reason-nact",
+  "author": "Nick Cuthbert (https://github.com/ncthbrt)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "http://github.com/ncthbrt/reason-nact/issues"
+  },
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
@@ -8,12 +14,23 @@
     "test": "jest --coverage",
     "test-watch": "jest --coverage --watch",
     "pretest": "yarn run build",
+    "prepush": "yarn run test",
     "prepublish": "yarn run clean && yarn run build"
   },
   "keywords": [
-    "BuckleScript"
-  ],
-  "license": "MIT",
+    "BuckleScript", 
+    "Reason",
+    "nact",
+    "actors",
+    "actor-model",    
+    "akka",
+    "akka.net",
+    "non-blocking",
+    "actor system",
+    "erlang",
+    "event sourcing",
+    "distributed-systems"
+  ],  
   "devDependencies": {
     "bs-jest": "^0.2.0",
     "bs-platform": "2.0.0",
@@ -21,7 +38,6 @@
     "jest": "^21.2.1"
   },
   "dependencies": {
-    "immutable-re": "^0.0.15",
     "nact": "^3.1.5"
   }
 }

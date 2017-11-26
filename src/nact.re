@@ -1,5 +1,3 @@
-open JsMap;
-
 type actorPath =
   | ActorPath(Bindings.actorPath);
 
@@ -14,7 +12,7 @@ type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing
   parent: actorRef('parentIncoming, 'parentOutgoing),
   path: actorPath,
   self: actorRef('incoming, 'outgoing),
-  children: Immutable.Map.t(string, untypedActorRef),
+  children: StringMap.t(untypedActorRef),
   name: string
 };
 
@@ -25,7 +23,7 @@ type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'send
   self: actorRef('incoming, 'outgoing),
   name: string,  
   persist: 'incoming => Js.Promise.t(unit),
-  children: Immutable.Map.t(string, untypedActorRef),
+  children: StringMap.t(untypedActorRef),
   recovering: bool    
 };
 
@@ -44,8 +42,7 @@ let mapCtx = (untypedCtx: Bindings.ctx) => {
   path: ActorPath(untypedCtx##path),
   children: untypedCtx##children 
     |> JsMap.mapValues(createUntypedRef)
-    |> toImmutableHashMap 
-    |> Immutable.HashMap.toMap
+    |> StringMap.fromJsMap
 };
 
 let mapPersist = (persist, msg) => persist(msg);
@@ -60,8 +57,7 @@ let mapPersistentCtx = (untypedCtx: Bindings.persistentCtx('incoming)) => {
   persist: mapPersist(untypedCtx##persist),
   children: untypedCtx##children 
             |> JsMap.mapValues(createUntypedRef) 
-            |> toImmutableHashMap 
-            |> Immutable.HashMap.toMap
+            |> StringMap.fromJsMap
 };
 
 

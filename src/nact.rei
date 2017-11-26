@@ -7,7 +7,7 @@ type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing
     parent: actorRef('parentIncoming, 'parentOutgoing),
     path: actorPath,
     self: actorRef('incoming, 'outgoing),
-    children: Immutable.Map.t(string, untypedActorRef),
+    children: StringMap.t(untypedActorRef),
     name: string
 };
 
@@ -18,7 +18,7 @@ type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'send
     self: actorRef('incoming, 'outgoing),
     name: string,  
     persist: 'incoming => Js.Promise.t(unit),
-    children: Immutable.Map.t(string, untypedActorRef),
+    children: StringMap.t(untypedActorRef),
     recovering: bool    
 };
 
