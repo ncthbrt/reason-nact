@@ -1,10 +1,10 @@
 'use strict';
 
-var Nact                 = require("nact");
-var Curry                = require("bs-platform/lib/js/curry.js");
-var Caml_exceptions      = require("bs-platform/lib/js/caml_exceptions.js");
-var JsMap$ReasonNact     = require("./jsMap.js");
-var StringMap$ReasonNact = require("./stringMap.js");
+var Nact            = require("nact");
+var Curry           = require("bs-platform/lib/js/curry.js");
+var JsMap           = require("./jsMap.js");
+var StringMap       = require("./stringMap.js");
+var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
 
 function mapSender(sender) {
   if (sender == null) {
@@ -24,7 +24,7 @@ function mapCtx(untypedCtx) {
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
-          /* children */StringMap$ReasonNact.fromJsMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children)),
+          /* children */StringMap.fromJsMap(JsMap.mapValues(createUntypedRef, untypedCtx.children)),
           /* name */untypedCtx.name
         ];
 }
@@ -38,7 +38,7 @@ function mapPersistentCtx(untypedCtx) {
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
-          /* children */StringMap$ReasonNact.fromJsMap(JsMap$ReasonNact.mapValues(createUntypedRef, untypedCtx.children)),
+          /* children */StringMap.fromJsMap(JsMap.mapValues(createUntypedRef, untypedCtx.children)),
           /* recovering */untypedCtx.recovering
         ];
 }
@@ -91,7 +91,7 @@ function dispatch(sender, param, msg) {
   }
 }
 
-var QueryTimeout = Caml_exceptions.create("Nact-ReasonNact.QueryTimeout");
+var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
 
 function query(timeout, param, msg) {
   return Nact.query(param[0], msg, timeout).catch((function () {

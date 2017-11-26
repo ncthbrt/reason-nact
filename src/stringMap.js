@@ -1,16 +1,16 @@
 'use strict';
 
-var $$Map            = require("bs-platform/lib/js/map.js");
-var Curry            = require("bs-platform/lib/js/curry.js");
-var $$String         = require("bs-platform/lib/js/string.js");
-var JsMap$ReasonNact = require("./jsMap.js");
+var $$Map    = require("bs-platform/lib/js/map.js");
+var Curry    = require("bs-platform/lib/js/curry.js");
+var JsMap    = require("./jsMap.js");
+var $$String = require("bs-platform/lib/js/string.js");
 
 var StringCompare = /* module */[/* compare */$$String.compare];
 
 var StringMap = $$Map.Make(StringCompare);
 
 function fromJsMap(jsMap) {
-  return JsMap$ReasonNact.entries(jsMap).reduce((function (map, param) {
+  return JsMap.entries(jsMap).reduce((function (map, param) {
                 return Curry._3(StringMap[/* add */3], param[0], param[1], map);
               }), StringMap[/* empty */0]);
 }
