@@ -1,42 +1,156 @@
-type untypedActorRef;
-type actorPath;
-type actorRef('incoming);
+type actorPath =
+  | ActorPath(Bindings.actorPath);
 
-type ctx('incoming, 'outgoing, 'parentIncoming) = {
-  sender: option(actorRef('outgoing)),
-  parent: actorRef('parentIncoming),
+type actorRef('incoming, 'outgoing) =
+  | ActorRef(Bindings.actorRef);
+
+type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
+  sender: option(actorRef('outgoing, 'senderOutgoing)),
+  parent: actorRef('parentIncoming, 'parentOutgoing),
   path: actorPath,
-  self: actorRef('incoming),
+  self: actorRef('incoming, 'outgoing),
+  name: string
+};
+
+type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
+  sender: option(actorRef('outgoing, 'senderOutgoing)),
+  parent: actorRef('parentIncoming, 'parentOutgoing),
+  path: actorPath,
+  self: actorRef('incoming, 'outgoing),
   name: string,
-  children: Immutable.Map.t(string, string)
+  persist: 'incoming => Js.Promise.t(unit),
+  recovering: bool
 };
 
-type persistentCtx('incoming, 'outgoing, 'parentIncoming) = {
-    sender: option(actorRef('outgoing)),
-    parent: actorRef('parentIncoming),
-    path: actorPath,
-    self: actorRef('incoming),
-    name: string,
-    children: Immutable.Map.t(string, string),
-    persist: 'incoming => Js.Promise.t(unit),
-    recovering: bool    
+let mapSender = (sender) =>
+  switch (Js.Nullable.to_opt(sender)) {
+  | Some(sndr) => Some(ActorRef(sndr))
+  | None => None
+  };
+
+let mapCtx = (untypedCtx: Bindings.ctx) => {
+  name: untypedCtx##name,
+  self: ActorRef(untypedCtx##self),
+  parent: ActorRef(untypedCtx##parent),
+  sender: mapSender(untypedCtx##sender),
+  path: ActorPath(untypedCtx##path)
 };
 
-type statefulActor('state, 'incoming, 'outgoing, 'parentIncoming) = 
-    ('state, 'incoming, ctx('incoming, 'outgoing, 'parentIncoming)) => 'state;
+let mapPersist = (persist, msg) => persist(msg);
 
-type statelessActor('incoming, 'outgoing, 'parentIncoming) = 
-  ('incoming, ctx('incoming, 'outgoing, 'parentIncoming)) => unit;
-
-type persistentActor('state, 'incoming, 'outgoing, 'parentIncoming) = 
-    ('state, 'incoming, persistentCtx('incoming, 'outgoing, 'parentIncoming)) => 'state;
-
-module type Nact = {
-    let spawn : (actorRef('parentIncoming),  statefulActor('state, 'incoming, 'outgoing, 'parentIncoming), string) => actorRef('incoming);
-    let spawnStateless : (actorRef('parentIncoming), statelessActor('incoming, 'outgoing, 'parentIncoming), string) => actorRef('incoming);
-    let spawnPersistent : (actorRef('parentIncoming), persistentActor('state, 'incoming, 'outgoing, 'parentIncoming), string) => actorRef('incoming);
-    let stop : (actorRef('msgType)) => unit;    
-    let start : ('options) => actorRef(unit);
-    let dispatch : (actorRef('msgType), 'msgType, actorRef('sender)) => unit;
-    let query: (actorRef('msgType), 'msgType, int) => Js.Promise.t('responseMsg);
+let mapPersistentCtx = (untypedCtx: Bindings.persistentCtx('incoming)) => {
+  name: untypedCtx##name,
+  self: ActorRef(untypedCtx##self),
+  parent: ActorRef(untypedCtx##parent),
+  sender: mapSender(untypedCtx##sender),
+  path: ActorPath(untypedCtx##path),
+  recovering: untypedCtx##recovering,
+  persist: mapPersist(untypedCtx##persist)
 };
+
+type statefulActor('state, 'incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) =
+  (
+    'state,
+    'incoming,
+    ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
+  ) =>
+  'state;
+
+type statelessActor('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) =
+  ('incoming, ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)) => unit;
+
+type persistentActor(
+  'state,
+  'incoming,
+  'outgoing,
+  'parentIncoming,
+  'parentOutgoing,
+  'senderOutgoing
+) =
+  (
+    'state,
+    'incoming,
+    persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
+  ) =>
+  'state;
+
+let spawn:
+  (
+    ~name: string=?,
+    actorRef('parentIncoming, 'parentOutgoing),
+    statefulActor('state, 'incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
+  ) =>
+  actorRef('incoming, 'outgoing) =
+  (~name=?, ActorRef(parent), func) => {
+    let f = (state, msg, ctx) => func(state, msg, mapCtx(ctx));
+    let untypedRef =
+      switch name {
+      | Some(concreteName) => Bindings.spawn(parent, f, Js.Nullable.return(concreteName))
+      | None => Bindings.spawn(parent, f, Js.Nullable.undefined)
+      };
+    ActorRef(untypedRef)
+  };
+
+let spawnStateless:
+  (
+    ~name: string=?,
+    actorRef('parentIncoming, 'parentOutgoing),
+    statelessActor('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
+  ) =>
+  actorRef('incoming, 'outgoing) =
+  (~name=?, ActorRef(parent), func) => {
+    let f = (msg, ctx) => func(msg, mapCtx(ctx));
+    let untypedRef =
+      switch name {
+      | Some(concreteName) => Bindings.spawnStateless(parent, f, Js.Nullable.return(concreteName))
+      | None => Bindings.spawnStateless(parent, f, Js.Nullable.undefined)
+      };
+    ActorRef(untypedRef)
+  };
+
+let spawnPersistent:
+  (
+    ~key: string,
+    ~name: string=?,
+    actorRef('parentIncoming, 'parentOutgoing),
+    persistentActor(
+      'state,
+      'incoming,
+      'outgoing,
+      'parentIncoming,
+      'parentOutgoing,
+      'senderOutgoing
+    )
+  ) =>
+  actorRef('incoming, 'outgoing) =
+  (~key, ~name=?, ActorRef(parent), func) => {
+    let f = (state, msg, ctx) => func(state, msg, mapPersistentCtx(ctx));
+    let untypedRef =
+      switch name {
+      | Some(concreteName) =>
+        Bindings.spawnPersistent(parent, f, key, Js.Nullable.return(concreteName))
+      | None => Bindings.spawnPersistent(parent, f, key, Js.Nullable.undefined)
+      };
+    ActorRef(untypedRef)
+  };
+
+let stop = (ActorRef(reference)) => Bindings.stop(reference);
+
+let start = () => {
+  let untypedRef = Bindings.start();
+  ActorRef(untypedRef);
+};
+
+let dispatch = (~sender=?, ActorRef(actor), msg) =>
+  switch sender {
+  | Some(ActorRef(concreteSender)) =>
+    Bindings.dispatch(actor, msg, Js.Nullable.return(concreteSender))
+  | None => Bindings.dispatch(actor, msg, Js.Nullable.undefined)
+  };
+
+exception QueryTimeout(int);
+
+let query: (actorRef('incoming, 'outgoing), 'incoming, int) => Js.Promise.t('outgoing) =
+  (ActorRef(actor), msg, timeout) =>
+    Bindings.query(actor, msg, timeout)
+    |> Js.Promise.catch((_) => Js.Promise.reject(QueryTimeout(timeout)));
