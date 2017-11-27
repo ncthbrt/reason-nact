@@ -2,8 +2,8 @@
 
 var Nact            = require("nact");
 var Curry           = require("bs-platform/lib/js/curry.js");
-var JsMap           = require("./jsMap.js");
-var StringMap       = require("./stringMap.js");
+var Nact_jsMap      = require("./Nact_jsMap.js");
+var Nact_stringMap  = require("./Nact_stringMap.js");
 var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
 
 function mapSender(sender) {
@@ -24,7 +24,7 @@ function mapCtx(untypedCtx) {
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
-          /* children */StringMap.fromJsMap(JsMap.mapValues(createUntypedRef, untypedCtx.children)),
+          /* children */Nact_stringMap.fromJsMap(Nact_jsMap.mapValues(createUntypedRef, untypedCtx.children)),
           /* name */untypedCtx.name
         ];
 }
@@ -38,7 +38,7 @@ function mapPersistentCtx(untypedCtx) {
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
-          /* children */StringMap.fromJsMap(JsMap.mapValues(createUntypedRef, untypedCtx.children)),
+          /* children */Nact_stringMap.fromJsMap(Nact_jsMap.mapValues(createUntypedRef, untypedCtx.children)),
           /* recovering */untypedCtx.recovering
         ];
 }
@@ -102,6 +102,9 @@ function query(timeout, param, msg) {
               }));
 }
 
+var StringMap = 0;
+
+exports.StringMap       = StringMap;
 exports.spawn           = spawn;
 exports.spawnStateless  = spawnStateless;
 exports.spawnPersistent = spawnPersistent;

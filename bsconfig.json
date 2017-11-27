@@ -19,6 +19,5 @@
   },
   "bs-dependencies": [],
   "bs-dev-dependencies": ["bs-jest"],
-  "bsc-flags": ["-bs-no-version-header"],
-  "namespace": false
+  "bsc-flags": ["-bs-no-version-header"]  
 }

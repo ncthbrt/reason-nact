@@ -1,5 +1,4 @@
-open Jest;
-/* 
+/* open Jest; */
 open Nact;
 
 let system = start();
@@ -22,11 +21,11 @@ let pong = spawnStateless(~name="pong", system, (msg, ctx) => {
 
 dispatch(~sender=pong, ping, "hello");
 
-Js.Global.setTimeout(() => stop(system), 1000); */
+Js.Global.setTimeout(() => stop(system), 1000); 
 
 
-describe("Expect", () => {
+/* describe("Expect", () => {
     open Expect;
   
     test("toBe", () => expect(1 + 2) |> toBe(3))
-});
+}); */

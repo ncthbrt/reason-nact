@@ -1,6 +1,10 @@
+module StringMap = Nact_stringMap;
+
 type actorPath;
 
 type untypedActorRef;
+
+type untypedActorMap = StringMap.t(untypedActorRef);
 
 type actorRef('incoming, 'outgoing);
 
@@ -9,7 +13,7 @@ type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing
   parent: actorRef('parentIncoming, 'parentOutgoing),
   path: actorPath,
   self: actorRef('incoming, 'outgoing),
-  children: StringMap.t(untypedActorRef),
+  children: untypedActorMap,
   name: string
 };
 
@@ -20,7 +24,7 @@ type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'send
   self: actorRef('incoming, 'outgoing),
   name: string,
   persist: 'incoming => Js.Promise.t(unit),
-  children: StringMap.t(untypedActorRef),
+  children: untypedActorMap,
   recovering: bool
 };
 

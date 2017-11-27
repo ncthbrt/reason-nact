@@ -11,7 +11,7 @@ type ctx = {.
     "path": actorPath,
     "self": actorRef,
     "name": string,
-    "children": JsMap.t(actorRef)
+    "children": Nact_jsMap.t(string, actorRef)
 };
 
 type persistentCtx('msgType) = {.
@@ -20,7 +20,7 @@ type persistentCtx('msgType) = {.
     "path": actorPath,
     "self": actorRef,
     "name": string,
-    "children": JsMap.t(actorRef),
+    "children": Nact_jsMap.t(string, actorRef),
     "persist": 'msgType => Js.Promise.t(unit),
     "recovering": bool
 };

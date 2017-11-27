@@ -1,18 +1,24 @@
-type actorPath =
-  | ActorPath(Bindings.actorPath);
-
-type actorRef('incoming, 'outgoing) =
-  | ActorRef(Bindings.actorRef);
+module StringMap = Nact_stringMap;
 
 type untypedActorRef = 
-  | UntypedActorRef(Bindings.actorRef);
+  | UntypedActorRef(Nact_bindings.actorRef);
+  
+type untypedActorMap = StringMap.t(untypedActorRef);
+
+
+type actorPath =
+  | ActorPath(Nact_bindings.actorPath);
+
+type actorRef('incoming, 'outgoing) =
+  | ActorRef(Nact_bindings.actorRef);
+
 
 type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
   sender: option(actorRef('outgoing, 'senderOutgoing)),
   parent: actorRef('parentIncoming, 'parentOutgoing),
   path: actorPath,
   self: actorRef('incoming, 'outgoing),
-  children: StringMap.t(untypedActorRef),
+  children: untypedActorMap,
   name: string
 };
 
@@ -23,7 +29,7 @@ type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'send
   self: actorRef('incoming, 'outgoing),
   name: string,  
   persist: 'incoming => Js.Promise.t(unit),
-  children: StringMap.t(untypedActorRef),
+  children: untypedActorMap,
   recovering: bool    
 };
 
@@ -34,20 +40,20 @@ let mapSender = (sender) =>
   };
 
 let createUntypedRef = x => UntypedActorRef(x);
-let mapCtx = (untypedCtx: Bindings.ctx) => {
+let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
   name: untypedCtx##name,
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   sender: mapSender(untypedCtx##sender),
   path: ActorPath(untypedCtx##path),
   children: untypedCtx##children 
-    |> JsMap.mapValues(createUntypedRef)
+    |> Nact_jsMap.mapValues(createUntypedRef)
     |> StringMap.fromJsMap
 };
 
 let mapPersist = (persist, msg) => persist(msg);
 
-let mapPersistentCtx = (untypedCtx: Bindings.persistentCtx('incoming)) => {
+let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
   name: untypedCtx##name,
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
@@ -56,7 +62,7 @@ let mapPersistentCtx = (untypedCtx: Bindings.persistentCtx('incoming)) => {
   recovering: untypedCtx##recovering,
   persist: mapPersist(untypedCtx##persist),
   children: untypedCtx##children 
-            |> JsMap.mapValues(createUntypedRef) 
+            |> Nact_jsMap.mapValues(createUntypedRef) 
             |> StringMap.fromJsMap
 };
 
@@ -98,8 +104,8 @@ let spawn:
     let f = (state, msg, ctx) => func(state, msg, mapCtx(ctx));
     let untypedRef =
       switch name {
-      | Some(concreteName) => Bindings.spawn(parent, f, Js.Nullable.return(concreteName))
-      | None => Bindings.spawn(parent, f, Js.Nullable.undefined)
+      | Some(concreteName) => Nact_bindings.spawn(parent, f, Js.Nullable.return(concreteName))
+      | None => Nact_bindings.spawn(parent, f, Js.Nullable.undefined)
       };
     ActorRef(untypedRef)
   };
@@ -115,8 +121,8 @@ let spawnStateless:
     let f = (msg, ctx) => func(msg, mapCtx(ctx));
     let untypedRef =
       switch name {
-      | Some(concreteName) => Bindings.spawnStateless(parent, f, Js.Nullable.return(concreteName))
-      | None => Bindings.spawnStateless(parent, f, Js.Nullable.undefined)
+      | Some(concreteName) => Nact_bindings.spawnStateless(parent, f, Js.Nullable.return(concreteName))
+      | None => Nact_bindings.spawnStateless(parent, f, Js.Nullable.undefined)
       };
     ActorRef(untypedRef)
   };
@@ -141,29 +147,29 @@ let spawnPersistent:
     let untypedRef =
       switch name {
       | Some(concreteName) =>
-        Bindings.spawnPersistent(parent, f, key, Js.Nullable.return(concreteName))
-      | None => Bindings.spawnPersistent(parent, f, key, Js.Nullable.undefined)
+      Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.return(concreteName))
+      | None => Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.undefined)
       };
     ActorRef(untypedRef)
   };
 
-let stop = (ActorRef(reference)) => Bindings.stop(reference);
+let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
 
 let start = () => {
-  let untypedRef = Bindings.start();
+  let untypedRef = Nact_bindings.start();
   ActorRef(untypedRef);
 };
 
 let dispatch = (~sender=?, ActorRef(actor), msg) =>
   switch sender {
   | Some(ActorRef(concreteSender)) =>
-    Bindings.dispatch(actor, msg, Js.Nullable.return(concreteSender))
-  | None => Bindings.dispatch(actor, msg, Js.Nullable.undefined)
+     Nact_bindings.dispatch(actor, msg, Js.Nullable.return(concreteSender))
+  | None => Nact_bindings.dispatch(actor, msg, Js.Nullable.undefined)
   };
 
 exception QueryTimeout(int);
 
 let query: (~timeout:int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing) =
   (~timeout, ActorRef(actor), msg) =>
-    Bindings.query(actor, msg, timeout)
+    Nact_bindings.query(actor, msg, timeout)
     |> Js.Promise.catch((_) => Js.Promise.reject(QueryTimeout(timeout)));
