@@ -58,7 +58,8 @@ let spawn:
   (
     ~name: string=?,
     actorRef('parentIncoming, 'parentOutgoing),
-    statefulActor('state, 'incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
+    statefulActor('state, 'incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing),
+    'state
   ) =>
   actorRef('incoming, 'outgoing);
 
@@ -82,7 +83,8 @@ let spawnPersistent:
       'parentIncoming,
       'parentOutgoing,
       'senderOutgoing
-    )
+    ),
+    'state
   ) =>
   actorRef('incoming, 'outgoing);
 
@@ -98,6 +100,8 @@ let dispatch:
   ) =>
   unit;
 
+exception ActorNotAvailable;
 exception QueryTimeout(int);
 
-let query: (~timeout: int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing);
+let query:
+  (~timeout: int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing);

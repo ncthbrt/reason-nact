@@ -43,9 +43,10 @@ function mapPersistentCtx(untypedCtx) {
         ];
 }
 
-function spawn(name, param, func) {
+function spawn(name, param, func, initialState) {
   var parent = param[0];
-  var f = function (state, msg, ctx) {
+  var f = function (possibleState, msg, ctx) {
+    var state = (possibleState == null) ? initialState : possibleState;
     return Curry._3(func, state, msg, mapCtx(ctx));
   };
   var untypedRef = name ? Nact.spawn(parent, f, name[0]) : Nact.spawn(parent, f, undefined);
@@ -61,9 +62,10 @@ function spawnStateless(name, param, func) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, param, func) {
+function spawnPersistent(key, name, param, func, initialState) {
   var parent = param[0];
-  var f = function (state, msg, ctx) {
+  var f = function (possibleState, msg, ctx) {
+    var state = (possibleState == null) ? initialState : possibleState;
     return Curry._3(func, state, msg, mapPersistentCtx(ctx));
   };
   var untypedRef = name ? Nact.spawnPersistent(parent, f, key, name[0]) : Nact.spawnPersistent(parent, f, key, undefined);
@@ -81,17 +83,19 @@ function start() {
 }
 
 function dispatch(sender, param, msg) {
-  var actor = param[0];
+  var recipient = param[0];
   if (sender) {
-    Nact.dispatch(actor, msg, sender[0][0]);
+    Nact.dispatch(recipient, msg, sender[0][0]);
     return /* () */0;
   } else {
-    Nact.dispatch(actor, msg, undefined);
+    Nact.dispatch(recipient, msg, undefined);
     return /* () */0;
   }
 }
 
 var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
+
+var ActorNotAvailable = Caml_exceptions.create("Nact.ActorNotAvailable");
 
 function query(timeout, param, msg) {
   return Nact.query(param[0], msg, timeout).catch((function () {
@@ -104,13 +108,14 @@ function query(timeout, param, msg) {
 
 var StringMap = 0;
 
-exports.StringMap       = StringMap;
-exports.spawn           = spawn;
-exports.spawnStateless  = spawnStateless;
-exports.spawnPersistent = spawnPersistent;
-exports.stop            = stop;
-exports.start           = start;
-exports.dispatch        = dispatch;
-exports.QueryTimeout    = QueryTimeout;
-exports.query           = query;
+exports.StringMap         = StringMap;
+exports.spawn             = spawn;
+exports.spawnStateless    = spawnStateless;
+exports.spawnPersistent   = spawnPersistent;
+exports.stop              = stop;
+exports.start             = start;
+exports.dispatch          = dispatch;
+exports.ActorNotAvailable = ActorNotAvailable;
+exports.QueryTimeout      = QueryTimeout;
+exports.query             = query;
 /* nact Not a pure module */

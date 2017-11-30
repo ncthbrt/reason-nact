@@ -25,9 +25,9 @@ type persistentCtx('msgType) = {.
     "recovering": bool
 };
 
-type statefulActor('state, 'msgType) = ('state, 'msgType, ctx) => 'state;
+type statefulActor('state, 'msgType) = (Js.nullable('state), 'msgType, ctx) => 'state;
 type statelessActor('msgType) = ('msgType, ctx) => unit;
-type persistentActor('state, 'msgType) = ('state, 'msgType, persistentCtx('msgType)) => 'state;
+type persistentActor('state, 'msgType) = (Js.nullable('state), 'msgType, persistentCtx('msgType)) => 'state;
 
 [@bs.module "nact"] external spawn : (actorRef,  statefulActor('state, 'msgType), Js.nullable(string)) => actorRef = "spawn";
 [@bs.module "nact"] external spawnStateless : (actorRef, statelessActor('msgType), Js.nullable(string)) => actorRef = "spawnStateless";
