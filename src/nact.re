@@ -88,14 +88,14 @@ type persistentActor(
   'state;
 
 let spawn = (~name=?, ActorRef(parent), func, initialState) => {
-  let f = (possibleState, msg, ctx) =>  {
-    let state = switch (Js.Nullable.to_opt(possibleState)) {
-      | None => initialState;
-      | Some(concreteState) => concreteState;
-    };
-    func(state, msg, mapCtx(ctx));
+  let f = (possibleState, msg, ctx) => {
+    let state =
+      switch (Js.Nullable.to_opt(possibleState)) {
+      | None => initialState
+      | Some(concreteState) => concreteState
+      };
+    func(state, msg, mapCtx(ctx))
   };
-
   let untypedRef =
     switch name {
     | Some(concreteName) => Nact_bindings.spawn(parent, f, Js.Nullable.return(concreteName))
@@ -117,13 +117,13 @@ let spawnStateless = (~name=?, ActorRef(parent), func) => {
 
 let spawnPersistent = (~key, ~name=?, ActorRef(parent), func, initialState) => {
   let f = (possibleState, msg, ctx) => {
-    let state = switch (Js.Nullable.to_opt(possibleState)) {
-      | None => initialState;
-      | Some(concreteState) => concreteState;
-    };
-    func(state, msg, mapPersistentCtx(ctx));
+    let state =
+      switch (Js.Nullable.to_opt(possibleState)) {
+      | None => initialState
+      | Some(concreteState) => concreteState
+      };
+    func(state, msg, mapPersistentCtx(ctx))
   };
-
   let untypedRef =
     switch name {
     | Some(concreteName) =>
@@ -141,9 +141,17 @@ let start = () => {
 };
 
 let dispatch = (~sender=?, ActorRef(recipient), msg) =>
-  switch (sender) {  
-  | Some(ActorRef(concreteSender))=> Nact_bindings.dispatch(recipient, msg, Js.Nullable.return(concreteSender))
+  switch sender {
+  | Some(ActorRef(concreteSender)) =>
+    Nact_bindings.dispatch(recipient, msg, Js.Nullable.return(concreteSender))
   | None => Nact_bindings.dispatch(recipient, msg, Js.Nullable.undefined)
+  };
+
+let optionallyDispatch = (~sender=?, possibleRecipient, msg) =>
+  switch (possibleRecipient, sender) {
+  | (None, _) => ()
+  | (Some(recipient), Some(concreteSender)) => dispatch(~sender=concreteSender, recipient, msg)
+  | (Some(recipient), None) => dispatch(recipient, msg)
   };
 
 exception QueryTimeout(int);

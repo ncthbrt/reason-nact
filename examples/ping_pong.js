@@ -6,22 +6,12 @@ var system = Nact.start(/* () */0);
 
 var ping = Nact.spawnStateless(/* Some */["ping"], system, (function (msg, ctx) {
         console.log(msg);
-        var match = ctx[/* sender */0];
-        if (match) {
-          return Nact.dispatch(/* Some */[ctx[/* self */3]], match[0], ctx[/* name */5]);
-        } else {
-          return /* () */0;
-        }
+        return Nact.optionallyDispatch(/* Some */[ctx[/* self */3]], ctx[/* sender */0], ctx[/* name */5]);
       }));
 
 var pong = Nact.spawnStateless(/* Some */["pong"], system, (function (msg, ctx) {
         console.log(msg);
-        var match = ctx[/* sender */0];
-        if (match) {
-          return Nact.dispatch(/* Some */[ctx[/* self */3]], match[0], ctx[/* name */5]);
-        } else {
-          return /* () */0;
-        }
+        return Nact.optionallyDispatch(/* Some */[ctx[/* self */3]], ctx[/* sender */0], ctx[/* name */5]);
       }));
 
 Nact.dispatch(/* Some */[pong], ping, "hello");

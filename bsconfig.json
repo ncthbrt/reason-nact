@@ -22,6 +22,11 @@
     "in-source": true
   },
   "bs-dependencies": [],
-  "bs-dev-dependencies": ["bs-jest"],
-  "bsc-flags": ["-bs-no-version-header"]  
+  "bs-dev-dependencies": [
+    "bs-jest",
+    "bs-express"
+  ],
+  "bsc-flags": [
+    "-bs-no-version-header"
+  ]
 }

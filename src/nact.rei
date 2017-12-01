@@ -100,8 +100,16 @@ let dispatch:
   ) =>
   unit;
 
+let optionallyDispatch:
+  (
+    ~sender: actorRef('senderIncoming, 'senderOutgoing)=?,
+    option(actorRef('incoming, 'outgoing)),
+    'incoming
+  ) =>
+  unit;
+
 exception ActorNotAvailable;
+
 exception QueryTimeout(int);
 
-let query:
-  (~timeout: int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing);
+let query: (~timeout: int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing);

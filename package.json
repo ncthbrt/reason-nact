@@ -18,11 +18,11 @@
     "prepublish": "yarn run clean && yarn run build"
   },
   "keywords": [
-    "BuckleScript", 
+    "BuckleScript",
     "Reason",
     "nact",
     "actors",
-    "actor-model",    
+    "actor-model",
     "akka",
     "akka.net",
     "non-blocking",
@@ -30,7 +30,7 @@
     "erlang",
     "event sourcing",
     "distributed-systems"
-  ],  
+  ],
   "devDependencies": {
     "bs-jest": "^0.2.0",
     "bs-platform": "2.0.0",

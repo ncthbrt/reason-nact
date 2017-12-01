@@ -93,6 +93,19 @@ function dispatch(sender, param, msg) {
   }
 }
 
+function optionallyDispatch(sender, possibleRecipient, msg) {
+  if (possibleRecipient) {
+    var recipient = possibleRecipient[0];
+    if (sender) {
+      return dispatch(/* Some */[sender[0]], recipient, msg);
+    } else {
+      return dispatch(/* None */0, recipient, msg);
+    }
+  } else {
+    return /* () */0;
+  }
+}
+
 var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
 
 var ActorNotAvailable = Caml_exceptions.create("Nact.ActorNotAvailable");
@@ -108,14 +121,15 @@ function query(timeout, param, msg) {
 
 var StringMap = 0;
 
-exports.StringMap         = StringMap;
-exports.spawn             = spawn;
-exports.spawnStateless    = spawnStateless;
-exports.spawnPersistent   = spawnPersistent;
-exports.stop              = stop;
-exports.start             = start;
-exports.dispatch          = dispatch;
-exports.ActorNotAvailable = ActorNotAvailable;
-exports.QueryTimeout      = QueryTimeout;
-exports.query             = query;
+exports.StringMap          = StringMap;
+exports.spawn              = spawn;
+exports.spawnStateless     = spawnStateless;
+exports.spawnPersistent    = spawnPersistent;
+exports.stop               = stop;
+exports.start              = start;
+exports.dispatch           = dispatch;
+exports.optionallyDispatch = optionallyDispatch;
+exports.ActorNotAvailable  = ActorNotAvailable;
+exports.QueryTimeout       = QueryTimeout;
+exports.query              = query;
 /* nact Not a pure module */
