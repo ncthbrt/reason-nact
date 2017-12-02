@@ -108,23 +108,23 @@ One of the major advantages of an actor system is that it offers a safe way of c
 
 In this example, the state is initialized to an empty object. Each time a message is received by the actor, the current state is passed in as the first argument to the actor.  Whenever the actor encounters a name it hasn't encountered yet, it returns a copy of previous state with the name added. If it has already encountered the name it simply returns the unchanged current state. The return value is used as the next state.
 
-```js
-const statefulGreeter = spawn(
-  system, 
-  (state = {}, msg, ctx) => {
-    const hasPreviouslyGreetedMe = state[msg.name] !== undefined;
-    if(hasPreviouslyGreetedMe) {
-      console.log(`Hello again ${msg.name}.`);  
-      return state;
-    } else {
-      console.log(
-        `Good to meet you, ${msg.name}.\nI am the ${ctx.name} service!`
-      );
-      return { ...state, [msg.name]: true };
-    }
-  },
-  'stateful-greeter'
-);
+```ocaml
+let statefulGreeter: actorRef(_, unit) =
+  spawn(
+    ~name="stateful-greeter",
+    system,
+    (state, {name}, ctx) => {
+      let hasPreviouslyGreetedMe = List.exists((v) => v === name, state);
+      if (hasPreviouslyGreetedMe) {
+        Js.log("Hello again " ++ name);
+        state
+      } else {
+        Js.log("Good to meet you, " ++ name ++ ". I am the " ++ ctx.name ++ " service!");
+        [name, ...state]
+      }
+    },
+    []
+  );
 ```
 
 If no state is returned or the state returned is `undefined` or `null`, stateful actors automatically shut down.
@@ -144,25 +144,33 @@ An actor alone is a somewhat useless construct; actors need to work together. Ac
 
 The third parameter of `dispatch` is the sender. This parameter is very useful in allowing an actor to service requests without knowing explicitly who the sender is.
 
-In this example, the actors Ping and Pong are playing a perfect ping-pong match. To start the match, we dispatch a message to Ping as Pong use this third parameter. 
+In this example, the actors Ping and Pong are playing a perfect ping-pong match. To start the match, we dispatch a message to Ping as Pong using the sender parameter. 
 
 
-```js
-const delay = (time) => new Promise((res) => setTimeout(res, time));
+```ocaml
+let ping =
+  spawnStateless(
+    ~name="ping",
+    system,
+    (msg, ctx) => {
+      print_endline(msg);
+      optionallyDispatch(~sender=ctx.self, ctx.sender, ctx.name)
+    }
+  );
 
-const ping = spawnStateless(system, async (msg, ctx) =>  {
-  console.log(msg);
-  // ping: Pong is a little slow. So I'm giving myself a little handicap :P
-  await delay(500);
-  dispatch(ctx.sender, ctx.name, ctx.self);
-}, 'ping');
+let pong =
+  spawnStateless(
+    ~name="pong",
+    system,
+    (msg, ctx) => {
+      print_endline(msg);
+      optionallyDispatch(~sender=ctx.self, ctx.sender, ctx.name)
+    }
+  );
 
-const pong = spawnStateless(system, (msg, ctx) =>  {
-  console.log(msg);
-  dispatch(ctx.sender, ctx.name, ctx.self);  
-}, 'pong');
+dispatch(~sender=pong, ping, "hello");
 
-dispatch(ping, 'begin', pong);
+Js.Global.setTimeout(() => stop(system), 100);
 ```
 This produces the following console output:
 
@@ -228,85 +236,85 @@ app.listen(process.env.PORT || 3000, function () {
 });
 ```
 
-Because actor are message driven, let us define the message types used between the express api and actor system:
+Because actor are message driven, let us define the message types used between the api and actor system:
 
-```js
- const ContactProtocolTypes = {
-   GET_CONTACTS: 'GET_CONTACTS',
-   GET_CONTACT: 'GET_CONTACT',
-   UPDATE_CONTACT: 'UPDATE_CONTACT',
-   REMOVE_CONTACT: 'REMOVE_CONTACT',
-   CREATE_CONTACT: 'CREATE_CONTACT',
-   // Operation sucessful
-   SUCCESS: 'SUCCESS',
-   // And finally if the contact is not found
-   NOT_FOUND: 'NOT_FOUND'
- };
+```ocaml
+type contactMsg =
+  | CreateContact(contact)
+  | RemoveContact(contactId)
+  | UpdateContact(contactId, contact)
+  | FindContact(contactId);
+
+type contactResponseMsg =
+  | Success(contact)
+  | NotFound;
 ```
 Our contacts actor will need to handle each message type:
 
-```js
-const uuid = require('uuid/v4');
+```ocaml
+type contactsServiceState = {
+  contacts: ContactIdMap.t(contact),
+  seqNumber: int
+};
 
-const contactsService = spawn(
-  system,
-  (state = { contacts:{} }, msg, ctx) => {    
-    if(msg.type === GET_CONTACTS) {
-        // Return all the contacts as an array
-        dispatch(
-          ctx.sender, 
-          { payload: Object.values(state.contacts), type: SUCCESS }, 
-          ctx.self
-        );
-    } else if (msg.type === CREATE_CONTACT) {
-        const newContact = { id: uuid(), ...msg.payload };
-        const nextState = { 
-          contacts: { ...state.contacts, [newContact.id]: newContact } 
-        };
-        dispatch(ctx.sender, { type: SUCCESS, payload: newContact });
-        return nextState;
+let createContact = ({contacts, seqNumber}, contact, ctx: ctx(_, _, _, _, _)) => {
+  let contactId = ContactId(seqNumber);
+  optionallyDispatch(ctx.sender, (contactId, Success(contact)));
+  let nextContacts = ContactIdMap.add(contactId, contact, contacts);
+  {contacts: nextContacts, seqNumber: seqNumber + 1}
+};
+
+let removeContact = ({contacts, seqNumber}, contactId, ctx: ctx(_, _, _, _, _)) => {
+  let nextContacts = ContactIdMap.remove(contactId, contacts);
+  let msg =
+    if (contacts === nextContacts) {
+      let contact = ContactIdMap.find(contactId, contacts);
+      (contactId, Success(contact))
     } else {
-        // All these message types require an existing contact
-        // So check if the contact exists
-        const contact = state.contacts[msg.contactId];
-        if (contact) {
-            switch(msg.type) {
-              case GET_CONTACT: {
-                dispatch(ctx.sender, { payload: contact, type: SUCCESS });
-                break;
-              }
-              case REMOVE_CONTACT: {
-                // Create a new state with the contact value to undefined
-                const nextState = { ...state.contacts, [contact.id]: undefined };
-                dispatch(ctx.sender, { type: SUCCESS, payload: contact });
-                return nextState;                 
-              }
-              case UPDATE_CONTACT:  {
-                // Create a new state with the previous fields of the contact 
-                // merged with the updated ones
-                const updatedContact = {...contact, ...msg.payload };
-                const nextState = { 
-                  ...state.contacts,
-                  [contact.id]: updatedContact 
-                };
-                dispatch(ctx.sender, { type: SUCCESS, payload: updatedContact });
-                return nextState;                 
-              }
-            }
-        } else {
-          // If it does not, dispatch a not found message to the sender          
-          dispatch(
-            ctx.sender, 
-            { type: NOT_FOUND, contactId: msg.contactId }, 
-            ctx.self
-          );
-        }
-    }      
-    // Return the current state if unchanged.
-    return state;
-  },
-  'contacts'
-);
+      (contactId, NotFound)
+    };
+  optionallyDispatch(ctx.sender, msg);
+  {contacts: nextContacts, seqNumber}
+};
+
+let updateContact = ({contacts, seqNumber}, contactId, contact, ctx: ctx(_, _, _, _, _)) => {
+  let nextContacts =
+    ContactIdMap.remove(contactId, contacts) |> ContactIdMap.add(contactId, contact);
+  let msg =
+    if (nextContacts === contacts) {
+      (contactId, Success(contact))
+    } else {
+      (contactId, NotFound)
+    };
+  optionallyDispatch(ctx.sender, msg);
+  {contacts: nextContacts, seqNumber}
+};
+
+let findContact = ({contacts, seqNumber}, contactId, ctx: ctx(_, _, _, _, _)) => {
+  let msg =
+    try (contactId, Success(ContactIdMap.find(contactId, contacts))) {
+    | Not_found => (contactId, NotFound)
+    };
+  optionallyDispatch(ctx.sender, msg);
+  {contacts, seqNumber}
+};
+
+let system = start();
+
+let contactsService =
+  spawn(
+    ~name="contacts",
+    system,
+    (state, msg, ctx) =>
+      switch msg {
+      | CreateContact(contact) => createContact(state, contact, ctx)
+      | RemoveContact(contactId) => removeContact(state, contactId, ctx)
+      | UpdateContact(contactId, contact) => updateContact(state, contactId, contact, ctx)
+      | FindContact(contactId) => findContact(state, contactId, ctx)
+      },
+    {contacts: ContactIdMap.empty, seqNumber: 0}
+  );
+
 ```
 
 Now to wire up the contact service to the API controllers, we have create a query for each endpoint. For example here is how to wire up the fetch a specific contact endpoint (the others are very similar):
@@ -390,8 +398,8 @@ const spawnUserContactService = (parent, userId) => spawn(
 
 Now we need to create the parent contact service:
 
-```js
-const spawnContactsService = (parent) => spawnStateless(
+```ocaml
+let spawnContactsService = (parent) => spawnStateless(
   parent,
   (msg, ctx) => {
     const userId = msg.userId;
