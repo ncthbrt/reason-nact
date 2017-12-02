@@ -5,14 +5,7 @@
 
 
 <!-- Badges -->
-[![Travis branch](https://img.shields.io/travis/ncthbrt/nact/master.svg?style=flat-square)]()
-[![Coveralls](https://img.shields.io/coveralls/ncthbrt/nact.svg?style=flat-square)]() [![Dependencies](https://david-dm.org/ncthbrt/nact.svg?branch=master&style=flat-square)](https://david-dm.org/ncthbrt/nact) 
 
-[![npm](https://img.shields.io/npm/v/nact.svg?style=flat-square)](https://www.npmjs.com/package/nact) 
-[![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-blue.svg?style=flat-square)](https://github.com/Flet/semistandard) 
-[![we are reactive](https://img.shields.io/badge/we_are-reactive-blue.svg?style=flat-square)](https://www.reactivemanifesto.org/)
-
-[![DeepScan Grade](https://deepscan.io/api/projects/908/branches/1863/badge/grade.svg)](https://deepscan.io/dashboard/#view=project&pid=908&bid=1863)
 
 > Note:
 >
@@ -39,8 +32,7 @@
 
 # Introduction
 
-Nact is an implementation of the actor model for Node.js. It is inspired by the approaches taken by [Akka](getakka.net) and [Erlang](https://erlang.com). Additionally it attempts to provide a familiar interface to users coming from Redux. This project provides a wrapper
-around nact for those using Bucklescript and/or ReasonML.
+Nact is an implementation of the actor model for Node.js. It is inspired by the approaches taken by [Akka](getakka.net) and [Erlang](https://erlang.com). Additionally it attempts to provide a familiar interface to users coming from Redux. This project provides a wrapper around nact for those using Bucklescript and/or ReasonML.
 
 The goal of the project is to provide a simple way to create and reason about µ-services and asynchronous event driven architectures in Node.js.
 
@@ -56,8 +48,7 @@ Actor systems have been used to drive hugely scalable and highly available syste
 
 ## Caveats
 
-While network transparency and clustering are planned features of the framework,
-they have not been implemented yet.
+While network transparency and clustering are planned features of the framework, they have not been implemented yet.
 
 # Core Concepts
 
@@ -70,36 +61,38 @@ they have not been implemented yet.
 Nact has only been tested to work on Node 8 and above. You can install nact in your project by invoking the following:
 
 ```bash
-    npm install --save nact
+npm install --save reason-nact
 ```
 
 Once installed, you need to import the start function, which starts and then returns the actor system.
 
-```js
-const { start, dispatch, stop } = require('nact');
-const system = start();
+```ocaml
+open Nact;
+let system = start();
 ```
 
 Once you have a reference to the system, it is now possible to create our first actor. To create an actor you have to `spawn` it.  As is traditional, let us create an actor which says hello when a message is sent to it. Since this actor doesn't require any state, we can use the simpler `spawnStateless` function.
 
-```js
-const greeter = spawnStateless(
-  system, // parent
-  (msg, ctx) => console.log(`Hello ${msg.name}`), // function
-  'greeter' // name
+```ocaml
+type greetingMsg = { name: string };
+
+let greeter: actorRef(_, unit) = spawnStateless(
+  ~name = "greeter",
+  system,
+  ({ name }, _) => print_endline("Hello " ++ name)
 );
 ```
 
-The first argument to `spawnStateless` is the parent, which is in this case the actor system. The [hierarchy](#hierarchy) section will go into more detail about this.
+The first unamed argument to `spawnStateless` is the parent, which is in this case the actor system. The [hierarchy](#hierarchy) section will go into more detail about this.
 
-The second argument to `spawnStateless` is a function which is invoked when a message is received.
+The second unamed argument to `spawnStateless` is a function which is invoked when a message is received.
 
-The third argument to `spawnStateless` is the name of the actor, which in this case is `'greeter'`. The name field is optional, and if omitted, the actor is automatically assigned a name by the system.
+The name argument to `spawnStateless` is optional, and if omitted, the actor is automatically assigned a name by the system.
 
 To communicate with the greeter, we need to `dispatch` a message to it informing it who we are:
 
-```js
-dispatch(greeter, { name: 'Erlich Bachman' });
+```ocaml
+dispatch(greeter, { name: "Erlich Bachman" });
 ```
 
 This should print `Hello Erlich Bachman` to the console. 
