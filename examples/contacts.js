@@ -4,9 +4,7 @@ var $$Map                   = require("bs-platform/lib/js/map.js");
 var Nact                    = require("../src/nact.js");
 var Block                   = require("bs-platform/lib/js/block.js");
 var Curry                   = require("bs-platform/lib/js/curry.js");
-var Js_json                 = require("bs-platform/lib/js/js_json.js");
 var Caml_obj                = require("bs-platform/lib/js/caml_obj.js");
-var Js_primitive            = require("bs-platform/lib/js/js_primitive.js");
 var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 function compare(param, param$1) {
@@ -20,10 +18,10 @@ var ContactIdMap = $$Map.Make(ContactIdCompare);
 function createContact(param, contact, ctx) {
   var seqNumber = param[/* seqNumber */1];
   var contactId = /* ContactId */[seqNumber];
-  Nact.optionallyDispatch(/* None */0, ctx[/* sender */0], /* Success */Block.__(0, [
-          contactId,
-          contact
-        ]));
+  Nact.optionallyDispatch(/* None */0, ctx[/* sender */0], /* tuple */[
+        contactId,
+        /* Success */[contact]
+      ]);
   var nextContacts = Curry._3(ContactIdMap[/* add */3], contactId, contact, param[/* contacts */0]);
   return /* record */[
           /* contacts */nextContacts,
@@ -37,12 +35,15 @@ function removeContact(param, contactId, ctx) {
   var msg;
   if (contacts === nextContacts) {
     var contact = Curry._2(ContactIdMap[/* find */21], contactId, contacts);
-    msg = /* Success */Block.__(0, [
-        contactId,
-        contact
-      ]);
+    msg = /* tuple */[
+      contactId,
+      /* Success */[contact]
+    ];
   } else {
-    msg = /* NotFound */Block.__(1, [contactId]);
+    msg = /* tuple */[
+      contactId,
+      /* NotFound */0
+    ];
   }
   Nact.optionallyDispatch(/* None */0, ctx[/* sender */0], msg);
   return /* record */[
@@ -54,10 +55,13 @@ function removeContact(param, contactId, ctx) {
 function updateContact(param, contactId, contact, ctx) {
   var contacts = param[/* contacts */0];
   var nextContacts = Curry._3(ContactIdMap[/* add */3], contactId, contact, Curry._2(ContactIdMap[/* remove */5], contactId, contacts));
-  var msg = nextContacts === contacts ? /* Success */Block.__(0, [
-        contactId,
-        contact
-      ]) : /* NotFound */Block.__(1, [contactId]);
+  var msg = nextContacts === contacts ? /* tuple */[
+      contactId,
+      /* Success */[contact]
+    ] : /* tuple */[
+      contactId,
+      /* NotFound */0
+    ];
   Nact.optionallyDispatch(/* None */0, ctx[/* sender */0], msg);
   return /* record */[
           /* contacts */nextContacts,
@@ -69,14 +73,17 @@ function findContact(param, contactId, ctx) {
   var contacts = param[/* contacts */0];
   var msg;
   try {
-    msg = /* Success */Block.__(0, [
-        contactId,
-        Curry._2(ContactIdMap[/* find */21], contactId, contacts)
-      ]);
+    msg = /* tuple */[
+      contactId,
+      /* Success */[Curry._2(ContactIdMap[/* find */21], contactId, contacts)]
+    ];
   }
   catch (exn){
     if (exn === Caml_builtin_exceptions.not_found) {
-      msg = /* NotFound */Block.__(1, [contactId]);
+      msg = /* tuple */[
+        contactId,
+        /* NotFound */0
+      ];
     } else {
       throw exn;
     }
@@ -107,47 +114,45 @@ var contactsService = Nact.spawn(/* Some */["contacts"], system, (function (stat
       /* seqNumber */0
     ]);
 
-var creationResult = Nact.query(100, contactsService, /* CreateContact */Block.__(0, [/* record */[
+var createErlich = Nact.query(100, contactsService, /* CreateContact */Block.__(0, [/* record */[
           /* name */"Erlich Bachman",
           /* email */"erlich@aviato.com"
         ]]));
 
-function mapSome(f, opt) {
-  if (opt) {
-    return Curry._1(f, opt[0]);
-  } else {
-    return /* None */0;
-  }
+function createDinesh() {
+  return Nact.query(100, contactsService, /* CreateContact */Block.__(0, [/* record */[
+                  /* name */"Dinesh Chugtai",
+                  /* email */"dinesh@piedpiper.com"
+                ]]));
 }
 
-function tryDecodeContactFromJson(body) {
-  var match = Js_json.decodeObject(body);
-  if (match) {
-    var obj = match[0];
-    var possibleName = mapSome(Js_json.decodeString, Js_primitive.undefined_to_opt(obj["name"]));
-    var possibleEmail = mapSome(Js_json.decodeString, Js_primitive.undefined_to_opt(obj["email"]));
-    if (possibleEmail && possibleName) {
-      return /* Some */[/* record */[
-                /* name */possibleName[0],
-                /* email */possibleEmail[0]
-              ]];
-    } else {
-      return /* None */0;
-    }
-  } else {
-    return /* None */0;
-  }
+function findDinsheh(param) {
+  return Nact.query(100, contactsService, /* FindContact */Block.__(3, [param[0]]));
 }
 
-exports.ContactIdCompare         = ContactIdCompare;
-exports.ContactIdMap             = ContactIdMap;
-exports.createContact            = createContact;
-exports.removeContact            = removeContact;
-exports.updateContact            = updateContact;
-exports.findContact              = findContact;
-exports.system                   = system;
-exports.contactsService          = contactsService;
-exports.creationResult           = creationResult;
-exports.mapSome                  = mapSome;
-exports.tryDecodeContactFromJson = tryDecodeContactFromJson;
+function $great$eq$great(promise1, promise2) {
+  return promise1.then(Curry.__1(promise2));
+}
+
+var promise1 = createErlich.then(createDinesh);
+
+var promise1$1 = promise1.then(findDinsheh);
+
+promise1$1.then((function (result) {
+        console.log(result);
+        return Promise.resolve(/* () */0);
+      }));
+
+exports.ContactIdCompare = ContactIdCompare;
+exports.ContactIdMap     = ContactIdMap;
+exports.createContact    = createContact;
+exports.removeContact    = removeContact;
+exports.updateContact    = updateContact;
+exports.findContact      = findContact;
+exports.system           = system;
+exports.contactsService  = contactsService;
+exports.createErlich     = createErlich;
+exports.createDinesh     = createDinesh;
+exports.findDinsheh      = findDinsheh;
+exports.$great$eq$great  = $great$eq$great;
 /* ContactIdMap Not a pure module */

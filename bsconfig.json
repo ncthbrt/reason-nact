@@ -23,8 +23,7 @@
   },
   "bs-dependencies": [],
   "bs-dev-dependencies": [
-    "bs-jest",
-    "bs-express"
+    "bs-jest"
   ],
   "bsc-flags": [
     "-bs-no-version-header"

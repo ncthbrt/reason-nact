@@ -22,8 +22,8 @@ type contactMsg =
   | FindContact(contactId);
 
 type contactResponseMsg =
-  | Success(contactId, contact)
-  | NotFound(contactId);
+  | Success(contact)
+  | NotFound;
 
 type contactsServiceState = {
   contacts: ContactIdMap.t(contact),
@@ -32,7 +32,7 @@ type contactsServiceState = {
 
 let createContact = ({contacts, seqNumber}, contact, ctx: ctx(_, _, _, _, _)) => {
   let contactId = ContactId(seqNumber);
-  optionallyDispatch(ctx.sender, Success(contactId, contact));
+  optionallyDispatch(ctx.sender, (contactId, Success(contact)));
   let nextContacts = ContactIdMap.add(contactId, contact, contacts);
   {contacts: nextContacts, seqNumber: seqNumber + 1}
 };
@@ -42,9 +42,9 @@ let removeContact = ({contacts, seqNumber}, contactId, ctx: ctx(_, _, _, _, _)) 
   let msg =
     if (contacts === nextContacts) {
       let contact = ContactIdMap.find(contactId, contacts);
-      Success(contactId, contact)
+      (contactId, Success(contact))
     } else {
-      NotFound(contactId)
+      (contactId, NotFound)
     };
   optionallyDispatch(ctx.sender, msg);
   {contacts: nextContacts, seqNumber}
@@ -55,9 +55,9 @@ let updateContact = ({contacts, seqNumber}, contactId, contact, ctx: ctx(_, _, _
     ContactIdMap.remove(contactId, contacts) |> ContactIdMap.add(contactId, contact);
   let msg =
     if (nextContacts === contacts) {
-      Success(contactId, contact)
+      (contactId, Success(contact))
     } else {
-      NotFound(contactId)
+      (contactId, NotFound)
     };
   optionallyDispatch(ctx.sender, msg);
   {contacts: nextContacts, seqNumber}
@@ -65,8 +65,8 @@ let updateContact = ({contacts, seqNumber}, contactId, contact, ctx: ctx(_, _, _
 
 let findContact = ({contacts, seqNumber}, contactId, ctx: ctx(_, _, _, _, _)) => {
   let msg =
-    try (Success(contactId, ContactIdMap.find(contactId, contacts))) {
-    | Not_found => NotFound(contactId)
+    try (contactId, Success(ContactIdMap.find(contactId, contacts))) {
+    | Not_found => (contactId, NotFound)
     };
   optionallyDispatch(ctx.sender, msg);
   {contacts, seqNumber}
@@ -88,27 +88,30 @@ let contactsService =
     {contacts: ContactIdMap.empty, seqNumber: 0}
   );
 
-let creationResult =
+let createErlich =
   query(
     ~timeout=100,
     contactsService,
     CreateContact({name: "Erlich Bachman", email: "erlich@aviato.com"})
   );
 
-let mapSome = (f, opt) =>
-  switch opt {
-  | Some(v) => f(v)
-  | None => None
-  };
+let createDinesh = (_) =>
+  query(
+    ~timeout=100,
+    contactsService,
+    CreateContact({name: "Dinesh Chugtai", email: "dinesh@piedpiper.com"})
+  );
 
-let tryDecodeContactFromJson = (body: Js.Json.t) =>
-  switch (Js.Json.decodeObject(body)) {
-  | Some(obj) =>
-    let possibleName = Js.Dict.get(obj, "name") |> mapSome(Js.Json.decodeString);
-    let possibleEmail = Js.Dict.get(obj, "email") |> mapSome(Js.Json.decodeString);
-    switch (possibleEmail, possibleName) {
-    | (Some(email), Some(name)) => Some({email, name})
-    | _ => None
-    }
-  | _ => None
-  };
+let findDinsheh = ((contactId, _)) => query(~timeout=100, contactsService, FindContact(contactId));
+
+let (>=>) = (promise1, promise2) => Js.Promise.then_(promise2, promise1);
+
+createErlich
+>=> createDinesh
+>=> findDinsheh
+>=> (
+  (result) => {
+    Js.log(result);
+    Js.Promise.resolve()
+  }
+);
