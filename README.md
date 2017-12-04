@@ -3,6 +3,7 @@
 **let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed**\
 *your services have never been so µ*
 
+> Please Note: This wrapper is very alpha level. It is highly subject to change and is not yet recommended for any serious use.
 
 <!-- Badges -->
 

@@ -2,26 +2,29 @@ open Nact;
 
 let system = start();
 
-let ping =
+type msgType =
+  | Msg(actorRef(msgType), string);
+
+let ping: actorRef(msgType) =
   spawnStateless(
     ~name="ping",
     system,
-    (msg, ctx) => {
+    (Msg(sender, msg), ctx) => {
       print_endline(msg);
-      optionallyDispatch(~sender=ctx.self, ctx.sender, ctx.name)
+      dispatch(sender, Msg(ctx.self, ctx.name)) |> Js.Promise.resolve
     }
   );
 
-let pong =
+let pong: actorRef(msgType) =
   spawnStateless(
     ~name="pong",
     system,
-    (msg, ctx) => {
+    (Msg(sender, msg), ctx) => {
       print_endline(msg);
-      optionallyDispatch(~sender=ctx.self, ctx.sender, ctx.name)
+      dispatch(sender, Msg(ctx.self, ctx.name)) |> Js.Promise.resolve
     }
   );
 
-dispatch(~sender=pong, ping, "hello");
+dispatch(ping, Msg(pong, "hello"));
 
 Js.Global.setTimeout(() => stop(system), 100);

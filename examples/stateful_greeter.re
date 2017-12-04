@@ -4,7 +4,7 @@ let system = start();
 
 type greetingMsg = {name: string};
 
-let statefulGreeter: actorRef(_, unit) =
+let statefulGreeter =
   spawn(
     ~name="stateful-greeter",
     system,
@@ -12,10 +12,10 @@ let statefulGreeter: actorRef(_, unit) =
       let hasPreviouslyGreetedMe = List.exists((v) => v === name, state);
       if (hasPreviouslyGreetedMe) {
         Js.log("Hello again " ++ name);
-        state
+        Js.Promise.resolve(state)
       } else {
         Js.log("Good to meet you, " ++ name ++ ". I am the " ++ ctx.name ++ " service!");
-        [name, ...state]
+        Js.Promise.resolve([name, ...state])
       }
     },
     []

@@ -5,6 +5,7 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/*.js": true
-  }
+    "**/*.js": false
+  },
+  "editor.formatOnSave": true
 }

@@ -12,21 +12,21 @@ var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], system, (functi
               }), state);
         if (hasPreviouslyGreetedMe) {
           console.log("Hello again " + name);
-          return state;
+          return Promise.resolve(state);
         } else {
-          console.log("Good to meet you, " + name + ". I am the " + ctx[/* name */5] + " service!");
-          return /* :: */[
-                  name,
-                  state
-                ];
+          console.log("Good to meet you, " + name + ". I am the " + ctx[/* name */4] + " service!");
+          return Promise.resolve(/* :: */[
+                      name,
+                      state
+                    ]);
         }
       }), /* [] */0);
 
-Nact.dispatch(/* None */0, statefulGreeter, /* record */[/* name */"Erlich"]);
+Nact.dispatch(statefulGreeter, /* record */[/* name */"Erlich"]);
 
-Nact.dispatch(/* None */0, statefulGreeter, /* record */[/* name */"Erlich"]);
+Nact.dispatch(statefulGreeter, /* record */[/* name */"Erlich"]);
 
-Nact.dispatch(/* None */0, statefulGreeter, /* record */[/* name */"Dinesh"]);
+Nact.dispatch(statefulGreeter, /* record */[/* name */"Dinesh"]);
 
 exports.system          = system;
 exports.statefulGreeter = statefulGreeter;

@@ -1,115 +1,60 @@
-module StringMap = Nact_stringMap;
+module StringSet = Nact_stringSet;
 
 type actorPath;
 
-type untypedActorRef;
+type actorRef('msg);
 
-type untypedActorMap = StringMap.t(untypedActorRef);
-
-type actorRef('incoming, 'outgoing);
-
-type ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
-  sender: option(actorRef('outgoing, 'senderOutgoing)),
-  parent: actorRef('parentIncoming, 'parentOutgoing),
+type ctx('msg, 'parentMsg) = {
+  parent: actorRef('parentMsg),
   path: actorPath,
-  self: actorRef('incoming, 'outgoing),
-  children: untypedActorMap,
+  self: actorRef('msg),
+  children: StringSet.t,
   name: string
 };
 
-type persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) = {
-  sender: option(actorRef('outgoing, 'senderOutgoing)),
-  parent: actorRef('parentIncoming, 'parentOutgoing),
+type persistentCtx('msg, 'parentMsg) = {
+  parent: actorRef('parentMsg),
   path: actorPath,
-  self: actorRef('incoming, 'outgoing),
+  self: actorRef('msg),
   name: string,
-  persist: 'incoming => Js.Promise.t(unit),
-  children: untypedActorMap,
+  persist: 'msg => Js.Promise.t(unit),
+  children: StringSet.t,
   recovering: bool
 };
 
-type statefulActor('state, 'incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) =
-  (
-    'state,
-    'incoming,
-    ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
-  ) =>
-  'state;
+type statefulActor('state, 'msg, 'parentMsg) =
+  ('state, 'msg, ctx('msg, 'parentMsg)) => Js.Promise.t('state);
 
-type statelessActor('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing) =
-  ('incoming, ctx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)) => unit;
+type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Promise.t(unit);
 
-type persistentActor(
-  'state,
-  'incoming,
-  'outgoing,
-  'parentIncoming,
-  'parentOutgoing,
-  'senderOutgoing
-) =
-  (
-    'state,
-    'incoming,
-    persistentCtx('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
-  ) =>
-  'state;
+type persistentActor('state, 'msg, 'parentMsg) =
+  ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
 let spawn:
-  (
-    ~name: string=?,
-    actorRef('parentIncoming, 'parentOutgoing),
-    statefulActor('state, 'incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing),
-    'state
-  ) =>
-  actorRef('incoming, 'outgoing);
+  (~name: string=?, actorRef('parentMsg), statefulActor('state, 'msg, 'parentMsg), 'state) =>
+  actorRef('msg);
 
 let spawnStateless:
-  (
-    ~name: string=?,
-    actorRef('parentIncoming, 'parentOutgoing),
-    statelessActor('incoming, 'outgoing, 'parentIncoming, 'parentOutgoing, 'senderOutgoing)
-  ) =>
-  actorRef('incoming, 'outgoing);
+  (~name: string=?, actorRef('parentMsg), statelessActor('msg, 'parentMsg)) => actorRef('msg);
 
 let spawnPersistent:
   (
     ~key: string,
     ~name: string=?,
-    actorRef('parentIncoming, 'parentOutgoing),
-    persistentActor(
-      'state,
-      'incoming,
-      'outgoing,
-      'parentIncoming,
-      'parentOutgoing,
-      'senderOutgoing
-    ),
+    actorRef('parentMsg),
+    persistentActor('state, 'msg, 'parentMsg),
     'state
   ) =>
-  actorRef('incoming, 'outgoing);
+  actorRef('msg);
 
-let stop: actorRef('incoming, 'outgoing) => unit;
+let stop: actorRef('msg) => unit;
 
-let start: unit => actorRef(unit, unit);
+let start: unit => actorRef(unit);
 
-let dispatch:
-  (
-    ~sender: actorRef('senderIncoming, 'senderOutgoing)=?,
-    actorRef('incoming, 'outgoing),
-    'incoming
-  ) =>
-  unit;
-
-let optionallyDispatch:
-  (
-    ~sender: actorRef('senderIncoming, 'senderOutgoing)=?,
-    option(actorRef('incoming, 'outgoing)),
-    'incoming
-  ) =>
-  unit;
+let dispatch: (actorRef('msg), 'msg) => unit;
 
 exception ActorNotAvailable;
 
 exception QueryTimeout(int);
 
-let query: (~timeout: int, actorRef('incoming, 'outgoing), 'incoming) => Js.Promise.t('outgoing);
+let query: (~timeout: int, actorRef('msg), actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);

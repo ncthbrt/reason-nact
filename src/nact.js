@@ -3,28 +3,15 @@
 var Nact            = require("nact");
 var Curry           = require("bs-platform/lib/js/curry.js");
 var Nact_jsMap      = require("./Nact_jsMap.js");
-var Nact_stringMap  = require("./Nact_stringMap.js");
+var Nact_stringSet  = require("./Nact_stringSet.js");
 var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
-
-function mapSender(sender) {
-  if (sender == null) {
-    return /* None */0;
-  } else {
-    return /* Some */[/* ActorRef */[sender]];
-  }
-}
-
-function createUntypedRef(x) {
-  return /* UntypedActorRef */[x];
-}
 
 function mapCtx(untypedCtx) {
   return /* record */[
-          /* sender */mapSender(untypedCtx.sender),
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
-          /* children */Nact_stringMap.fromJsMap(Nact_jsMap.mapValues(createUntypedRef, untypedCtx.children)),
+          /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children)),
           /* name */untypedCtx.name
         ];
 }
@@ -32,13 +19,12 @@ function mapCtx(untypedCtx) {
 function mapPersistentCtx(untypedCtx) {
   var partial_arg = untypedCtx.persist;
   return /* record */[
-          /* sender */mapSender(untypedCtx.sender),
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
-          /* children */Nact_stringMap.fromJsMap(Nact_jsMap.mapValues(createUntypedRef, untypedCtx.children)),
+          /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children)),
           /* recovering */untypedCtx.recovering
         ];
 }
@@ -82,36 +68,18 @@ function start() {
   return /* ActorRef */[untypedRef];
 }
 
-function dispatch(sender, param, msg) {
-  var recipient = param[0];
-  if (sender) {
-    Nact.dispatch(recipient, msg, sender[0][0]);
-    return /* () */0;
-  } else {
-    Nact.dispatch(recipient, msg, undefined);
-    return /* () */0;
-  }
-}
-
-function optionallyDispatch(sender, possibleRecipient, msg) {
-  if (possibleRecipient) {
-    var recipient = possibleRecipient[0];
-    if (sender) {
-      return dispatch(/* Some */[sender[0]], recipient, msg);
-    } else {
-      return dispatch(/* None */0, recipient, msg);
-    }
-  } else {
-    return /* () */0;
-  }
+function dispatch(param, msg) {
+  Nact.dispatch(param[0], msg);
+  return /* () */0;
 }
 
 var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
 
 var ActorNotAvailable = Caml_exceptions.create("Nact.ActorNotAvailable");
 
-function query(timeout, param, msg) {
-  return Nact.query(param[0], msg, timeout).catch((function () {
+function query(timeout, param, msgF) {
+  var recipient = param[0];
+  return Nact.query(recipient, Curry._1(msgF, /* ActorRef */[recipient]), timeout).catch((function () {
                 return Promise.reject([
                             QueryTimeout,
                             timeout
@@ -119,17 +87,16 @@ function query(timeout, param, msg) {
               }));
 }
 
-var StringMap = 0;
+var StringSet = 0;
 
-exports.StringMap          = StringMap;
-exports.spawn              = spawn;
-exports.spawnStateless     = spawnStateless;
-exports.spawnPersistent    = spawnPersistent;
-exports.stop               = stop;
-exports.start              = start;
-exports.dispatch           = dispatch;
-exports.optionallyDispatch = optionallyDispatch;
-exports.ActorNotAvailable  = ActorNotAvailable;
-exports.QueryTimeout       = QueryTimeout;
-exports.query              = query;
+exports.StringSet         = StringSet;
+exports.spawn             = spawn;
+exports.spawnStateless    = spawnStateless;
+exports.spawnPersistent   = spawnPersistent;
+exports.stop              = stop;
+exports.start             = start;
+exports.dispatch          = dispatch;
+exports.ActorNotAvailable = ActorNotAvailable;
+exports.QueryTimeout      = QueryTimeout;
+exports.query             = query;
 /* nact Not a pure module */
