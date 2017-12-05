@@ -1,5 +1,7 @@
 module StringSet = Nact_stringSet;
 
+type persistenceEngine;
+
 type actorPath =
   | ActorPath(Nact_bindings.actorPath);
 
@@ -103,7 +105,7 @@ let spawnPersistent = (~key, ~name=?, ActorRef(parent), func, initialState) => {
 
 let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
 
-let start = () => {
+let start = (~persistenceEngine=?, ()) => {
   let untypedRef = Nact_bindings.start();
   ActorRef(untypedRef)
 };
@@ -114,6 +116,8 @@ exception QueryTimeout(int);
 
 exception ActorNotAvailable;
 
-let query = (~timeout, ActorRef(recipient), msgF) =>
-  Nact_bindings.query(recipient, msgF(ActorRef(recipient)), timeout)
-  |> Js.Promise.catch((_) => Js.Promise.reject(QueryTimeout(timeout)));
+let query = (~timeout, ActorRef(recipient), msgF) => {
+  let f = (tempReference) => msgF(ActorRef(tempReference));
+  Nact_bindings.query(recipient, f, timeout)
+  |> Js.Promise.catch((_) => Js.Promise.reject(QueryTimeout(timeout)))
+};

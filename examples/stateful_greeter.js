@@ -3,7 +3,7 @@
 var List = require("bs-platform/lib/js/list.js");
 var Nact = require("../src/nact.js");
 
-var system = Nact.start(/* () */0);
+var system = Nact.start(/* None */0, /* () */0);
 
 var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], system, (function (state, param, ctx) {
         var name = param[/* name */0];

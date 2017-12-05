@@ -60,5 +60,6 @@ external spawnPersistent :
 
 [@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "dispatch";
 
-[@bs.module "nact"] external query : (actorRef, 'msgType, int) => Js.Promise.t('expectedResult) =
+[@bs.module "nact"]
+external query : (actorRef, actorRef => 'msgType, int) => Js.Promise.t('expectedResult) =
   "query";

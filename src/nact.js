@@ -63,7 +63,7 @@ function stop(param) {
   return /* () */0;
 }
 
-function start() {
+function start(_, _$1) {
   var untypedRef = Nact.start();
   return /* ActorRef */[untypedRef];
 }
@@ -78,8 +78,10 @@ var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
 var ActorNotAvailable = Caml_exceptions.create("Nact.ActorNotAvailable");
 
 function query(timeout, param, msgF) {
-  var recipient = param[0];
-  return Nact.query(recipient, Curry._1(msgF, /* ActorRef */[recipient]), timeout).catch((function () {
+  var f = function (tempReference) {
+    return Curry._1(msgF, /* ActorRef */[tempReference]);
+  };
+  return Nact.query(param[0], f, timeout).catch((function () {
                 return Promise.reject([
                             QueryTimeout,
                             timeout

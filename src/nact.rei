@@ -2,6 +2,8 @@ module StringSet = Nact_stringSet;
 
 type actorPath;
 
+type persistenceEngine;
+
 type actorRef('msg);
 
 type ctx('msg, 'parentMsg) = {
@@ -49,7 +51,7 @@ let spawnPersistent:
 
 let stop: actorRef('msg) => unit;
 
-let start: unit => actorRef(unit);
+let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(unit);
 
 let dispatch: (actorRef('msg), 'msg) => unit;
 
