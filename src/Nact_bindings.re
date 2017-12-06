@@ -1,5 +1,7 @@
 type actorPath;
 
+type persistenceEngine;
+
 type actorRef = {. "parent": actorRef, "path": actorPath, "name": string};
 
 type ctx = {
@@ -51,12 +53,12 @@ external spawnPersistent :
   (actorRef, persistentActor('state, 'msgType), string, Js.nullable(string)) => actorRef =
   "spawnPersistent";
 
-[@bs.module "nact"] external configurePersistence : ('engine, actorRef) => unit =
+[@bs.module "nact"] external configurePersistence : (persistenceEngine, actorRef) => unit =
   "configurePersistence";
 
 [@bs.module "nact"] external stop : actorRef => unit = "stop";
 
-[@bs.module "nact"] external start : unit => actorRef = "start";
+[@bs.module "nact"] [@bs.splice] external start : array((actorRef => unit)) => actorRef = "start";
 
 [@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "dispatch";
 

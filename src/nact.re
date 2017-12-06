@@ -1,6 +1,6 @@
 module StringSet = Nact_stringSet;
 
-type persistenceEngine;
+type persistenceEngine = Nact_bindings.persistenceEngine;
 
 type actorPath =
   | ActorPath(Nact_bindings.actorPath);
@@ -106,7 +106,11 @@ let spawnPersistent = (~key, ~name=?, ActorRef(parent), func, initialState) => {
 let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
 
 let start = (~persistenceEngine=?, ()) => {
-  let untypedRef = Nact_bindings.start();
+  let untypedRef =
+    switch persistenceEngine {
+    | Some(engine) => Nact_bindings.start([|Nact_bindings.configurePersistence(engine)|])
+    | None => Nact_bindings.start([||])
+    };
   ActorRef(untypedRef)
 };
 

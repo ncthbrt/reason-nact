@@ -63,8 +63,17 @@ function stop(param) {
   return /* () */0;
 }
 
-function start(_, _$1) {
-  var untypedRef = Nact.start();
+function start(persistenceEngine, _) {
+  var untypedRef;
+  if (persistenceEngine) {
+    var engine = persistenceEngine[0];
+    untypedRef = Nact.start((function (param) {
+            Nact.configurePersistence(engine, param);
+            return /* () */0;
+          }));
+  } else {
+    untypedRef = Nact.start();
+  }
   return /* ActorRef */[untypedRef];
 }
 
