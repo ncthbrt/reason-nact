@@ -4,7 +4,7 @@ var Nact = require("../src/nact.js");
 
 var system = Nact.start(/* None */0, /* () */0);
 
-var ping = Nact.spawnStateless(/* Some */["ping"], system, (function (param, ctx) {
+var ping = Nact.spawnStateless(/* Some */["ping"], /* None */0, system, (function (param, ctx) {
         console.log(param[1]);
         return Promise.resolve(Nact.dispatch(param[0], /* Msg */[
                         ctx[/* self */2],
@@ -12,7 +12,7 @@ var ping = Nact.spawnStateless(/* Some */["ping"], system, (function (param, ctx
                       ]));
       }));
 
-var pong = Nact.spawnStateless(/* Some */["pong"], system, (function (param, ctx) {
+var pong = Nact.spawnStateless(/* Some */["pong"], /* None */0, system, (function (param, ctx) {
         console.log(param[1]);
         return Promise.resolve(Nact.dispatch(param[0], /* Msg */[
                         ctx[/* self */2],

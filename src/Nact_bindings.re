@@ -1,6 +1,24 @@
 type actorPath;
 
-type persistenceEngine;
+type observable;
+
+type persistedEvent = {
+  .
+  "data": Js.Json.t, "sequenceNumber": int, "key": string, "createdAt": int, "tags": array(string)
+};
+
+type persistedSnapshot = {
+  .
+  "data": Js.Json.t, "sequenceNumber": int, "key": string, "createdAt": int
+};
+
+type persistenceEngine = {
+  .
+  "events": (string, int, int, array(string)) => observable,
+  "persist": persistedEvent => Js.Promise.t(unit),
+  "takeSnapshot": persistedSnapshot => Js.Promise.t(unit),
+  "latestSnapshot": string => Js.Promise.t(persistedSnapshot)
+};
 
 type actorRef = {. "parent": actorRef, "path": actorPath, "name": string};
 

@@ -5,7 +5,7 @@ var Nact = require("../src/nact.js");
 
 var system = Nact.start(/* None */0, /* () */0);
 
-var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], system, (function (state, param, ctx) {
+var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], /* None */0, system, (function (state, param, ctx) {
         var name = param[/* name */0];
         var hasPreviouslyGreetedMe = List.exists((function (v) {
                 return +(v === name);

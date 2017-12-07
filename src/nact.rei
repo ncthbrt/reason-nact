@@ -32,17 +32,30 @@ type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Prom
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
+type timeout;
+
+type snapshot;
+
 let spawn:
-  (~name: string=?, actorRef('parentMsg), statefulActor('state, 'msg, 'parentMsg), 'state) =>
+  (
+    ~name: string=?,
+    ~timeout: timeout=?,
+    actorRef('parentMsg),
+    statefulActor('state, 'msg, 'parentMsg),
+    'state
+  ) =>
   actorRef('msg);
 
 let spawnStateless:
-  (~name: string=?, actorRef('parentMsg), statelessActor('msg, 'parentMsg)) => actorRef('msg);
+  (~name: string=?, ~timeout: timeout=?, actorRef('parentMsg), statelessActor('msg, 'parentMsg)) =>
+  actorRef('msg);
 
 let spawnPersistent:
   (
     ~key: string,
     ~name: string=?,
+    ~timeout: timeout=?,
+    ~snapshot: snapshot=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state
@@ -54,8 +67,6 @@ let stop: actorRef('msg) => unit;
 let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(unit);
 
 let dispatch: (actorRef('msg), 'msg) => unit;
-
-exception ActorNotAvailable;
 
 exception QueryTimeout(int);
 

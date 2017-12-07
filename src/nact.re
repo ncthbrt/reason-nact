@@ -54,10 +54,20 @@ type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Prom
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
+type timeout;
+
+type snapshot;
+
 let spawn:
-  (~name: string=?, actorRef('parentMsg), statefulActor('state, 'msg, 'parentMsg), 'state) =>
+  (
+    ~name: string=?,
+    ~timeout: timeout=?,
+    actorRef('parentMsg),
+    statefulActor('state, 'msg, 'parentMsg),
+    'state
+  ) =>
   actorRef('msg) =
-  (~name=?, ActorRef(parent), func, initialState) => {
+  (~name=?, ~timeout=?, ActorRef(parent), func, initialState) => {
     let f = (possibleState, msg, ctx) => {
       let state =
         switch (Js.Nullable.to_opt(possibleState)) {
@@ -74,7 +84,7 @@ let spawn:
     ActorRef(untypedRef)
   };
 
-let spawnStateless = (~name=?, ActorRef(parent), func) => {
+let spawnStateless = (~name=?, ~timeout=?, ActorRef(parent), func) => {
   let f = (msg, ctx) => func(msg, mapCtx(ctx));
   let untypedRef =
     switch name {
@@ -85,7 +95,8 @@ let spawnStateless = (~name=?, ActorRef(parent), func) => {
   ActorRef(untypedRef)
 };
 
-let spawnPersistent = (~key, ~name=?, ActorRef(parent), func, initialState) => {
+let spawnPersistent =
+    (~key, ~name=?, ~timeout=?, ~snapshot=?, ActorRef(parent), func, initialState) => {
   let f = (possibleState, msg, ctx) => {
     let state =
       switch (Js.Nullable.to_opt(possibleState)) {
@@ -117,8 +128,6 @@ let start = (~persistenceEngine=?, ()) => {
 let dispatch = (ActorRef(recipient), msg) => Nact_bindings.dispatch(recipient, msg);
 
 exception QueryTimeout(int);
-
-exception ActorNotAvailable;
 
 let query = (~timeout, ActorRef(recipient), msgF) => {
   let f = (tempReference) => msgF(ActorRef(tempReference));

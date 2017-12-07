@@ -29,7 +29,7 @@ function mapPersistentCtx(untypedCtx) {
         ];
 }
 
-function spawn(name, param, func, initialState) {
+function spawn(name, _, param, func, initialState) {
   var parent = param[0];
   var f = function (possibleState, msg, ctx) {
     var state = (possibleState == null) ? initialState : possibleState;
@@ -39,7 +39,7 @@ function spawn(name, param, func, initialState) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnStateless(name, param, func) {
+function spawnStateless(name, _, param, func) {
   var parent = param[0];
   var f = function (msg, ctx) {
     return Curry._2(func, msg, mapCtx(ctx));
@@ -48,7 +48,7 @@ function spawnStateless(name, param, func) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, param, func, initialState) {
+function spawnPersistent(key, name, _, _$1, param, func, initialState) {
   var parent = param[0];
   var f = function (possibleState, msg, ctx) {
     var state = (possibleState == null) ? initialState : possibleState;
@@ -84,8 +84,6 @@ function dispatch(param, msg) {
 
 var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
 
-var ActorNotAvailable = Caml_exceptions.create("Nact.ActorNotAvailable");
-
 function query(timeout, param, msgF) {
   var f = function (tempReference) {
     return Curry._1(msgF, /* ActorRef */[tempReference]);
@@ -100,14 +98,13 @@ function query(timeout, param, msgF) {
 
 var StringSet = 0;
 
-exports.StringSet         = StringSet;
-exports.spawn             = spawn;
-exports.spawnStateless    = spawnStateless;
-exports.spawnPersistent   = spawnPersistent;
-exports.stop              = stop;
-exports.start             = start;
-exports.dispatch          = dispatch;
-exports.ActorNotAvailable = ActorNotAvailable;
-exports.QueryTimeout      = QueryTimeout;
-exports.query             = query;
+exports.StringSet       = StringSet;
+exports.spawn           = spawn;
+exports.spawnStateless  = spawnStateless;
+exports.spawnPersistent = spawnPersistent;
+exports.stop            = stop;
+exports.start           = start;
+exports.dispatch        = dispatch;
+exports.QueryTimeout    = QueryTimeout;
+exports.query           = query;
 /* nact Not a pure module */
