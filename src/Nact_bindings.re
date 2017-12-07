@@ -52,12 +52,25 @@ type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 type persistentActor('state, 'msgType) =
   (Js.nullable('state), 'msgType, persistentCtx('msgType)) => Js.Promise.t('state);
 
+type timeout = {. "duration": int};
+
+type interval = {. "duration": Js.Nullable.t(int), "messages": Js.Nullable.t(int)};
+
+type actorOptions = {. "timeout": Js.Nullable.t(timeout)};
+
+type persistentActorOptions = {
+  .
+  "timeout": Js.Nullable.t(timeout), "snapshot": Js.Nullable.t(interval)
+};
+
 [@bs.module "nact"]
-external spawn : (actorRef, statefulActor('state, 'msgType), Js.nullable(string)) => actorRef =
+external spawn :
+  (actorRef, statefulActor('state, 'msgType), Js.nullable(string), actorOptions) => actorRef =
   "spawn";
 
 [@bs.module "nact"]
-external spawnStateless : (actorRef, statelessActor('msgType), Js.nullable(string)) => actorRef =
+external spawnStateless :
+  (actorRef, statelessActor('msgType), Js.nullable(string), actorOptions) => actorRef =
   "spawnStateless";
 
 type actor;
@@ -68,7 +81,14 @@ type actor;
 
 [@bs.module "nact"]
 external spawnPersistent :
-  (actorRef, persistentActor('state, 'msgType), string, Js.nullable(string)) => actorRef =
+  (
+    actorRef,
+    persistentActor('state, 'msgType),
+    string,
+    Js.nullable(string),
+    persistentActorOptions
+  ) =>
+  actorRef =
   "spawnPersistent";
 
 [@bs.module "nact"] external configurePersistence : (persistenceEngine, actorRef) => unit =

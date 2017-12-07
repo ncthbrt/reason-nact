@@ -54,9 +54,35 @@ type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Prom
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
-type timeout;
+type timeout = {duration: int};
 
-type snapshot;
+type interval = {
+  duration: int,
+  messages: int
+};
+
+let defaultOrValue = (opt, defaultValue) =>
+  switch opt {
+  | Some(value) => value
+  | None => defaultValue
+  };
+
+let after = (~hours=?, ~minutes=?, ~seconds=?, ~milliseconds=?, ()) => {
+  duration:
+    defaultOrValue(hours, 0)
+    + defaultOrValue(minutes, 0)
+    + defaultOrValue(seconds, 0)
+    + defaultOrValue(milliseconds, 0)
+};
+
+let every = (~messages=?, ~hours=?, ~minutes=?, ~seconds=?, ~milliseconds=?, ()) => {
+  duration:
+    defaultOrValue(hours, 0)
+    + defaultOrValue(minutes, 0)
+    + defaultOrValue(seconds, 0)
+    + defaultOrValue(milliseconds, 0),
+  messages: defaultOrValue(messages, 0)
+};
 
 let spawn:
   (
@@ -68,6 +94,12 @@ let spawn:
   ) =>
   actorRef('msg) =
   (~name=?, ~timeout=?, ActorRef(parent), func, initialState) => {
+    let duration =
+      switch timeout {
+      | Some({duration}) => Js.Nullable.return({"duration": duration})
+      | None => Js.Nullable.undefined
+      };
+    let options: Nact_bindings.actorOptions = {"timeout": duration};
     let f = (possibleState, msg, ctx) => {
       let state =
         switch (Js.Nullable.to_opt(possibleState)) {
@@ -78,41 +110,82 @@ let spawn:
     };
     let untypedRef =
       switch name {
-      | Some(concreteName) => Nact_bindings.spawn(parent, f, Js.Nullable.return(concreteName))
-      | None => Nact_bindings.spawn(parent, f, Js.Nullable.undefined)
+      | Some(concreteName) =>
+        Nact_bindings.spawn(parent, f, Js.Nullable.return(concreteName), options)
+      | None => Nact_bindings.spawn(parent, f, Js.Nullable.undefined, options)
       };
     ActorRef(untypedRef)
   };
 
-let spawnStateless = (~name=?, ~timeout=?, ActorRef(parent), func) => {
-  let f = (msg, ctx) => func(msg, mapCtx(ctx));
-  let untypedRef =
-    switch name {
-    | Some(concreteName) =>
-      Nact_bindings.spawnStateless(parent, f, Js.Nullable.return(concreteName))
-    | None => Nact_bindings.spawnStateless(parent, f, Js.Nullable.undefined)
-    };
-  ActorRef(untypedRef)
-};
-
-let spawnPersistent =
-    (~key, ~name=?, ~timeout=?, ~snapshot=?, ActorRef(parent), func, initialState) => {
-  let f = (possibleState, msg, ctx) => {
-    let state =
-      switch (Js.Nullable.to_opt(possibleState)) {
-      | None => initialState
-      | Some(concreteState) => concreteState
+let spawnStateless:
+  (~name: string=?, ~timeout: timeout=?, actorRef('parentMsg), statelessActor('msg, 'parentMsg)) =>
+  actorRef('msg) =
+  (~name=?, ~timeout=?, ActorRef(parent), func) => {
+    let timeout =
+      switch timeout {
+      | Some({duration}) => Js.Nullable.return({"duration": duration})
+      | None => Js.Nullable.undefined
       };
-    func(state, msg, mapPersistentCtx(ctx))
+    let options: Nact_bindings.actorOptions = {"timeout": timeout};
+    let f = (msg, ctx) => func(msg, mapCtx(ctx));
+    let untypedRef =
+      switch name {
+      | Some(concreteName) =>
+        Nact_bindings.spawnStateless(parent, f, Js.Nullable.return(concreteName), options)
+      | None => Nact_bindings.spawnStateless(parent, f, Js.Nullable.undefined, options)
+      };
+    ActorRef(untypedRef)
   };
-  let untypedRef =
-    switch name {
-    | Some(concreteName) =>
-      Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.return(concreteName))
-    | None => Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.undefined)
+
+let spawnPersistent:
+  (
+    ~key: string,
+    ~name: string=?,
+    ~timeout: timeout=?,
+    ~snapshot: interval=?,
+    actorRef('parentMsg),
+    persistentActor('state, 'msg, 'parentMsg),
+    'state
+  ) =>
+  actorRef('msg) =
+  (~key, ~name=?, ~timeout=?, ~snapshot=?, ActorRef(parent), func, initialState) => {
+    let timeout =
+      switch timeout {
+      | Some({duration}) => Js.Nullable.return({"duration": duration})
+      | None => Js.Nullable.undefined
+      };
+    let snapshot =
+      switch snapshot {
+      | Some({duration: 0, messages: 0}) => Js.Nullable.undefined
+      | Some({duration, messages: 0}) =>
+        Js.Nullable.return({
+          "duration": Js.Nullable.return(duration),
+          "messages": Js.Nullable.undefined
+        })
+      | Some({duration, messages}) =>
+        Js.Nullable.return({
+          "duration": Js.Nullable.return(duration),
+          "messages": Js.Nullable.return(messages)
+        })
+      | None => Js.Nullable.undefined
+      };
+    let options: Nact_bindings.persistentActorOptions = {"timeout": timeout, "snapshot": snapshot};
+    let f = (possibleState, msg, ctx) => {
+      let state =
+        switch (Js.Nullable.to_opt(possibleState)) {
+        | None => initialState
+        | Some(concreteState) => concreteState
+        };
+      func(state, msg, mapPersistentCtx(ctx))
     };
-  ActorRef(untypedRef)
-};
+    let untypedRef =
+      switch name {
+      | Some(concreteName) =>
+        Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.return(concreteName), options)
+      | None => Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.undefined, options)
+      };
+    ActorRef(untypedRef)
+  };
 
 let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
 
@@ -127,10 +200,10 @@ let start = (~persistenceEngine=?, ()) => {
 
 let dispatch = (ActorRef(recipient), msg) => Nact_bindings.dispatch(recipient, msg);
 
-exception QueryTimeout(int);
+exception QueryTimeout(timeout);
 
-let query = (~timeout, ActorRef(recipient), msgF) => {
+let query = (~timeout: timeout, ActorRef(recipient), msgF) => {
   let f = (tempReference) => msgF(ActorRef(tempReference));
-  Nact_bindings.query(recipient, f, timeout)
+  Nact_bindings.query(recipient, f, timeout.duration)
   |> Js.Promise.catch((_) => Js.Promise.reject(QueryTimeout(timeout)))
 };

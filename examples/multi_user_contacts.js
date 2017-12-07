@@ -158,7 +158,7 @@ var contactsService = Nact.spawn(/* None */0, /* None */0, system, (function (ch
         return Promise.resolve(tmp);
       }), StringMap[/* empty */0]);
 
-var createErlich = Nact.query(100, contactsService, (function (tempReference) {
+var createErlich = Nact.query(Nact.after(/* None */0, /* None */0, /* None */0, /* Some */[100], /* () */0), contactsService, (function (tempReference) {
         return /* tuple */[
                 tempReference,
                 "0",
@@ -170,7 +170,7 @@ var createErlich = Nact.query(100, contactsService, (function (tempReference) {
       }));
 
 function createDinesh() {
-  return Nact.query(100, contactsService, (function (tempReference) {
+  return Nact.query(Nact.after(/* None */0, /* None */0, /* None */0, /* Some */[100], /* () */0), contactsService, (function (tempReference) {
                 return /* tuple */[
                         tempReference,
                         "1",
@@ -184,7 +184,7 @@ function createDinesh() {
 
 function findDinsheh(param) {
   var contactId = param[0];
-  return Nact.query(100, contactsService, (function (tempReference) {
+  return Nact.query(Nact.after(/* None */0, /* None */0, /* None */0, /* Some */[100], /* () */0), contactsService, (function (tempReference) {
                 return /* tuple */[
                         tempReference,
                         "1",

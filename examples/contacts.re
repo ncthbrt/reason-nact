@@ -93,7 +93,7 @@ let contactsService =
 
 let createErlich =
   query(
-    ~timeout=100,
+    ~timeout=after(~milliseconds=100, ()),
     contactsService,
     (tempReference) => (
       tempReference,
@@ -103,7 +103,7 @@ let createErlich =
 
 let createDinesh = (_) =>
   query(
-    ~timeout=100,
+    ~timeout=after(~milliseconds=100, ()),
     contactsService,
     (tempReference) => (
       tempReference,
@@ -112,7 +112,11 @@ let createDinesh = (_) =>
   );
 
 let findDinsheh = ((contactId, _)) =>
-  query(~timeout=100, contactsService, (tempReference) => (tempReference, FindContact(contactId)));
+  query(
+    ~timeout=after(~milliseconds=100, ()),
+    contactsService,
+    (tempReference) => (tempReference, FindContact(contactId))
+  );
 
 let (>=>) = (promise1, promise2) => Js.Promise.then_(promise2, promise1);
 

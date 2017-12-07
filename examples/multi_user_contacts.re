@@ -123,7 +123,7 @@ let contactsService =
 
 let createErlich =
   query(
-    ~timeout=100,
+    ~timeout=after(~milliseconds=100, ()),
     contactsService,
     (tempReference) => (
       tempReference,
@@ -134,7 +134,7 @@ let createErlich =
 
 let createDinesh = (_) =>
   query(
-    ~timeout=100,
+    ~timeout=after(~milliseconds=100, ()),
     contactsService,
     (tempReference) => (
       tempReference,
@@ -145,7 +145,7 @@ let createDinesh = (_) =>
 
 let findDinsheh = ((contactId, _)) =>
   query(
-    ~timeout=100,
+    ~timeout=after(~milliseconds=100, ()),
     contactsService,
     (tempReference) => (tempReference, "1", FindContact(contactId))
   );
