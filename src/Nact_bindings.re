@@ -52,15 +52,11 @@ type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 type persistentActor('state, 'msgType) =
   (Js.nullable('state), 'msgType, persistentCtx('msgType)) => Js.Promise.t('state);
 
-type timeout = {. "duration": int};
-
-type interval = {. "duration": Js.Nullable.t(int), "messages": Js.Nullable.t(int)};
-
-type actorOptions = {. "timeout": Js.Nullable.t(timeout)};
+type actorOptions = {. "shutdownAfter": Js.Nullable.t(int)};
 
 type persistentActorOptions = {
   .
-  "timeout": Js.Nullable.t(timeout), "snapshot": Js.Nullable.t(interval)
+  "shutdownAfter": Js.Nullable.t(int), "snapshotEvery": Js.Nullable.t(int)
 };
 
 [@bs.module "nact"]
@@ -91,12 +87,14 @@ external spawnPersistent :
   actorRef =
   "spawnPersistent";
 
-[@bs.module "nact"] external configurePersistence : (persistenceEngine, actorRef) => unit =
+type plugin = actorRef => unit;
+
+[@bs.module "nact"] external configurePersistence : persistenceEngine => plugin =
   "configurePersistence";
 
 [@bs.module "nact"] external stop : actorRef => unit = "stop";
 
-[@bs.module "nact"] [@bs.splice] external start : array((actorRef => unit)) => actorRef = "start";
+[@bs.module "nact"] [@bs.splice] external start : array(plugin) => actorRef = "start";
 
 [@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "dispatch";
 

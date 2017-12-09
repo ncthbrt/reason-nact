@@ -1655,9 +1655,9 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-nact@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/nact/-/nact-4.1.0.tgz#7b27d5232141959c708d5cf16c91884928175ab5"
+nact@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/nact/-/nact-4.2.0.tgz#70968f91948592aacc1ee62e78e12f2f59fc3a40"
   dependencies:
     bluebird "^3.5.0"
     deep-freeze-node "^1.1.3"
@@ -2119,8 +2119,8 @@ rimraf@2, rimraf@^2.5.1, rimraf@^2.6.1:
     glob "^7.0.5"
 
 rxjs@^5.4.3:
-  version "5.5.4"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.5.4.tgz#66a466acb21270b5f441645a1141f95fcae10ee6"
+  version "5.5.5"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.5.5.tgz#e164f11d38eaf29f56f08c3447f74ff02dd84e97"
   dependencies:
     symbol-observable "1.0.1"
 

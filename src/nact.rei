@@ -32,31 +32,10 @@ type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Prom
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
-type timeout = {duration: int};
-
-type interval = {
-  duration: int,
-  messages: int
-};
-
-let after:
-  (~hours: int=?, ~minutes: int=?, ~seconds: int=?, ~milliseconds: int=?, unit) => timeout;
-
-let every:
-  (
-    ~messages: int=?,
-    ~hours: int=?,
-    ~minutes: int=?,
-    ~seconds: int=?,
-    ~milliseconds: int=?,
-    unit
-  ) =>
-  interval;
-
 let spawn:
   (
     ~name: string=?,
-    ~timeout: timeout=?,
+    ~shutdownAfter: int=?,
     actorRef('parentMsg),
     statefulActor('state, 'msg, 'parentMsg),
     'state
@@ -64,15 +43,20 @@ let spawn:
   actorRef('msg);
 
 let spawnStateless:
-  (~name: string=?, ~timeout: timeout=?, actorRef('parentMsg), statelessActor('msg, 'parentMsg)) =>
+  (
+    ~name: string=?,
+    ~shutdownAfter: int=?,
+    actorRef('parentMsg),
+    statelessActor('msg, 'parentMsg)
+  ) =>
   actorRef('msg);
 
 let spawnPersistent:
   (
     ~key: string,
     ~name: string=?,
-    ~timeout: timeout=?,
-    ~snapshot: interval=?,
+    ~shutdownAfter: int=?,
+    ~snapshotEvery: int=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state
@@ -81,11 +65,30 @@ let spawnPersistent:
 
 let stop: actorRef('msg) => unit;
 
-let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(unit);
+type systemMsg;
+
+let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(systemMsg);
 
 let dispatch: (actorRef('msg), 'msg) => unit;
 
-exception QueryTimeout(timeout);
+exception QueryTimeout(int);
 
-let query:
-  (~timeout: timeout, actorRef('msg), actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);
+let query: (~timeout: int, actorRef('msg), actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);
+
+let milliseconds: int;
+
+let millisecond: int;
+
+let seconds: int;
+
+let second: int;
+
+let minutes: int;
+
+let minute: int;
+
+let hours: int;
+
+let messages: int;
+
+let message: int;

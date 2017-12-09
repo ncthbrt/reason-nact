@@ -1,10 +1,12 @@
 'use strict';
 
-var Nact            = require("nact");
-var Curry           = require("bs-platform/lib/js/curry.js");
-var Nact_jsMap      = require("./Nact_jsMap.js");
-var Nact_stringSet  = require("./Nact_stringSet.js");
-var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
+var Nact              = require("nact");
+var Curry             = require("bs-platform/lib/js/curry.js");
+var Caml_int32        = require("bs-platform/lib/js/caml_int32.js");
+var Nact_jsMap        = require("./Nact_jsMap.js");
+var Nact_stringSet    = require("./Nact_stringSet.js");
+var Caml_exceptions   = require("bs-platform/lib/js/caml_exceptions.js");
+var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
 
 function mapCtx(untypedCtx) {
   return /* record */[
@@ -29,32 +31,10 @@ function mapPersistentCtx(untypedCtx) {
         ];
 }
 
-function defaultOrValue(opt, defaultValue) {
-  if (opt) {
-    return opt[0];
-  } else {
-    return defaultValue;
-  }
-}
-
-function after(hours, minutes, seconds, milliseconds, _) {
-  return /* record */[/* duration */((defaultOrValue(hours, 0) + defaultOrValue(minutes, 0) | 0) + defaultOrValue(seconds, 0) | 0) + defaultOrValue(milliseconds, 0) | 0];
-}
-
-function every(messages, hours, minutes, seconds, milliseconds, _) {
-  return /* record */[
-          /* duration */((defaultOrValue(hours, 0) + defaultOrValue(minutes, 0) | 0) + defaultOrValue(seconds, 0) | 0) + defaultOrValue(milliseconds, 0) | 0,
-          /* messages */defaultOrValue(messages, 0)
-        ];
-}
-
-function spawn(name, timeout, param, func, initialState) {
+function spawn(name, shutdownAfter, param, func, initialState) {
   var parent = param[0];
-  var duration = timeout ? ({
-        duration: timeout[0][/* duration */0]
-      }) : undefined;
   var options = {
-    timeout: duration
+    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter)
   };
   var f = function (possibleState, msg, ctx) {
     var state = (possibleState == null) ? initialState : possibleState;
@@ -64,13 +44,10 @@ function spawn(name, timeout, param, func, initialState) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnStateless(name, timeout, param, func) {
+function spawnStateless(name, shutdownAfter, param, func) {
   var parent = param[0];
-  var timeout$1 = timeout ? ({
-        duration: timeout[0][/* duration */0]
-      }) : undefined;
   var options = {
-    timeout: timeout$1
+    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter)
   };
   var f = function (msg, ctx) {
     return Curry._2(func, msg, mapCtx(ctx));
@@ -79,38 +56,11 @@ function spawnStateless(name, timeout, param, func) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, timeout, snapshot, param, func, initialState) {
+function spawnPersistent(key, name, shutdownAfter, snapshotEvery, param, func, initialState) {
   var parent = param[0];
-  var timeout$1 = timeout ? ({
-        duration: timeout[0][/* duration */0]
-      }) : undefined;
-  var snapshot$1;
-  if (snapshot) {
-    var match = snapshot[0];
-    var duration = match[/* duration */0];
-    var exit = 0;
-    if (duration !== 0 || match[/* messages */1] !== 0) {
-      exit = 1;
-    } else {
-      snapshot$1 = undefined;
-    }
-    if (exit === 1) {
-      var messages = match[/* messages */1];
-      snapshot$1 = messages !== 0 ? ({
-            duration: duration,
-            messages: messages
-          }) : ({
-            duration: duration,
-            messages: undefined
-          });
-    }
-    
-  } else {
-    snapshot$1 = undefined;
-  }
   var options = {
-    timeout: timeout$1,
-    snapshot: snapshot$1
+    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
+    snapshotEvery: Js_null_undefined.from_opt(snapshotEvery)
   };
   var f = function (possibleState, msg, ctx) {
     var state = (possibleState == null) ? initialState : possibleState;
@@ -126,16 +76,7 @@ function stop(param) {
 }
 
 function start(persistenceEngine, _) {
-  var untypedRef;
-  if (persistenceEngine) {
-    var engine = persistenceEngine[0];
-    untypedRef = Nact.start((function (param) {
-            Nact.configurePersistence(engine, param);
-            return /* () */0;
-          }));
-  } else {
-    untypedRef = Nact.start();
-  }
+  var untypedRef = persistenceEngine ? Nact.start(Nact.configurePersistence(persistenceEngine[0])) : Nact.start();
   return /* ActorRef */[untypedRef];
 }
 
@@ -150,7 +91,7 @@ function query(timeout, param, msgF) {
   var f = function (tempReference) {
     return Curry._1(msgF, /* ActorRef */[tempReference]);
   };
-  return Nact.query(param[0], f, timeout[/* duration */0]).catch((function () {
+  return Nact.query(param[0], f, timeout).catch((function () {
                 return Promise.reject([
                             QueryTimeout,
                             timeout
@@ -158,11 +99,27 @@ function query(timeout, param, msgF) {
               }));
 }
 
+var seconds = 1000;
+
+var minutes = Caml_int32.imul(60, seconds);
+
+var hours = Caml_int32.imul(60, minutes);
+
 var StringSet = 0;
 
+var milliseconds = 1;
+
+var millisecond = 1;
+
+var second = seconds;
+
+var minute = minutes;
+
+var messages = 1;
+
+var message = 1;
+
 exports.StringSet       = StringSet;
-exports.after           = after;
-exports.every           = every;
 exports.spawn           = spawn;
 exports.spawnStateless  = spawnStateless;
 exports.spawnPersistent = spawnPersistent;
@@ -171,4 +128,13 @@ exports.start           = start;
 exports.dispatch        = dispatch;
 exports.QueryTimeout    = QueryTimeout;
 exports.query           = query;
+exports.milliseconds    = milliseconds;
+exports.millisecond     = millisecond;
+exports.seconds         = seconds;
+exports.second          = second;
+exports.minutes         = minutes;
+exports.minute          = minute;
+exports.hours           = hours;
+exports.messages        = messages;
+exports.message         = message;
 /* nact Not a pure module */

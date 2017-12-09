@@ -122,7 +122,7 @@ var contactsService = Nact.spawn(/* Some */["contacts"], /* None */0, system, (f
       /* seqNumber */0
     ]);
 
-var createErlich = Nact.query(Nact.after(/* None */0, /* None */0, /* None */0, /* Some */[100], /* () */0), contactsService, (function (tempReference) {
+var createErlich = Nact.query(100, contactsService, (function (tempReference) {
         return /* tuple */[
                 tempReference,
                 /* CreateContact */Block.__(0, [/* record */[
@@ -133,7 +133,7 @@ var createErlich = Nact.query(Nact.after(/* None */0, /* None */0, /* None */0, 
       }));
 
 function createDinesh() {
-  return Nact.query(Nact.after(/* None */0, /* None */0, /* None */0, /* Some */[100], /* () */0), contactsService, (function (tempReference) {
+  return Nact.query(100, contactsService, (function (tempReference) {
                 return /* tuple */[
                         tempReference,
                         /* CreateContact */Block.__(0, [/* record */[
@@ -146,7 +146,7 @@ function createDinesh() {
 
 function findDinsheh(param) {
   var contactId = param[0];
-  return Nact.query(Nact.after(/* None */0, /* None */0, /* None */0, /* Some */[100], /* () */0), contactsService, (function (tempReference) {
+  return Nact.query(100, contactsService, (function (tempReference) {
                 return /* tuple */[
                         tempReference,
                         /* FindContact */Block.__(3, [contactId])

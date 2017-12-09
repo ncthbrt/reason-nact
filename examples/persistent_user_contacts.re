@@ -1,5 +1,18 @@
 open Nact;
 
+let (>=>) = (promise1, promise2) => Js.Promise.then_(promise2, promise1);
+
+[@bs.module "nact/test/mock-persistence-engine"] [@bs.new]
+external createMockPersistenceEngine : unit => persistenceEngine =
+  "MockPersistenceEngine";
+
+module StringCompare = {
+  type t = string;
+  let compare = String.compare;
+};
+
+module StringMap = Map.Make(StringCompare);
+
 type contactId =
   | ContactId(int);
 
@@ -72,49 +85,84 @@ let findContact = ({contacts, seqNumber}, sender, contactId) => {
   {contacts, seqNumber}
 };
 
-let system = start();
+let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
+
+let createContactsService = (parent, userId) =>
+  spawnPersistent(
+    ~key="contacts" ++ userId,
+    ~name=userId,
+    ~shutdownAfter=15 * minutes,
+    ~snapshotEvery=10 * messages,
+    parent,
+    (state, (sender, msg), {persist}) =>
+      persist((sender, msg))
+      >=> (
+        () =>
+          (
+            switch msg {
+            | CreateContact(contact) => createContact(state, sender, contact)
+            | RemoveContact(contactId) => removeContact(state, sender, contactId)
+            | UpdateContact(contactId, contact) => updateContact(state, sender, contactId, contact)
+            | FindContact(contactId) => findContact(state, sender, contactId)
+            }
+          )
+          |> Js.Promise.resolve
+      ),
+    {contacts: ContactIdMap.empty, seqNumber: 0}
+  );
 
 let contactsService =
   spawn(
-    ~name="contacts",
     system,
-    (state, (sender, msg), _) =>
+    (children, (sender, userId, msg), ctx) => {
+      let potentialChild =
+        try (Some(StringMap.find(userId, children))) {
+        | _ => None
+        };
       (
-        switch msg {
-        | CreateContact(contact) => createContact(state, sender, contact)
-        | RemoveContact(contactId) => removeContact(state, sender, contactId)
-        | UpdateContact(contactId, contact) => updateContact(state, sender, contactId, contact)
-        | FindContact(contactId) => findContact(state, sender, contactId)
+        switch potentialChild {
+        | Some(child) =>
+          dispatch(child, (sender, msg));
+          children
+        | None =>
+          let child = createContactsService(ctx.self, userId);
+          dispatch(child, (sender, msg));
+          StringMap.add(userId, child, children)
         }
       )
-      |> Js.Promise.resolve,
-    {contacts: ContactIdMap.empty, seqNumber: 0}
+      |> Js.Promise.resolve
+    },
+    StringMap.empty
   );
 
 let createErlich =
   query(
-    ~timeout=100,
+    ~timeout=100 * milliseconds,
     contactsService,
     (tempReference) => (
       tempReference,
+      "0",
       CreateContact({name: "Erlich Bachman", email: "erlich@aviato.com"})
     )
   );
 
 let createDinesh = (_) =>
   query(
-    ~timeout=100,
+    ~timeout=100 * milliseconds,
     contactsService,
     (tempReference) => (
       tempReference,
+      "1",
       CreateContact({name: "Dinesh Chugtai", email: "dinesh@piedpiper.com"})
     )
   );
 
 let findDinsheh = ((contactId, _)) =>
-  query(~timeout=100, contactsService, (tempReference) => (tempReference, FindContact(contactId)));
-
-let (>=>) = (promise1, promise2) => Js.Promise.then_(promise2, promise1);
+  query(
+    ~timeout=100 * milliseconds,
+    contactsService,
+    (tempReference) => (tempReference, "1", FindContact(contactId))
+  );
 
 createErlich
 >=> createDinesh
@@ -122,6 +170,7 @@ createErlich
 >=> (
   (result) => {
     Js.log(result);
-    Js.Promise.resolve()
+    stop(system);
+    Js.Promise.resolve(1)
   }
 );

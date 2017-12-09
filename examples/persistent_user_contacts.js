@@ -1,12 +1,18 @@
 'use strict';
 
-var $$Map                   = require("bs-platform/lib/js/map.js");
-var Nact                    = require("../src/nact.js");
-var Block                   = require("bs-platform/lib/js/block.js");
-var Curry                   = require("bs-platform/lib/js/curry.js");
-var $$String                = require("bs-platform/lib/js/string.js");
-var Caml_obj                = require("bs-platform/lib/js/caml_obj.js");
-var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
+var $$Map                                     = require("bs-platform/lib/js/map.js");
+var Nact                                      = require("../src/nact.js");
+var Block                                     = require("bs-platform/lib/js/block.js");
+var Curry                                     = require("bs-platform/lib/js/curry.js");
+var $$String                                  = require("bs-platform/lib/js/string.js");
+var Caml_obj                                  = require("bs-platform/lib/js/caml_obj.js");
+var Caml_int32                                = require("bs-platform/lib/js/caml_int32.js");
+var Caml_builtin_exceptions                   = require("bs-platform/lib/js/caml_builtin_exceptions.js");
+var Nact$slashtest$slashmockPersistenceEngine = require("nact/test/mock-persistence-engine");
+
+function $great$eq$great(promise1, promise2) {
+  return promise1.then(Curry.__1(promise2));
+}
 
 var StringCompare = /* module */[/* compare */$$String.compare];
 
@@ -100,29 +106,35 @@ function findContact(param, sender, contactId) {
         ];
 }
 
-var system = Nact.start(/* None */0, /* () */0);
+var system = Nact.start(/* Some */[new Nact$slashtest$slashmockPersistenceEngine.MockPersistenceEngine()], /* () */0);
 
 function createContactsService(parent, userId) {
-  return Nact.spawn(/* Some */[userId], /* None */0, parent, (function (state, param, _) {
+  return Nact.spawnPersistent("contacts" + userId, /* Some */[userId], /* Some */[Caml_int32.imul(15, Nact.minutes)], /* Some */[Caml_int32.imul(10, Nact.messages)], parent, (function (state, param, param$1) {
                 var msg = param[1];
                 var sender = param[0];
-                var tmp;
-                switch (msg.tag | 0) {
-                  case 0 : 
-                      tmp = createContact(state, sender, msg[0]);
-                      break;
-                  case 1 : 
-                      tmp = removeContact(state, sender, msg[0]);
-                      break;
-                  case 2 : 
-                      tmp = updateContact(state, sender, msg[0], msg[1]);
-                      break;
-                  case 3 : 
-                      tmp = findContact(state, sender, msg[0]);
-                      break;
-                  
-                }
-                return Promise.resolve(tmp);
+                var promise1 = Curry._1(param$1[/* persist */4], /* tuple */[
+                      sender,
+                      msg
+                    ]);
+                return promise1.then((function () {
+                              var tmp;
+                              switch (msg.tag | 0) {
+                                case 0 : 
+                                    tmp = createContact(state, sender, msg[0]);
+                                    break;
+                                case 1 : 
+                                    tmp = removeContact(state, sender, msg[0]);
+                                    break;
+                                case 2 : 
+                                    tmp = updateContact(state, sender, msg[0], msg[1]);
+                                    break;
+                                case 3 : 
+                                    tmp = findContact(state, sender, msg[0]);
+                                    break;
+                                
+                              }
+                              return Promise.resolve(tmp);
+                            }));
               }), /* record */[
               /* contacts */ContactIdMap[/* empty */0],
               /* seqNumber */0
@@ -158,7 +170,7 @@ var contactsService = Nact.spawn(/* None */0, /* None */0, system, (function (ch
         return Promise.resolve(tmp);
       }), StringMap[/* empty */0]);
 
-var createErlich = Nact.query(100, contactsService, (function (tempReference) {
+var createErlich = Nact.query(Caml_int32.imul(100, Nact.milliseconds), contactsService, (function (tempReference) {
         return /* tuple */[
                 tempReference,
                 "0",
@@ -170,7 +182,7 @@ var createErlich = Nact.query(100, contactsService, (function (tempReference) {
       }));
 
 function createDinesh() {
-  return Nact.query(100, contactsService, (function (tempReference) {
+  return Nact.query(Caml_int32.imul(100, Nact.milliseconds), contactsService, (function (tempReference) {
                 return /* tuple */[
                         tempReference,
                         "1",
@@ -184,7 +196,7 @@ function createDinesh() {
 
 function findDinsheh(param) {
   var contactId = param[0];
-  return Nact.query(100, contactsService, (function (tempReference) {
+  return Nact.query(Caml_int32.imul(100, Nact.milliseconds), contactsService, (function (tempReference) {
                 return /* tuple */[
                         tempReference,
                         "1",
@@ -193,19 +205,17 @@ function findDinsheh(param) {
               }));
 }
 
-function $great$eq$great(promise1, promise2) {
-  return promise1.then(Curry.__1(promise2));
-}
-
 var promise1 = createErlich.then(createDinesh);
 
 var promise1$1 = promise1.then(findDinsheh);
 
 promise1$1.then((function (result) {
         console.log(result);
-        return Promise.resolve(/* () */0);
+        Nact.stop(system);
+        return Promise.resolve(1);
       }));
 
+exports.$great$eq$great       = $great$eq$great;
 exports.StringCompare         = StringCompare;
 exports.StringMap             = StringMap;
 exports.ContactIdCompare      = ContactIdCompare;
@@ -220,5 +230,4 @@ exports.contactsService       = contactsService;
 exports.createErlich          = createErlich;
 exports.createDinesh          = createDinesh;
 exports.findDinsheh           = findDinsheh;
-exports.$great$eq$great       = $great$eq$great;
 /* StringMap Not a pure module */

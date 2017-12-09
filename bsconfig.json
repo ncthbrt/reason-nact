@@ -12,10 +12,6 @@
       "type": "dev"
     },
     {
-      "dir": "__test_utils__",
-      "type": "dev"
-    },
-    {
       "dir": "examples",
       "type": "dev"
     }

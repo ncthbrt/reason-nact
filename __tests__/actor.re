@@ -1,7 +1,6 @@
 open Jest;
 
-let mockEngine = Nact_mockPersistenceEngine.create();
-
+/* let mockEngine = Nact_mockPersistenceEngine.create(); */
 describe(
   "spawn",
   () => {
