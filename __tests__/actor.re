@@ -7,7 +7,7 @@ open Nact;
 let delay: int => Js.Promise.t(unit) =
   (ms) =>
     Js.Promise.make(
-      (~resolve, ~reject) => Js.Global.setTimeout(() => [@bs] resolve((): unit), ms) |> ignore
+      (~resolve, ~reject as _) => Js.Global.setTimeout(() => [@bs] resolve((): unit), ms) |> ignore
     );
 
 module StringCompare = {
