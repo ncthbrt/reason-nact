@@ -93,7 +93,7 @@ let spawnPersistent =
   };
   let f = (possibleState, msg, ctx) => {
     let state =
-      switch (Js.Nullable.to_opt(possibleState)) {
+      switch (Js.Null_undefined.to_opt(possibleState)) {
       | None => initialState
       | Some(concreteState) => concreteState
       };
