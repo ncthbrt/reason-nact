@@ -41,7 +41,11 @@ let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
-  recovering: untypedCtx##recovering,
+  recovering:
+    switch (untypedCtx##recovering |> Js.Nullable.to_opt) {
+    | Some(b) => b
+    | None => false
+    },
   persist: mapPersist(untypedCtx##persist),
   children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray
 };

@@ -20,6 +20,7 @@ function mapCtx(untypedCtx) {
 
 function mapPersistentCtx(untypedCtx) {
   var partial_arg = untypedCtx.persist;
+  var match = untypedCtx.recovering;
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
@@ -27,7 +28,7 @@ function mapPersistentCtx(untypedCtx) {
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
           /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children)),
-          /* recovering */untypedCtx.recovering
+          /* recovering */(match == null) ? /* false */0 : match
         ];
 }
 

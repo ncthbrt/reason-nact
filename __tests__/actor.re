@@ -4,14 +4,12 @@ open ExpectJs;
 
 open Nact;
 
-/* let delay: int => Js.Promise.t(unit) =
-   (ms) =>
-     Js.Promise.make(
-       (~resolve, ~reject: _) => {
-         Js.Global.setTimeout((_) => resolve(() => ()), ms);
-         ()
-       }
-     ); */
+let delay: int => Js.Promise.t(unit) =
+  (ms) =>
+    Js.Promise.make(
+      (~resolve, ~reject) => Js.Global.setTimeout(() => [@bs] resolve((): unit), ms) |> ignore
+    );
+
 module StringCompare = {
   type t = string;
   let compare = String.compare;
@@ -76,9 +74,13 @@ describe(
               )
               |> Js.Promise.resolve
           );
-        let queryPromise =
-          query(~timeout=30 * milliseconds, actor, (temp) => (temp, Echo("hello")));
-        queryPromise >=> ((result) => expect(result) |> toBe("hello") |> Js.Promise.resolve)
+        delay(20 * milliseconds)
+        >=> (
+          (_) =>
+            query(~timeout=30 * milliseconds, actor, (temp) => (temp, Echo("hello")))
+            >=> ((_) => fail("Query should not be have resolved") |> Js.Promise.resolve)
+            >/=> ((_) => pass |> Js.Promise.resolve)
+        )
       }
     );
     testPromise(
@@ -207,8 +209,8 @@ describe(
 );
 
 describe(
-  "Stateful Actor",
-  () =>
+  "Persistent Actor",
+  () => {
     testPromise(
       "allows queries to resolve",
       () => {
@@ -216,7 +218,6 @@ describe(
         let actor =
           spawnPersistent(
             ~key="calculator",
-            ~name="calculator",
             system,
             (total, (sender, msg), _) =>
               (
@@ -236,5 +237,82 @@ describe(
         let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
         queryPromise >=> ((result) => expect(result) |> toBe(15) |> Js.Promise.resolve)
       }
+    );
+    testPromise(
+      "automatically snapshots",
+      () => {
+        let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
+        let spawnActor = () =>
+          spawnPersistent(
+            ~key="calculator",
+            ~name="calculator",
+            ~snapshotEvery=3 * messages,
+            system,
+            (total, (sender, msg), ctx) =>
+              switch msg {
+              | Add(number) =>
+                /* Don't add if recovering we want to test snapshotting in particular */
+                let numberToAdd = ctx.recovering ? 0 : number;
+                ctx.persist((sender, msg)) >=> ((_) => Js.Promise.resolve(total + numberToAdd))
+              | GetTotal =>
+                dispatch(sender, total);
+                Js.Promise.resolve(total)
+              },
+            0
+          );
+        let actorInstance1 = spawnActor();
+        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
+        dispatch(actorInstance1, (loggerActor, Add(5)));
+        dispatch(actorInstance1, (loggerActor, Add(10)));
+        dispatch(actorInstance1, (loggerActor, Add(10)));
+        delay(30)
+        >=> (
+          (_) => {
+            stop(actorInstance1);
+            let actorInstance2 = spawnActor();
+            let queryPromise =
+              query(~timeout=30 * milliseconds, actorInstance2, (temp) => (temp, GetTotal));
+            queryPromise >=> ((result) => expect(result) |> toBe(15) |> Js.Promise.resolve)
+          }
+        )
+      }
+    );
+    testPromise(
+      "can persist events",
+      () => {
+        let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
+        let spawnActor = () =>
+          spawnPersistent(
+            ~key="calculator",
+            ~name="calculator",
+            system,
+            (total, (sender, msg), ctx) =>
+              switch msg {
+              | Add(number) =>
+                /* Don't add if recovering we want to test snapshotting in particular */
+                ctx.persist((sender, msg)) >=> ((_) => Js.Promise.resolve(total + number))
+              | GetTotal =>
+                dispatch(sender, total);
+                Js.Promise.resolve(total)
+              },
+            0
+          );
+        let actorInstance1 = spawnActor();
+        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
+        dispatch(actorInstance1, (loggerActor, Add(5)));
+        dispatch(actorInstance1, (loggerActor, Add(10)));
+        dispatch(actorInstance1, (loggerActor, Add(10)));
+        delay(30)
+        >=> (
+          (_) => {
+            stop(actorInstance1);
+            let actorInstance2 = spawnActor();
+            let queryPromise =
+              query(~timeout=30 * milliseconds, actorInstance2, (temp) => (temp, GetTotal));
+            queryPromise >=> ((result) => expect(result) |> toBe(25) |> Js.Promise.resolve)
+          }
+        )
+      }
     )
+  }
 );

@@ -41,7 +41,7 @@ type persistentCtx('msgType) = {
   "name": string,
   "children": Nact_jsMap.t(string, actorRef),
   "persist": 'msgType => Js.Promise.t(unit),
-  "recovering": bool
+  "recovering": Js.Nullable.t(bool)
 };
 
 type statefulActor('state, 'msgType) =
