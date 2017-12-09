@@ -4,15 +4,14 @@ open ExpectJs;
 
 open Nact;
 
-let delay: int => Js.Promise.t(unit) =
-  (ms) =>
-    Js.Promise.make(
-      (~resolve, ~reject: _) => {
-        Js.Global.setTimeout((_) => resolve(() => ()), ms);
-        ()
-      }
-    );
-
+/* let delay: int => Js.Promise.t(unit) =
+   (ms) =>
+     Js.Promise.make(
+       (~resolve, ~reject: _) => {
+         Js.Global.setTimeout((_) => resolve(() => ()), ms);
+         ()
+       }
+     ); */
 module StringCompare = {
   type t = string;
   let compare = String.compare;
