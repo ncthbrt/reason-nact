@@ -1,6 +1,7 @@
 {
   "name": "reason-nact",
   "version": "1.0.0",
+  "description": "let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed",
   "repository": "https://github.com/ncthbrt/reason-nact",
   "author": "Nick Cuthbert (https://github.com/ncthbrt)",
   "license": "Apache-2.0",
@@ -11,10 +12,12 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "test": "jest --coverage",
+    "local-test": "jest --coverage",
+    "test": "jest --coverage && yarn run coverage",
     "test-watch": "jest --coverage --watch",
+    "coverage": "nyc report --temp-directory=coverage --reporter=text-lcov | coveralls",
     "pretest": "yarn run build",
-    "prepush": "yarn run test",
+    "prepush": "yarn run local-test",
     "prepare": "yarn run clean && yarn run build"
   },
   "keywords": [
@@ -34,8 +37,10 @@
   "devDependencies": {
     "bs-jest": "^0.2.0",
     "bs-platform": "2.0.0",
+    "coveralls": "^3.0.0",
     "husky": "^0.14.3",
-    "jest": "^21.2.1"
+    "jest": "^21.2.1",
+    "nyc": "^11.3.0"
   },
   "dependencies": {
     "nact": "^4.2.0"

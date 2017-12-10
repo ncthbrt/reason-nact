@@ -3,9 +3,12 @@
 **let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed**\
 *your services have never been so µ*
 
-> Please Note: This wrapper is very alpha level. It is highly subject to change and is not yet recommended for any serious use.
 
 <!-- Badges -->
+[![Travis branch](https://img.shields.io/travis/ncthbrt/reason-nact/master.svg?style=flat-square)]()
+[![Coveralls](https://img.shields.io/coveralls/ncthbrt/reason-nact.svg?style=flat-square)]() [![Dependencies](https://david-dm.org/ncthbrt/nact.svg?branch=master&style=flat-square)](https://david-dm.org/ncthbrt/reason-nact) 
+
+[![npm](https://img.shields.io/npm/v/nact.svg?style=flat-square)](https://www.npmjs.com/package/reason-nact) [![we are reactive](https://img.shields.io/badge/we_are-reactive-blue.svg?style=flat-square)](https://www.reactivemanifesto.org/)
 
 > Note:
 >
@@ -63,6 +66,7 @@ Nact has only been tested to work on Node 8 and above. You can install nact in y
 ```bash
 npm install --save reason-nact
 ```
+
 
 Once installed, you need to import the start function, which starts and then returns the actor system.
 
