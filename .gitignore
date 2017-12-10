@@ -2,7 +2,9 @@
 .merlin
 npm-debug.log
 /lib/bs/
+/lib/ocaml/
 /node_modules/
 coverage/
 /lib/**/*.js
 /__tests__/**/*.js
+*.log

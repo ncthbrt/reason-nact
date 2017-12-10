@@ -1,4 +1,6 @@
-lib/
 *.log
-node_modules/
 .merlin/
+examples/
+coverage/
+__tests/
+.vscode/

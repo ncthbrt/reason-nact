@@ -1,6 +1,15 @@
 language: node_js
 node_js:
-  - "node"
-  - "9"
-  - "8"
+- node
+- '9'
+- '8'
 cache: yarn
+deploy:
+  provider: npm
+  email: nick@cuthbert.co.za
+  api_key:
+    secure: WufvKibsXWw920MJl0N5A5ID5dJ2Z0Na7fMwawpGN8abYtkm/LeT2yXUrRvt0kkw727AhOOOhXMKxjzY/WZFld7AVZM+RM24jyCamE6xfy9d/H2UwVfGo4NOF29NHP9EU12Juz8mBiawVTgpMiQsnljcZ2ehkvs7kUvXga/eo+cCSWQElqaf8zklL7Bg6o5rR8DAtOvOkm2ELYFAut307sx45wsVFXYtB+CT9AWUek465DX+TChTuH9XXQXiwjPAua2x7ISNguLqR8gDiv5uggAJDopsRbemHjJ7m63XwgZtvN4tVLpuiYEJO4uJnePpmuwWepgVJ4EBA1TreC4AdUpXKc0OOfVro4uFKO82IvVqZniBTySYGPpirOiwHxZ6OSSyGcMJNIQpiU5dlzo51CmeKkMc7/mCqYFQqqw9/e2cOB9kICzbWupwhhiCNzrWvhKLmvSceDl2ZzYf207FM6gqV8npy3pIPXieK8Wd6XfFH6QXvocRZVX05/srkqfy2ngUSRSoCRNdLnUnFoHhSqtFeN5uHKtC1Tzg9w7GB1lDjJ6Bj6NVpqwZA3d5ZiEl7Q/7hFqOJTMQiuSmCKeh0/Yo8akFCbmPO9tNb1f6pv+V7V7SyFGAremRPU/cW3R/WJ9mDTqkgJMl4baxJJ3W2nkm0x9Rtd7Q3RYzupKMZ/g=
+  on:
+    tags: true
+    branch: master
+    repo: ncthbrt/reason-nact
