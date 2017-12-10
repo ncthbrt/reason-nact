@@ -1,5 +1,7 @@
 open Nact;
 
+include Nact.Operators;
+
 let system = start();
 
 type msgType =
@@ -11,7 +13,7 @@ let ping: actorRef(msgType) =
     system,
     (Msg(sender, msg), ctx) => {
       print_endline(msg);
-      dispatch(sender, Msg(ctx.self, ctx.name)) |> Js.Promise.resolve
+      sender <-< Msg(ctx.self, ctx.name) |> Js.Promise.resolve
     }
   );
 
@@ -21,10 +23,10 @@ let pong: actorRef(msgType) =
     system,
     (Msg(sender, msg), ctx) => {
       print_endline(msg);
-      dispatch(sender, Msg(ctx.self, ctx.name)) |> Js.Promise.resolve
+      sender <-< Msg(ctx.self, ctx.name) |> Js.Promise.resolve
     }
   );
 
-dispatch(ping, Msg(pong, "hello"));
+ping <-< Msg(pong, "hello");
 
 Js.Global.setTimeout(() => stop(system), 100);

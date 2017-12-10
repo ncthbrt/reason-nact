@@ -2,6 +2,8 @@ open Jest;
 
 open ExpectJs;
 
+open Nact.Operators;
+
 open Nact;
 
 let delay: int => Js.Promise.t(unit) =
@@ -20,6 +22,8 @@ module StringMap = Map.Make(StringCompare);
 [@bs.module "nact/test/mock-persistence-engine"] [@bs.new]
 external createMockPersistenceEngine : unit => persistenceEngine =
   "MockPersistenceEngine";
+
+let (?:) = (v) => Js.Promise.resolve(v);
 
 let (>=>) = (promise1, promise2) => Js.Promise.then_(promise2, promise1);
 
@@ -44,13 +48,12 @@ describe(
           spawnStateless(
             system,
             ((sender, msg), _) =>
-              (
+              ?:(
                 switch msg {
-                | Echo(text) => dispatch(sender, text)
+                | Echo(text) => text >-> sender
                 | Ignore => ()
                 }
               )
-              |> Js.Promise.resolve
           );
         let queryPromise =
           query(~timeout=30 * milliseconds, actor, (temp) => (temp, Echo("hello")));
@@ -66,13 +69,12 @@ describe(
             ~shutdownAfter=10 * milliseconds,
             system,
             ((sender, msg), _) =>
-              (
+              ?:(
                 switch msg {
-                | Echo(text) => dispatch(sender, text)
+                | Echo(text) => sender <-< text
                 | Ignore => ()
                 }
               )
-              |> Js.Promise.resolve
           );
         delay(20 * milliseconds)
         >=> (
@@ -91,13 +93,12 @@ describe(
           spawnStateless(
             system,
             ((sender, msg), _) =>
-              (
+              ?:(
                 switch msg {
-                | Echo(text) => dispatch(sender, text)
+                | Echo(text) => text >-> sender
                 | Ignore => ()
                 }
               )
-              |> Js.Promise.resolve
           );
         stop(actor);
         let queryPromise =
@@ -116,13 +117,12 @@ describe(
             ~name="test1",
             system,
             ((sender, msg), _) =>
-              (
+              ?:(
                 switch msg {
                 | Echo(text) => dispatch(sender, text)
                 | Ignore => ()
                 }
               )
-              |> Js.Promise.resolve
           );
         let queryPromise = query(~timeout=20 * milliseconds, actor, (temp) => (temp, Ignore));
         queryPromise
@@ -145,22 +145,21 @@ describe(
             ~name="calculator",
             system,
             (total, (sender, msg), _) =>
-              (
+              ?:(
                 switch msg {
                 | Add(number) => total + number
                 | GetTotal =>
                   dispatch(sender, total);
                   total
                 }
-              )
-              |> Js.Promise.resolve,
+              ),
             0
           );
         let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
         dispatch(actor, (loggerActor, Add(5)));
         dispatch(actor, (loggerActor, Add(10)));
         let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
-        queryPromise >=> ((result) => expect(result) |> toBe(15) |> Js.Promise.resolve)
+        queryPromise >=> ((result) => ?:(expect(result) |> toBe(15)))
       }
     );
     testPromise(
@@ -192,7 +191,7 @@ describe(
                 | _ => spawnCalculator(ctx.self)
                 };
               dispatch(calcActor, childMsg);
-              StringMap.add(calc, calcActor, children) |> Js.Promise.resolve
+              ?:(StringMap.add(calc, calcActor, children))
             },
             StringMap.empty
           );
@@ -202,7 +201,7 @@ describe(
         dispatch(parent, (loggerActor, "b", Add(5)));
         let queryPromise =
           query(~timeout=30 * milliseconds, parent, (temp) => (temp, "b", GetTotal));
-        queryPromise >=> ((result) => expect(result) |> toBe(15) |> Js.Promise.resolve)
+        queryPromise >=> ((result) => ?:(expect(result) |> toBe(15)))
       }
     )
   }
@@ -220,20 +219,19 @@ describe(
             ~key="calculator",
             system,
             (total, (sender, msg), _) =>
-              (
+              ?:(
                 switch msg {
                 | Add(number) => total + number
                 | GetTotal =>
                   dispatch(sender, total);
                   total
                 }
-              )
-              |> Js.Promise.resolve,
+              ),
             0
           );
         let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
-        dispatch(actor, (loggerActor, Add(5)));
-        dispatch(actor, (loggerActor, Add(10)));
+        actor <-< (loggerActor, Add(5));
+        actor <-< (loggerActor, Add(10));
         let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
         queryPromise >=> ((result) => expect(result) |> toBe(15) |> Js.Promise.resolve)
       }
@@ -256,7 +254,7 @@ describe(
                 ctx.persist((sender, msg)) >=> ((_) => Js.Promise.resolve(total + numberToAdd))
               | GetTotal =>
                 dispatch(sender, total);
-                Js.Promise.resolve(total)
+                ?:total
               },
             0
           );
@@ -293,12 +291,12 @@ describe(
                 ctx.persist((sender, msg)) >=> ((_) => Js.Promise.resolve(total + number))
               | GetTotal =>
                 dispatch(sender, total);
-                Js.Promise.resolve(total)
+                ?:total
               },
             0
           );
         let actorInstance1 = spawnActor();
-        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
+        let loggerActor = spawnStateless(system, (msg, _) => ?:(print_int(msg)));
         dispatch(actorInstance1, (loggerActor, Add(5)));
         dispatch(actorInstance1, (loggerActor, Add(10)));
         dispatch(actorInstance1, (loggerActor, Add(10)));
@@ -309,7 +307,7 @@ describe(
             let actorInstance2 = spawnActor();
             let queryPromise =
               query(~timeout=30 * milliseconds, actorInstance2, (temp) => (temp, GetTotal));
-            queryPromise >=> ((result) => expect(result) |> toBe(25) |> Js.Promise.resolve)
+            queryPromise >=> ((result) => ?:(expect(result) |> toBe(25)))
           }
         )
       }

@@ -36,7 +36,7 @@
   ],
   "devDependencies": {
     "bs-jest": "^0.2.0",
-    "bs-platform": "2.0.0",
+    "bs-platform": "^2.0.0",
     "coveralls": "^3.0.0",
     "husky": "^0.14.3",
     "jest": "^21.2.1",

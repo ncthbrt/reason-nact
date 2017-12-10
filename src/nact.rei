@@ -92,3 +92,5 @@ let hours: int;
 let messages: int;
 
 let message: int;
+
+module Operators: {let (<-<): (actorRef('a), 'a) => unit; let (>->): ('a, actorRef('a)) => unit;};

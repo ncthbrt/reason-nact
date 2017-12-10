@@ -152,3 +152,8 @@ let hours = 60 * minutes;
 let messages = 1;
 
 let message = 1;
+
+module Operators = {
+  let (<-<) = (actorRef, msg) => dispatch(actorRef, msg);
+  let (>->) = (msg, actorRef) => dispatch(actorRef, msg);
+};
