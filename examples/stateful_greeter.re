@@ -11,18 +11,20 @@ let statefulGreeter =
     (state, {name}, ctx) => {
       let hasPreviouslyGreetedMe = List.exists((v) => v === name, state);
       if (hasPreviouslyGreetedMe) {
-        Js.log("Hello again " ++ name);
-        Js.Promise.resolve(state)
+        print_endline("Hello again " ++ name);
+        state |> Js.Promise.resolve
       } else {
-        Js.log("Good to meet you, " ++ name ++ ". I am the " ++ ctx.name ++ " service!");
-        Js.Promise.resolve([name, ...state])
+        print_endline("Good to meet you, " ++ name ++ ". I am the " ++ ctx.name ++ " service!");
+        [name, ...state] |> Js.Promise.resolve
       }
     },
     []
   );
 
-dispatch(statefulGreeter, {name: "Erlich"});
+open Nact.Operators;
 
-dispatch(statefulGreeter, {name: "Erlich"});
+statefulGreeter <-< {name: "Erlich"};
 
-dispatch(statefulGreeter, {name: "Dinesh"});
+statefulGreeter <-< {name: "Erlich"};
+
+statefulGreeter <-< {name: "Dinesh"};

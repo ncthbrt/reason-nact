@@ -22,11 +22,11 @@ var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], /* None */0, sy
         }
       }), /* [] */0);
 
-Nact.dispatch(statefulGreeter, /* record */[/* name */"Erlich"]);
+Nact.Operators[/* <-< */0](statefulGreeter, /* record */[/* name */"Erlich"]);
 
-Nact.dispatch(statefulGreeter, /* record */[/* name */"Erlich"]);
+Nact.Operators[/* <-< */0](statefulGreeter, /* record */[/* name */"Erlich"]);
 
-Nact.dispatch(statefulGreeter, /* record */[/* name */"Dinesh"]);
+Nact.Operators[/* <-< */0](statefulGreeter, /* record */[/* name */"Dinesh"]);
 
 exports.system          = system;
 exports.statefulGreeter = statefulGreeter;

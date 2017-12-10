@@ -1,14 +1,9 @@
 open Nact;
 
+open Nact.Operators;
+
 type contactId =
   | ContactId(int);
-
-module ContactIdCompare = {
-  type t = contactId;
-  let compare = (ContactId(left), ContactId(right)) => compare(left, right);
-};
-
-module ContactIdMap = Map.Make(ContactIdCompare);
 
 type contact = {
   name: string,
@@ -25,6 +20,13 @@ type contactMsg =
   | UpdateContact(contactId, contact)
   | FindContact(contactId);
 
+module ContactIdCompare = {
+  type t = contactId;
+  let compare = (ContactId(left), ContactId(right)) => compare(left, right);
+};
+
+module ContactIdMap = Map.Make(ContactIdCompare);
+
 type contactsServiceState = {
   contacts: ContactIdMap.t(contact),
   seqNumber: int
@@ -32,7 +34,7 @@ type contactsServiceState = {
 
 let createContact = ({contacts, seqNumber}, sender, contact) => {
   let contactId = ContactId(seqNumber);
-  dispatch(sender, (contactId, Success(contact)));
+  sender <-< (contactId, Success(contact));
   let nextContacts = ContactIdMap.add(contactId, contact, contacts);
   {contacts: nextContacts, seqNumber: seqNumber + 1}
 };
@@ -46,7 +48,7 @@ let removeContact = ({contacts, seqNumber}, sender, contactId) => {
     } else {
       (contactId, NotFound)
     };
-  dispatch(sender, msg);
+  sender <-< msg;
   {contacts: nextContacts, seqNumber}
 };
 
@@ -59,7 +61,7 @@ let updateContact = ({contacts, seqNumber}, sender, contactId, contact) => {
     } else {
       (contactId, NotFound)
     };
-  dispatch(sender, msg);
+  sender <-< msg;
   {contacts: nextContacts, seqNumber}
 };
 
@@ -68,7 +70,7 @@ let findContact = ({contacts, seqNumber}, sender, contactId) => {
     try (contactId, Success(ContactIdMap.find(contactId, contacts))) {
     | Not_found => (contactId, NotFound)
     };
-  dispatch(sender, msg);
+  sender <-< msg;
   {contacts, seqNumber}
 };
 

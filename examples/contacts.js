@@ -18,7 +18,7 @@ var ContactIdMap = $$Map.Make(ContactIdCompare);
 function createContact(param, sender, contact) {
   var seqNumber = param[/* seqNumber */1];
   var contactId = /* ContactId */[seqNumber];
-  Nact.dispatch(sender, /* tuple */[
+  Nact.Operators[/* <-< */0](sender, /* tuple */[
         contactId,
         /* Success */[contact]
       ]);
@@ -45,7 +45,7 @@ function removeContact(param, sender, contactId) {
       /* NotFound */0
     ];
   }
-  Nact.dispatch(sender, msg);
+  Nact.Operators[/* <-< */0](sender, msg);
   return /* record */[
           /* contacts */nextContacts,
           /* seqNumber */param[/* seqNumber */1]
@@ -62,7 +62,7 @@ function updateContact(param, sender, contactId, contact) {
       contactId,
       /* NotFound */0
     ];
-  Nact.dispatch(sender, msg);
+  Nact.Operators[/* <-< */0](sender, msg);
   return /* record */[
           /* contacts */nextContacts,
           /* seqNumber */param[/* seqNumber */1]
@@ -88,7 +88,7 @@ function findContact(param, sender, contactId) {
       throw exn;
     }
   }
-  Nact.dispatch(sender, msg);
+  Nact.Operators[/* <-< */0](sender, msg);
   return /* record */[
           /* contacts */contacts,
           /* seqNumber */param[/* seqNumber */1]

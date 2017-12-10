@@ -1,6 +1,6 @@
 open Nact;
 
-include Nact.Operators;
+open Nact.Operators;
 
 let system = start();
 
