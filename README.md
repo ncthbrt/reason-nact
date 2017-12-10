@@ -415,7 +415,7 @@ let system = start(~persistenceEngine=NactPostgres.create("CONNECTION_STRING"), 
 
 The optional parameter `~persistenceEngine` adds the persistence plugin to the system using the specified persistence engine.
 
-Now the only remaining work is to modify the contacts service to allow persistence. When the actor start up, it first receives all the persisted messages and then can begin processing new ones.  
+Now the only remaining work is to modify the contacts service to allow persistence. When the actor start up, it first receives all the persisted messages and then can begin processing new ones. 
 
 ```ocaml
 let createContactsService = (parent, userId) =>
@@ -441,6 +441,8 @@ let createContactsService = (parent, userId) =>
   );
 ```
 
+The `~key` parameter supplied when spawning the persistent actor is very important and should be a unique value. The key is used to save and retrieve snapshots and persisted events.
+
 ### Snapshotting
 
 Sometimes actors accumulate a lot of persisted events. This is problematic because it means that it can take a potentially long time for an actor to recover. For time-sensitive applictions, this would make nact an unsuitable proposition. Snapshotting is a way to skip replaying every single event. When a persistent actor starts up again, nact checks to see if there are any snapshots available in the *snapshot store*. Nact selects the latest snapshot. The snapshot contains the sequence number at which it was taken. The snapshot is passed as the initial state to the actor, and only the events which were persisted after the snapshot are replayed. 
@@ -460,7 +462,7 @@ let createContactsService = (parent, userId) =>
     {contacts: ContactIdMap.empty, seqNumber: 0}
   );
 ```
-Here we are using the optional argument `snapshotEvery` to instruct nact to make a snapshot every 10 messages.
+Here we are using the optional argument `snapshotEvery` to instruct nact to take a snapshot every 10 messages.
 
 ### Timeouts
 
