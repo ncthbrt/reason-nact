@@ -7,7 +7,6 @@
 
 <!-- Badges -->
 
-
 > Note:
 >
 > Any and all feedback, comments and suggestions are welcome. Please open an issue if you
