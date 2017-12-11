@@ -65,14 +65,14 @@ You'll also need to add `reason-nact` to your dependencies in the `bsconfig.json
 
 Once installed, you need to import the start function, which starts and then returns the actor system.
 
-```ocaml
+```reason
 open Nact;
 let system = start();
 ```
 
 Once you have a reference to the system, it is now possible to create our first actor. To create an actor you have to `spawn` it.  As is traditional, let us create an actor which says hello when a message is sent to it. Since this actor doesn't require any state, we can use the simpler `spawnStateless` function.
 
-```ocaml
+```reason
 type greetingMsg = {name: string};
 
 let greeter =
@@ -93,7 +93,7 @@ The name argument to `spawnStateless` is optional, and if omitted, the actor is 
 
 To communicate with the greeter, we need to `dispatch` a message to it informing it who we are:
 
-```ocaml
+```reason
 dispatch(greeter, { name: "Erlich Bachman" });
 ```
 
@@ -105,7 +105,7 @@ To complete this example, we need to shutdown our system. We can do this by call
 
 An alternative to calling dispatch is opening `Nact.Operators` and using the  `<-<` operator:
 
-```ocaml
+```reason
 open Nact.Operators;
 greeter <-< { name: "Erlich Bachman" };
 { name: "Erlich Bachman" } >-> greeter;
@@ -117,7 +117,7 @@ One of the major advantages of an actor system is that it offers a safe way of c
 
 In this example, the state is initialized to an empty object. Each time a message is received by the actor, the current state is passed in as the first argument to the actor.  Whenever the actor encounters a name it hasn't encountered yet, it returns a copy of previous state with the name added. If it has already encountered the name it simply returns the unchanged current state. The return value is used as the next state.
 
-```ocaml
+```reason
 let statefulGreeter =
   spawn(
     ~name="stateful-greeter",
@@ -144,7 +144,7 @@ In this example, the actors Ping and Pong are playing a perfect ping-pong match.
 specify that the sender in msgType is pong.
 
 
-```ocaml
+```reason
 open Nact;
 
 open Nact.Operators;
@@ -210,7 +210,7 @@ What are the basic requirements of a basic address book API? It should be able t
 
 Because actor are message driven, let us define the message types used between the api and actor system:
 
-```ocaml
+```reason
 type contactId =
   | ContactId(int);
 
@@ -231,7 +231,7 @@ type contactMsg =
 ```
 We also need to describe the shape of the contact actor's state. In this example, it was decided to create a `ContactIdMap` map to hold the list of contacts. `seqNumber` is used to assign each contact a unique identifier. `seqNumber` monotonically increases, even if a contact is deleted:
 
-```ocaml
+```reason
 module ContactIdCompare = {
   type t = contactId;
   let compare = (ContactId(left), ContactId(right)) => compare(left, right);
@@ -247,7 +247,7 @@ type contactsServiceState = {
 
 Now let us create functions to handle each message type:
 
-```ocaml
+```reason
 let createContact = ({contacts, seqNumber}, sender, contact) => {
   let contactId = ContactId(seqNumber);
   sender <-< (contactId, Success(contact));
@@ -292,7 +292,7 @@ let findContact = ({contacts, seqNumber}, sender, contactId) => {
 ```
 Finally we can put it all together and create the actor:
 
-```ocaml
+```reason
 let system = start();
 
 let contactsService =
@@ -317,7 +317,7 @@ This should leave you with a working but very basic contacts service.
 We can now interact with this actor from outside the actor system by calling the query function. In the example below, we are passing in a 
 function which constructs the final message to sender to the contactsService actor:
 
-```ocaml
+```reason
 let createDinesh = query(
     ~timeout=100 * milliseconds,
     contactsService,
@@ -350,7 +350,7 @@ Let us focus on the contacts service to see how we can make effective of use of 
 
 Modifying our original service is as simple as the following:
 
-```ocaml
+```reason
 let createContactsService = (parent, userId) =>
   spawn(
     ~name=userId,
@@ -372,7 +372,7 @@ let createContactsService = (parent, userId) =>
 Now we need to create the parent contact service. The parent checks if it has a child with the userId as the key. If it does not, it spawns the 
 child actor:
 
-```ocaml
+```reason
 
 let contactsService =
   spawn(
@@ -409,7 +409,7 @@ The contacts service we've been working on *still* isn't very useful. While we'v
 To use `persist`, the first thing we need to do is specify a persistence engine. Currently only a [PostgreSQL](https://github.com/ncthbrt/reason-nact-postgres) engine is available (though it should be easy to create your own). To work with the PostgreSQL engine, install the persistent provider package using the command `npm install --save reason-nact-postgres`. Also ensure you add
 the package to `bsconfig.json`. Now we'll need to modify the code creating the system to look something like the following (replacing "CONNECTION_STRING" with a valid postgresql connection string of course):
 
-```ocaml
+```reason
 let system = start(~persistenceEngine=NactPostgres.create("CONNECTION_STRING"), ());
 ```
 
@@ -417,7 +417,7 @@ The optional parameter `~persistenceEngine` adds the persistence plugin to the s
 
 Now the only remaining work is to modify the contacts service to allow persistence. When the actor start up, it first receives all the persisted messages and then can begin processing new ones. 
 
-```ocaml
+```reason
 let createContactsService = (parent, userId) =>
   spawnPersistent(
     ~key="contacts" ++ userId,
@@ -449,7 +449,7 @@ Sometimes actors accumulate a lot of persisted events. This is problematic becau
 
 To modify the user contacts service to support snapshotting, we refactor the code to the following:
 
-```ocaml
+```reason
 let createContactsService = (parent, userId) =>
   spawnPersistent(
     ~key="contacts" ++ userId,
@@ -468,7 +468,7 @@ Here we are using the optional argument `snapshotEvery` to instruct nact to take
 
 While not strictly a part of the persistent actor, timeouts are frequently used with snapshotting. Actors take up memory, which is still a limited resource. If an actor has not processed messages in a while, it makes sense to shut it down until it is again needed; this frees up memory. Adding a timeout to the user contacts service is similar to snapshotting:
 
-```ocaml
+```reason
 let createContactsService = (parent, userId) =>
   spawnPersistent(
     ~key="contacts" ++ userId,
