@@ -17,19 +17,6 @@
 # Sponsored by 
 [![Root Logo](https://raw.githubusercontent.com/ncthbrt/nact/master/root-logo.svg?sanitize=true)](https://root.co.za)
 
-# Table of Contents
-  * [Introduction](#introduction)
-  * [Core Concepts](#core-concepts)
-    * [Getting Started](#getting-started)
-    * [Stateful Actors](#stateful-actors)
-    * [Actor Communication](#actor-communication)
-    * [Querying](#querying)
-    * [Hierarchy](#hierarchy)
-    * [Persistence](#persistence)
-      * [Snapshotting](#snapshotting)
-      * [Timeouts](#timeouts)  
-<!--  * Patterns and Practises !-->
-
 # Introduction
 
 Nact is redux but for the server
