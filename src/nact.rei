@@ -24,6 +24,23 @@ type persistentCtx('msg, 'parentMsg) = {
   recovering: bool
 };
 
+type supervisionCtx('msg, 'parentMsg) = {
+  parent: actorRef('parentMsg),
+  child: string,
+  path: actorPath,
+  self: actorRef('msg),
+  name: string,
+  children: StringSet.t
+};
+
+type supervisionAction =
+  | Stop
+  | StopAll
+  | Reset
+  | ResetAll
+  | Escalate
+  | Resume;
+
 type statefulActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, ctx('msg, 'parentMsg)) => Js.Promise.t('state);
 
@@ -32,10 +49,21 @@ type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Prom
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
+type supervisionPolicy('msg, 'parentMsg) =
+  (exn, supervisionCtx('msg, 'parentMsg)) => Js.Promise.t(supervisionAction);
+
+type statefulSupervisionPolicy('msg, 'parentMsg, 'state) =
+  (exn, 'state, supervisionCtx('msg, 'parentMsg)) => ('state, Js.Promise.t(supervisionAction));
+
+let useStatefulSupervisionPolicy:
+  (statefulSupervisionPolicy('msg, 'parentMsg, 'state), 'state) =>
+  supervisionPolicy('msg, 'parentMsg);
+
 let spawn:
   (
     ~name: string=?,
     ~shutdownAfter: int=?,
+    ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
     actorRef('parentMsg),
     statefulActor('state, 'msg, 'parentMsg),
     'state
@@ -46,6 +74,7 @@ let spawnStateless:
   (
     ~name: string=?,
     ~shutdownAfter: int=?,
+    ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
     actorRef('parentMsg),
     statelessActor('msg, 'parentMsg)
   ) =>
@@ -57,6 +86,7 @@ let spawnPersistent:
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~snapshotEvery: int=?,
+    ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state
