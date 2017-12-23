@@ -2,6 +2,7 @@
 
 var Nact              = require("nact");
 var Curry             = require("bs-platform/lib/js/curry.js");
+var Js_exn            = require("bs-platform/lib/js/js_exn.js");
 var Caml_int32        = require("bs-platform/lib/js/caml_int32.js");
 var Nact_jsMap        = require("./Nact_jsMap.js");
 var Nact_stringSet    = require("./Nact_stringSet.js");
@@ -32,23 +33,85 @@ function mapPersistentCtx(untypedCtx) {
         ];
 }
 
-function spawn(name, shutdownAfter, param, func, initialState) {
+function mapSupervisionCtx(untypedCtx) {
+  return /* record */[
+          /* parent : ActorRef */[untypedCtx.parent],
+          /* child */untypedCtx.child.name,
+          /* path : ActorPath */[untypedCtx.path],
+          /* self : ActorRef */[untypedCtx.self],
+          /* name */untypedCtx.name,
+          /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children))
+        ];
+}
+
+function mapSupervisionFunction(optionalF) {
+  if (optionalF) {
+    var f = optionalF[0];
+    return (function (_, err, ctx) {
+        return Curry._2(f, err, mapSupervisionCtx(ctx)).then((function (decision) {
+                      var tmp;
+                      switch (decision) {
+                        case 0 : 
+                            tmp = ctx.stop;
+                            break;
+                        case 1 : 
+                            tmp = ctx.stopAll;
+                            break;
+                        case 2 : 
+                            tmp = ctx.reset;
+                            break;
+                        case 3 : 
+                            tmp = ctx.resetAll;
+                            break;
+                        case 4 : 
+                            tmp = ctx.escalate;
+                            break;
+                        case 5 : 
+                            tmp = ctx.resume;
+                            break;
+                        
+                      }
+                      return Promise.resolve(tmp);
+                    }));
+      });
+  } else {
+    return undefined;
+  }
+}
+
+function useStatefulSupervisionPolicy(f, initialState) {
+  var state = [initialState];
+  return (function (err, ctx) {
+      var match = Curry._3(f, err, state[0], ctx);
+      state[0] = match[0];
+      return match[1];
+    });
+}
+
+function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState) {
   var parent = param[0];
   var options = {
-    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter)
+    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
+    whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (possibleState, msg, ctx) {
     var state = (possibleState == null) ? initialState : possibleState;
-    return Curry._3(func, state, msg, mapCtx(ctx));
+    try {
+      return Curry._3(func, state, msg, mapCtx(ctx));
+    }
+    catch (raw_err){
+      return Promise.reject(Js_exn.internalToOCamlException(raw_err));
+    }
   };
   var untypedRef = name ? Nact.spawn(parent, f, name[0], options) : Nact.spawn(parent, f, undefined, options);
   return /* ActorRef */[untypedRef];
 }
 
-function spawnStateless(name, shutdownAfter, param, func) {
+function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
   var parent = param[0];
   var options = {
-    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter)
+    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
+    whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (msg, ctx) {
     return Curry._2(func, msg, mapCtx(ctx));
@@ -57,15 +120,21 @@ function spawnStateless(name, shutdownAfter, param, func) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, shutdownAfter, snapshotEvery, param, func, initialState) {
+function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, param, func, initialState) {
   var parent = param[0];
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
-    snapshotEvery: Js_null_undefined.from_opt(snapshotEvery)
+    snapshotEvery: Js_null_undefined.from_opt(snapshotEvery),
+    whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (possibleState, msg, ctx) {
     var state = (possibleState == null) ? initialState : possibleState;
-    return Curry._3(func, state, msg, mapPersistentCtx(ctx));
+    try {
+      return Curry._3(func, state, msg, mapPersistentCtx(ctx));
+    }
+    catch (raw_err){
+      return Promise.reject(Js_exn.internalToOCamlException(raw_err));
+    }
   };
   var untypedRef = name ? Nact.spawnPersistent(parent, f, key, name[0], options) : Nact.spawnPersistent(parent, f, key, undefined, options);
   return /* ActorRef */[untypedRef];
@@ -131,23 +200,24 @@ var messages = 1;
 
 var message = 1;
 
-exports.StringSet       = StringSet;
-exports.spawn           = spawn;
-exports.spawnStateless  = spawnStateless;
-exports.spawnPersistent = spawnPersistent;
-exports.stop            = stop;
-exports.start           = start;
-exports.dispatch        = dispatch;
-exports.QueryTimeout    = QueryTimeout;
-exports.query           = query;
-exports.milliseconds    = milliseconds;
-exports.millisecond     = millisecond;
-exports.seconds         = seconds;
-exports.second          = second;
-exports.minutes         = minutes;
-exports.minute          = minute;
-exports.hours           = hours;
-exports.messages        = messages;
-exports.message         = message;
-exports.Operators       = Operators;
+exports.StringSet                    = StringSet;
+exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
+exports.spawn                        = spawn;
+exports.spawnStateless               = spawnStateless;
+exports.spawnPersistent              = spawnPersistent;
+exports.stop                         = stop;
+exports.start                        = start;
+exports.dispatch                     = dispatch;
+exports.QueryTimeout                 = QueryTimeout;
+exports.query                        = query;
+exports.milliseconds                 = milliseconds;
+exports.millisecond                  = millisecond;
+exports.seconds                      = seconds;
+exports.second                       = second;
+exports.minutes                      = minutes;
+exports.minute                       = minute;
+exports.hours                        = hours;
+exports.messages                     = messages;
+exports.message                      = message;
+exports.Operators                    = Operators;
 /* nact Not a pure module */

@@ -1,11 +1,11 @@
 'use strict';
 
 var List = require("bs-platform/lib/js/list.js");
-var Nact = require("../src/nact.js");
+var Nact = require("../src/Nact.js");
 
 var system = Nact.start(/* None */0, /* () */0);
 
-var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], /* None */0, system, (function (state, param, ctx) {
+var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], /* None */0, /* None */0, system, (function (state, param, ctx) {
         var name = param[/* name */0];
         var hasPreviouslyGreetedMe = List.exists((function (v) {
                 return +(v === name);

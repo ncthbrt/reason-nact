@@ -50,6 +50,62 @@ let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
   children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray
 };
 
+type supervisionCtx('msg, 'parentMsg) = {
+  parent: actorRef('parentMsg),
+  child: string,
+  path: actorPath,
+  self: actorRef('msg),
+  name: string,
+  children: StringSet.t
+};
+
+let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
+  name: untypedCtx##name,
+  self: ActorRef(untypedCtx##self),
+  parent: ActorRef(untypedCtx##parent),
+  path: ActorPath(untypedCtx##path),
+  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
+  child: untypedCtx##child##name
+};
+
+type supervisionAction =
+  | Stop
+  | StopAll
+  | Reset
+  | ResetAll
+  | Escalate
+  | Resume;
+
+type supervisionPolicy('msg, 'parentMsg) =
+  (exn, supervisionCtx('msg, 'parentMsg)) => Js.Promise.t(supervisionAction);
+
+type statefulSupervisionPolicy('msg, 'parentMsg, 'state) =
+  (exn, 'state, supervisionCtx('msg, 'parentMsg)) => ('state, Js.Promise.t(supervisionAction));
+
+let mapSupervisionFunction = (optionalF) =>
+  switch optionalF {
+  | None => Js.Nullable.undefined
+  | Some(f) =>
+    Js.Nullable.return(
+      (_, err, ctx) =>
+        f(err, mapSupervisionCtx(ctx))
+        |> Js.Promise.then_(
+             (decision) =>
+               (
+                 switch decision {
+                 | Stop => ctx##stop
+                 | StopAll => ctx##stopAll
+                 | Reset => ctx##reset
+                 | ResetAll => ctx##resetAll
+                 | Escalate => ctx##escalate
+                 | Resume => ctx##resume
+                 }
+               )
+               |> Js.Promise.resolve
+           )
+    )
+  };
+
 type statefulActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, ctx('msg, 'parentMsg)) => Js.Promise.t('state);
 
@@ -58,15 +114,29 @@ type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Prom
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
-let spawn = (~name=?, ~shutdownAfter=?, ActorRef(parent), func, initialState) => {
-  let options = {"shutdownAfter": Js.Nullable.from_opt(shutdownAfter)};
+let useStatefulSupervisionPolicy = (f, initialState) => {
+  let state = ref(initialState);
+  (err, ctx) => {
+    let (nextState, promise) = f(err, state^, ctx);
+    state := nextState;
+    promise
+  }
+};
+
+let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func, initialState) => {
+  let options = {
+    "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
+    "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
+  };
   let f = (possibleState, msg, ctx) => {
     let state =
       switch (Js.Nullable.to_opt(possibleState)) {
       | None => initialState
       | Some(concreteState) => concreteState
       };
-    func(state, msg, mapCtx(ctx))
+    try (func(state, msg, mapCtx(ctx))) {
+    | err => Js.Promise.reject(err)
+    }
   };
   let untypedRef =
     switch name {
@@ -77,9 +147,13 @@ let spawn = (~name=?, ~shutdownAfter=?, ActorRef(parent), func, initialState) =>
   ActorRef(untypedRef)
 };
 
-let spawnStateless = (~name=?, ~shutdownAfter=?, ActorRef(parent), func) => {
-  let options = {"shutdownAfter": Js.Nullable.from_opt(shutdownAfter)};
+let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func) => {
+  let options = {
+    "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
+    "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
+  };
   let f = (msg, ctx) => func(msg, mapCtx(ctx));
+    
   let untypedRef =
     switch name {
     | Some(concreteName) =>
@@ -90,10 +164,20 @@ let spawnStateless = (~name=?, ~shutdownAfter=?, ActorRef(parent), func) => {
 };
 
 let spawnPersistent =
-    (~key, ~name=?, ~shutdownAfter=?, ~snapshotEvery=?, ActorRef(parent), func, initialState) => {
+    (
+      ~key,
+      ~name=?,
+      ~shutdownAfter=?,
+      ~snapshotEvery=?,
+      ~whenChildCrashes=?,
+      ActorRef(parent),
+      func,
+      initialState
+    ) => {
   let options: Nact_bindings.persistentActorOptions = {
     "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
-    "snapshotEvery": Js.Nullable.from_opt(snapshotEvery)
+    "snapshotEvery": Js.Nullable.from_opt(snapshotEvery),
+    "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
   let f = (possibleState, msg, ctx) => {
     let state =
@@ -101,7 +185,9 @@ let spawnPersistent =
       | None => initialState
       | Some(concreteState) => concreteState
       };
-    func(state, msg, mapPersistentCtx(ctx))
+    try (func(state, msg, mapPersistentCtx(ctx))) {
+    | err => Js.Promise.reject(err)
+    }
   };
   let untypedRef =
     switch name {
