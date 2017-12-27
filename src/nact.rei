@@ -10,7 +10,7 @@ type localActorRef('msg) = [ | `LocalRef(actorRef('msg))];
 
 type clusterRef('msg) = [ | `ClusterRef(actorRef('msg))];
 
-type dispatchable('msg) = [ 
+type dispatchable('msg) = [
   clusterRef('msg) 
   | localActorRef('msg)
 ];
