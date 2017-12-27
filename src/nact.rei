@@ -6,18 +6,27 @@ type persistenceEngine;
 
 type actorRef('msg);
 
+type localActorRef('msg) = [ | `LocalRef(actorRef('msg))];
+
+type clusterRef('msg) = [ | `ClusterRef(actorRef('msg))];
+
+type dispatchable('msg) = [ 
+  clusterRef('msg) 
+  | localActorRef('msg)
+];
+
 type ctx('msg, 'parentMsg) = {
-  parent: actorRef('parentMsg),
+  parent: localActorRef('parentMsg),
   path: actorPath,
-  self: actorRef('msg),
+  self: localActorRef('msg),
   children: StringSet.t,
   name: string
 };
 
 type persistentCtx('msg, 'parentMsg) = {
-  parent: actorRef('parentMsg),
+  parent: localActorRef('parentMsg),
   path: actorPath,
-  self: actorRef('msg),
+  self: localActorRef('msg),
   name: string,
   persist: 'msg => Js.Promise.t(unit),
   children: StringSet.t,
@@ -25,10 +34,10 @@ type persistentCtx('msg, 'parentMsg) = {
 };
 
 type supervisionCtx('msg, 'parentMsg) = {
-  parent: actorRef('parentMsg),
+  parent: localActorRef('parentMsg),
   child: string,
   path: actorPath,
-  self: actorRef('msg),
+  self: localActorRef('msg),
   name: string,
   children: StringSet.t
 };
@@ -64,21 +73,21 @@ let spawn:
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
-    actorRef('parentMsg),
+    localActorRef('parentMsg),
     statefulActor('state, 'msg, 'parentMsg),
     'state
   ) =>
-  actorRef('msg);
+  localActorRef('msg);
 
 let spawnStateless:
   (
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
-    actorRef('parentMsg),
+    localActorRef('parentMsg),
     statelessActor('msg, 'parentMsg)
   ) =>
-  actorRef('msg);
+  localActorRef('msg);
 
 let spawnPersistent:
   (
@@ -87,23 +96,37 @@ let spawnPersistent:
     ~shutdownAfter: int=?,
     ~snapshotEvery: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
-    actorRef('parentMsg),
+    localActorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state
   ) =>
-  actorRef('msg);
+  localActorRef('msg);
 
-let stop: actorRef('msg) => unit;
+module Cluster: {
+  type keySelector('msg) = 'msg => int;
+  type routingStrategy('msg) =
+    | Sharded(keySelector('msg));
+  let createCluster: (~name: string, routingStrategy('msg)) => clusterRef('msg);
+  let join: (clusterRef('msg), localActorRef('msg)) => unit;
+  let leave: (clusterRef('msg), localActorRef('msg)) => unit;
+  module Operators: {
+    let (+@): (clusterRef('msg), localActorRef('msg)) => unit;
+    let (-@): (clusterRef('msg), localActorRef('msg)) => unit;
+  };
+};
+
+let stop: dispatchable('msg) => unit;
 
 type systemMsg;
 
-let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(systemMsg);
+let start: (~persistenceEngine: persistenceEngine=?, unit) => localActorRef(systemMsg);
 
-let dispatch: (actorRef('msg), 'msg) => unit;
+let dispatch: (dispatchable('msg), 'msg) => unit;
 
 exception QueryTimeout(int);
 
-let query: (~timeout: int, actorRef('msg), actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);
+let query:
+  (~timeout: int, dispatchable('msg), localActorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);
 
 let milliseconds: int;
 
@@ -123,4 +146,7 @@ let messages: int;
 
 let message: int;
 
-module Operators: {let (<-<): (actorRef('a), 'a) => unit; let (>->): ('a, actorRef('a)) => unit;};
+module Operators: {
+  let (<-<): (dispatchable('a), 'a) => unit;
+  let (>->): ('a, dispatchable('a)) => unit;
+};
