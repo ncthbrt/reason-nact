@@ -1,7 +1,7 @@
 'use strict';
 
 var $$Map                   = require("bs-platform/lib/js/map.js");
-var Nact                    = require("../src/nact.js");
+var Nact                    = require("../src/Nact.js");
 var Block                   = require("bs-platform/lib/js/block.js");
 var Curry                   = require("bs-platform/lib/js/curry.js");
 var Caml_obj                = require("bs-platform/lib/js/caml_obj.js");
@@ -97,7 +97,7 @@ function findContact(param, sender, contactId) {
 
 var system = Nact.start(/* None */0, /* () */0);
 
-var contactsService = Nact.spawn(/* Some */["contacts"], /* None */0, system, (function (state, param, _) {
+var contactsService = Nact.spawn(/* Some */["contacts"], /* None */0, /* None */0, system, (function (state, param, _) {
         var msg = param[1];
         var sender = param[0];
         var tmp;

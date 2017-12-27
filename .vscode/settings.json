@@ -5,7 +5,11 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/*.js": true
+    // "**/*.js": true,
+    "**/coverage/**": true,
+    "**/.ninja_log": true,
+    "**/build.ninja": true,
+    "**/*.d": true
   },
   "editor.formatOnSave": true
 }

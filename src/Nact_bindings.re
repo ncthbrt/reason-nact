@@ -52,11 +52,37 @@ type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 type persistentActor('state, 'msgType) =
   (Js.nullable('state), 'msgType, persistentCtx('msgType)) => Js.Promise.t('state);
 
-type actorOptions = {. "shutdownAfter": Js.Nullable.t(int)};
+type supervisionAction;
+
+type supervisionCtx = {
+  .
+  "sender": Js.nullable(actorRef),
+  "parent": actorRef,
+  "path": actorPath,
+  "self": actorRef,
+  "name": string,
+  "child": actorRef,
+  "children": Nact_jsMap.t(string, actorRef),
+  "stop": supervisionAction,
+  "stopAll": supervisionAction,
+  "escalate": supervisionAction,
+  "reset": supervisionAction,
+  "resetAll": supervisionAction,
+  "resume": supervisionAction
+};
+
+type supervisionFunction = (unit, exn, supervisionCtx) => Js.Promise.t(supervisionAction);
+
+type actorOptions = {
+  .
+  "shutdownAfter": Js.Nullable.t(int), "whenChildCrashes": Js.Nullable.t(supervisionFunction)
+};
 
 type persistentActorOptions = {
   .
-  "shutdownAfter": Js.Nullable.t(int), "snapshotEvery": Js.Nullable.t(int)
+  "shutdownAfter": Js.Nullable.t(int),
+  "snapshotEvery": Js.Nullable.t(int),
+  "whenChildCrashes": Js.Nullable.t(supervisionFunction)
 };
 
 [@bs.module "nact"]
