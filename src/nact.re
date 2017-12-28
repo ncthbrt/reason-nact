@@ -8,6 +8,20 @@ type actorPath =
 type actorRef('msg) =
   | ActorRef(Nact_bindings.actorRef);
 
+type clusterRef('msg) =
+  | ClusterRef(Nact_bindings.clusterRef);
+module Cluster: {
+  type keySelector('msg) = 'msg => int;
+  type routingStrategy('msg) =
+    | Sharded(keySelector('msg));
+  let createCluster: (~name: string, routingStrategy('msg)) => clusterRef('msg);
+  let join: (clusterRef('msg), actorRef('msg)) => unit;
+  let leave: (clusterRef('msg), actorRef('msg)) => unit;
+  module Operators: {
+    let (+@): (clusterRef('msg), actorRef('msg)) => unit;
+    let (-@): (clusterRef('msg), actorRef('msg)) => unit;
+  };
+};
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   path: actorPath,
@@ -153,7 +167,6 @@ let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(p
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
   let f = (msg, ctx) => func(msg, mapCtx(ctx));
-    
   let untypedRef =
     switch name {
     | Some(concreteName) =>

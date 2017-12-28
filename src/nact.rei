@@ -6,6 +6,21 @@ type persistenceEngine;
 
 type actorRef('msg);
 
+type clusterRef('msg);
+
+module Cluster: {
+  type keySelector('msg) = 'msg => int;
+  type routingStrategy('msg) =
+    | Sharded(keySelector('msg));
+  let createCluster: (~name: string, routingStrategy('msg)) => (actorRef('msg), clusterRef('msg));
+  let join: (clusterRef('msg), actorRef('msg)) => unit;
+  let leave: (clusterRef('msg), actorRef('msg)) => unit;
+  module Operators: {
+    let (+@): (clusterRef('msg), actorRef('msg)) => unit;
+    let (-@): (clusterRef('msg), actorRef('msg)) => unit;
+  };
+};
+
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   path: actorPath,

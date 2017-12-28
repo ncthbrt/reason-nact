@@ -22,6 +22,8 @@ type persistenceEngine = {
 
 type actorRef = {. "parent": actorRef, "path": actorPath, "name": string};
 
+type clusterRef = {. "name": string};
+
 type ctx = {
   .
   "sender": Js.nullable(actorRef),
