@@ -17,7 +17,7 @@
     "test-watch": "jest --coverage --watch",
     "coverage": "nyc report --temp-directory=coverage --reporter=text-lcov | coveralls",
     "pretest": "yarn run build",
-    "prepush": "yarn run local-test",
+    "prepush": "yarn run build && yarn run local-test",
     "prepare": "yarn run clean && yarn run build"
   },
   "keywords": [

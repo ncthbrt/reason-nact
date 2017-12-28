@@ -11,9 +11,15 @@ var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
 
 function mapCtx(untypedCtx) {
   return /* record */[
-          /* parent : ActorRef */[untypedCtx.parent],
+          /* parent : `ActorRef */[
+            823462270,
+            untypedCtx.parent
+          ],
           /* path : ActorPath */[untypedCtx.path],
-          /* self : ActorRef */[untypedCtx.self],
+          /* self : `ActorRef */[
+            823462270,
+            untypedCtx.self
+          ],
           /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children)),
           /* name */untypedCtx.name
         ];
@@ -23,9 +29,15 @@ function mapPersistentCtx(untypedCtx) {
   var partial_arg = untypedCtx.persist;
   var match = untypedCtx.recovering;
   return /* record */[
-          /* parent : ActorRef */[untypedCtx.parent],
+          /* parent : `ActorRef */[
+            823462270,
+            untypedCtx.parent
+          ],
           /* path : ActorPath */[untypedCtx.path],
-          /* self : ActorRef */[untypedCtx.self],
+          /* self : `ActorRef */[
+            823462270,
+            untypedCtx.self
+          ],
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
           /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children)),
@@ -35,10 +47,16 @@ function mapPersistentCtx(untypedCtx) {
 
 function mapSupervisionCtx(untypedCtx) {
   return /* record */[
-          /* parent : ActorRef */[untypedCtx.parent],
+          /* parent : `ActorRef */[
+            823462270,
+            untypedCtx.parent
+          ],
           /* child */untypedCtx.child.name,
           /* path : ActorPath */[untypedCtx.path],
-          /* self : ActorRef */[untypedCtx.self],
+          /* self : `ActorRef */[
+            823462270,
+            untypedCtx.self
+          ],
           /* name */untypedCtx.name,
           /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children))
         ];
@@ -89,7 +107,7 @@ function useStatefulSupervisionPolicy(f, initialState) {
 }
 
 function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState) {
-  var parent = param[0];
+  var parent = param[1];
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
@@ -104,11 +122,14 @@ function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState)
     }
   };
   var untypedRef = name ? Nact.spawn(parent, f, name[0], options) : Nact.spawn(parent, f, undefined, options);
-  return /* ActorRef */[untypedRef];
+  return /* `ActorRef */[
+          823462270,
+          untypedRef
+        ];
 }
 
 function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
-  var parent = param[0];
+  var parent = param[1];
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
@@ -117,11 +138,14 @@ function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
     return Curry._2(func, msg, mapCtx(ctx));
   };
   var untypedRef = name ? Nact.spawnStateless(parent, f, name[0], options) : Nact.spawnStateless(parent, f, undefined, options);
-  return /* ActorRef */[untypedRef];
+  return /* `ActorRef */[
+          823462270,
+          untypedRef
+        ];
 }
 
 function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, param, func, initialState) {
-  var parent = param[0];
+  var parent = param[1];
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     snapshotEvery: Js_null_undefined.from_opt(snapshotEvery),
@@ -137,21 +161,27 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrash
     }
   };
   var untypedRef = name ? Nact.spawnPersistent(parent, f, key, name[0], options) : Nact.spawnPersistent(parent, f, key, undefined, options);
-  return /* ActorRef */[untypedRef];
+  return /* `ActorRef */[
+          823462270,
+          untypedRef
+        ];
 }
 
 function stop(param) {
-  Nact.stop(param[0]);
+  Nact.stop(param[1]);
   return /* () */0;
 }
 
 function start(persistenceEngine, _) {
   var untypedRef = persistenceEngine ? Nact.start(Nact.configurePersistence(persistenceEngine[0])) : Nact.start();
-  return /* ActorRef */[untypedRef];
+  return /* `ActorRef */[
+          823462270,
+          untypedRef
+        ];
 }
 
 function dispatch(param, msg) {
-  Nact.dispatch(param[0], msg);
+  Nact.dispatch(param[1], msg);
   return /* () */0;
 }
 
@@ -159,9 +189,12 @@ var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
 
 function query(timeout, param, msgF) {
   var f = function (tempReference) {
-    return Curry._1(msgF, /* ActorRef */[tempReference]);
+    return Curry._1(msgF, /* `ActorRef */[
+                823462270,
+                tempReference
+              ]);
   };
-  return Nact.query(param[0], f, timeout).catch((function () {
+  return Nact.query(param[1], f, timeout).catch((function () {
                 return Promise.reject([
                             QueryTimeout,
                             timeout

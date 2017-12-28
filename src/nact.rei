@@ -4,7 +4,16 @@ type actorPath;
 
 type persistenceEngine;
 
-type actorRef('msg);
+type reference('msg);
+
+type actorRef('msg) = [ | `ActorRef(reference('msg))];
+
+type clusterRef('msg) = [ | `ClusterRef(reference('msg))];
+
+type dispatchable('msg) = [
+  clusterRef('msg) 
+  | actorRef('msg)
+];
 
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
@@ -93,17 +102,31 @@ let spawnPersistent:
   ) =>
   actorRef('msg);
 
-let stop: actorRef('msg) => unit;
+module Cluster: {
+  type keySelector('msg) = 'msg => int;
+  type routingStrategy('msg) =
+    | Sharded(keySelector('msg));
+  let createCluster: (~name: string, routingStrategy('msg)) => clusterRef('msg);
+  let join: (clusterRef('msg), actorRef('msg)) => unit;
+  let leave: (clusterRef('msg), actorRef('msg)) => unit;
+  module Operators: {
+    let (+@): (clusterRef('msg), actorRef('msg)) => unit;
+    let (-@): (clusterRef('msg), actorRef('msg)) => unit;
+  };
+};
+
+let stop: actorRef('a) => unit;
 
 type systemMsg;
 
 let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(systemMsg);
 
-let dispatch: (actorRef('msg), 'msg) => unit;
+let dispatch: ([< | dispatchable('a)], 'msg) => unit;
 
 exception QueryTimeout(int);
 
-let query: (~timeout: int, actorRef('msg), actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);
+let query:
+  (~timeout: int, [< | dispatchable('a)], actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);
 
 let milliseconds: int;
 
@@ -123,4 +146,7 @@ let messages: int;
 
 let message: int;
 
-module Operators: {let (<-<): (actorRef('a), 'a) => unit; let (>->): ('a, actorRef('a)) => unit;};
+module Operators: {
+  let (<-<): ([< | dispatchable('a)], 'a) => unit;
+  let (>->): ([< | dispatchable('a)], 'a) => unit;
+};
