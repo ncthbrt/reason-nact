@@ -20,7 +20,7 @@ type persistenceEngine = {
   "latestSnapshot": string => Js.Promise.t(persistedSnapshot)
 };
 
-type actorRef = {. "parent": actorRef, "path": actorPath, "name": string};
+type actorRef = {. "path": actorPath, "name": string};
 
 type clusterRef = {. "name": string};
 

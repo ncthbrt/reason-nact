@@ -9,6 +9,32 @@ var Nact_stringSet    = require("./Nact_stringSet.js");
 var Caml_exceptions   = require("bs-platform/lib/js/caml_exceptions.js");
 var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
 
+var NotImplemented = Caml_exceptions.create("Nact.NotImplemented");
+
+function createCluster(_, _$1) {
+  throw NotImplemented;
+}
+
+function join(_, _$1) {
+  return /* () */0;
+}
+
+function leave(_, _$1) {
+  return /* () */0;
+}
+
+var Operators = /* module */[
+  /* +@ */join,
+  /* -@ */leave
+];
+
+var Cluster = /* module */[
+  /* createCluster */createCluster,
+  /* join */join,
+  /* leave */leave,
+  /* Operators */Operators
+];
+
 function mapCtx(untypedCtx) {
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
@@ -181,7 +207,7 @@ function $great$neg$great(msg, actorRef) {
   return dispatch(actorRef, msg);
 }
 
-var Operators = /* module */[
+var Operators$1 = /* module */[
   /* <-< */$less$neg$less,
   /* >-> */$great$neg$great
 ];
@@ -201,6 +227,7 @@ var messages = 1;
 var message = 1;
 
 exports.StringSet                    = StringSet;
+exports.Cluster                      = Cluster;
 exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
 exports.spawn                        = spawn;
 exports.spawnStateless               = spawnStateless;
@@ -219,5 +246,5 @@ exports.minute                       = minute;
 exports.hours                        = hours;
 exports.messages                     = messages;
 exports.message                      = message;
-exports.Operators                    = Operators;
+exports.Operators                    = Operators$1;
 /* nact Not a pure module */
