@@ -8,8 +8,8 @@ type actorPath =
 type actorRef('msg) =
   | ActorRef(Nact_bindings.actorRef);
 
-type clusterRef('msg) =
-  | ClusterRef(Nact_bindings.clusterRef);
+type cluster('msg) =
+  | Cluster(Nact_bindings.clusterRef);
 
 exception NotImplemented;
 
