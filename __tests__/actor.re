@@ -77,6 +77,8 @@ exception TragicException;
 let spawnLoggerActor = (parent) =>
   spawnStateless(parent, (msg, _) => Js.log(msg) |> Js.Promise.resolve);
 
+  let echoHello = (temp) => (temp, Echo("hello"));
+
 describe(
   "Stateless Actor",
   () => {
@@ -96,7 +98,7 @@ describe(
               )
           );
         let queryPromise =
-          query(~timeout=30 * milliseconds, actor, (temp) => (temp, Echo("hello")));
+          query(~timeout=30 * milliseconds, actor, echoHello);
         queryPromise >=> ((result) => expect(result) |> toBe("hello") |> Js.Promise.resolve)
       }
     );
@@ -119,7 +121,7 @@ describe(
         delay(20 * milliseconds)
         >=> (
           (_) =>
-            query(~timeout=30 * milliseconds, actor, (temp) => (temp, Echo("hello")))
+            query(~timeout=30 * milliseconds, actor, echoHello)
             >=> ((_) => fail("Query should not be have resolved") |> Js.Promise.resolve)
             >/=> ((_) => pass |> Js.Promise.resolve)
         )
@@ -142,7 +144,7 @@ describe(
           );
         stop(actor);
         let queryPromise =
-          query(~timeout=30 * milliseconds, actor, (temp) => (temp, Echo("hello")));
+          actor <? (echoHello, 30 * milliseconds);
         queryPromise
         >=> ((_) => fail("Query should not be have resolved") |> Js.Promise.resolve)
         >/=> ((_) => pass |> Js.Promise.resolve)
@@ -185,7 +187,7 @@ describe(
         child <-< (loggerActor, Add(5));
         child <-< (loggerActor, Add((-5)));
         child <-< (loggerActor, Add(12));
-        let queryPromise = query(~timeout=30 * milliseconds, child, (temp) => (temp, GetTotal));
+        let queryPromise = child <? ((temp) => (temp, GetTotal), 30 * milliseconds);
         queryPromise >=> ((result) => ?:(expect(result) |> toBe(12)))
       }
     );
@@ -218,7 +220,6 @@ describe(
     )
   }
 );
-
 describe(
   "Stateful Actor",
   () => {

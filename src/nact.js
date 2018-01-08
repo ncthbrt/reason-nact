@@ -181,9 +181,14 @@ function $great$neg$great(msg, actorRef) {
   return dispatch(actorRef, msg);
 }
 
+function $less$unknown(actor, param) {
+  return query(param[1], actor, param[0]);
+}
+
 var Operators = /* module */[
   /* <-< */$less$neg$less,
-  /* >-> */$great$neg$great
+  /* >-> */$great$neg$great,
+  /* <? */$less$unknown
 ];
 
 var StringSet = 0;

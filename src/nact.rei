@@ -123,4 +123,8 @@ let messages: int;
 
 let message: int;
 
-module Operators: {let (<-<): (actorRef('a), 'a) => unit; let (>->): ('a, actorRef('a)) => unit;};
+module Operators: {
+  let (<-<): (actorRef('a), 'a) => unit;
+  let (>->): ('a, actorRef('a)) => unit;
+  let (<?): (actorRef('msg), (actorRef('outgoing) => 'msg, int)) => Js.Promise.t('outgoing);
+};

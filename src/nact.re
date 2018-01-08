@@ -153,7 +153,6 @@ let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(p
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
   let f = (msg, ctx) => func(msg, mapCtx(ctx));
-    
   let untypedRef =
     switch name {
     | Some(concreteName) =>
@@ -242,4 +241,5 @@ let message = 1;
 module Operators = {
   let (<-<) = (actorRef, msg) => dispatch(actorRef, msg);
   let (>->) = (msg, actorRef) => dispatch(actorRef, msg);
+  let (<?) = (actor, (f, timeout)) => query(~timeout, actor, f);
 };

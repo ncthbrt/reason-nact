@@ -1,7 +1,7 @@
 'use strict';
 
 var $$Map                   = require("bs-platform/lib/js/map.js");
-var Nact                    = require("../src/Nact.js");
+var Nact                    = require("../src/nact.js");
 var Block                   = require("bs-platform/lib/js/block.js");
 var Curry                   = require("bs-platform/lib/js/curry.js");
 var $$String                = require("bs-platform/lib/js/string.js");
@@ -194,15 +194,22 @@ function createDinesh() {
               }));
 }
 
+function findContact$1(userId, contactId, tempReference) {
+  return /* tuple */[
+          tempReference,
+          userId,
+          /* FindContact */Block.__(3, [contactId])
+        ];
+}
+
 function findDinsheh(param) {
   var contactId = param[0];
-  return Nact.query(Caml_int32.imul(100, Nact.milliseconds), contactsService, (function (tempReference) {
-                return /* tuple */[
-                        tempReference,
-                        "1",
-                        /* FindContact */Block.__(3, [contactId])
-                      ];
-              }));
+  return Nact.Operators[/* <? */2](contactsService, /* tuple */[
+              (function (param) {
+                  return findContact$1("1", contactId, param);
+                }),
+              Caml_int32.imul(100, Nact.milliseconds)
+            ]);
 }
 
 var promise1 = createErlich.then(createDinesh);
@@ -223,11 +230,11 @@ exports.ContactIdMap          = ContactIdMap;
 exports.createContact         = createContact;
 exports.removeContact         = removeContact;
 exports.updateContact         = updateContact;
-exports.findContact           = findContact;
 exports.system                = system;
 exports.createContactsService = createContactsService;
 exports.contactsService       = contactsService;
 exports.createErlich          = createErlich;
 exports.createDinesh          = createDinesh;
+exports.findContact           = findContact$1;
 exports.findDinsheh           = findDinsheh;
 /* StringMap Not a pure module */

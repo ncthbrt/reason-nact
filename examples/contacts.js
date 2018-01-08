@@ -1,7 +1,7 @@
 'use strict';
 
 var $$Map                   = require("bs-platform/lib/js/map.js");
-var Nact                    = require("../src/Nact.js");
+var Nact                    = require("../src/nact.js");
 var Block                   = require("bs-platform/lib/js/block.js");
 var Curry                   = require("bs-platform/lib/js/curry.js");
 var Caml_obj                = require("bs-platform/lib/js/caml_obj.js");

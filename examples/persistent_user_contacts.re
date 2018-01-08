@@ -157,12 +157,16 @@ let createDinesh = (_) =>
     )
   );
 
+open Nact.Operators;
+
+let findContact = (userId, contactId, tempReference) => (
+  tempReference,
+  userId,
+  FindContact(contactId)
+);
+
 let findDinsheh = ((contactId, _)) =>
-  query(
-    ~timeout=100 * milliseconds,
-    contactsService,
-    (tempReference) => (tempReference, "1", FindContact(contactId))
-  );
+  contactsService <? (findContact("1", contactId), 100 * milliseconds);
 
 createErlich
 >=> createDinesh
