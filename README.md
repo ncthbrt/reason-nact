@@ -15,6 +15,7 @@ This is the repository for the ReasonML bindings for nact. If you'd like to view
 
 # Sponsored by 
 [![Root Logo](https://raw.githubusercontent.com/ncthbrt/nact/master/root-logo.svg?sanitize=true)](https://root.co.za)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact?ref=badge_shield)
 
 ## Nact is redux but for the server
 
@@ -32,3 +33,6 @@ With out of the box support for event sourcing, and a considered implementation 
 Nact is no silver bullet, but it is evolving to tackle ever more demanding use cases. Perhaps one of them is yours?
 
 To get started, head to https://nact.io
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact?ref=badge_large)
