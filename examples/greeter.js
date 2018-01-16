@@ -1,6 +1,6 @@
 'use strict';
 
-var Nact = require("../src/nact.js");
+var Nact = require("../src/Nact.js");
 
 var system = Nact.start(/* None */0, /* () */0);
 

@@ -212,6 +212,8 @@ let start = (~persistenceEngine=?, ()) => {
 
 let dispatch = (ActorRef(recipient), msg) => Nact_bindings.dispatch(recipient, msg);
 
+let nobody = () => ActorRef(Nact_bindings.nobody());
+
 exception QueryTimeout(int);
 
 let query = (~timeout: int, ActorRef(recipient), msgF) => {

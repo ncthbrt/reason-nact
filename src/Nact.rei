@@ -101,6 +101,8 @@ let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(systemMsg
 
 let dispatch: (actorRef('msg), 'msg) => unit;
 
+let nobody: unit => actorRef('a);
+
 exception QueryTimeout(int);
 
 let query: (~timeout: int, actorRef('msg), actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);

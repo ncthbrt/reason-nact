@@ -97,6 +97,8 @@ external spawnStateless :
 
 type actor;
 
+[@bs.module "nact/lib/references"] [@bs.val "Nobody"] external nobody : unit => actorRef = "";
+
 [@bs.module "nact/lib/actor"] [@bs.val "Actor"] external actor : actor = "";
 
 [@bs.send] external getSafeTimeout : (actor, int) => int = "getSafeTimeout";

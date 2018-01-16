@@ -8,6 +8,7 @@ var Nact_jsMap        = require("./Nact_jsMap.js");
 var Nact_stringSet    = require("./Nact_stringSet.js");
 var Caml_exceptions   = require("bs-platform/lib/js/caml_exceptions.js");
 var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
+var References        = require("nact/lib/references");
 
 function mapCtx(untypedCtx) {
   return /* record */[
@@ -155,6 +156,10 @@ function dispatch(param, msg) {
   return /* () */0;
 }
 
+function nobody() {
+  return /* ActorRef */[References.Nobody()];
+}
+
 var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
 
 function query(timeout, param, msgF) {
@@ -213,6 +218,7 @@ exports.spawnPersistent              = spawnPersistent;
 exports.stop                         = stop;
 exports.start                        = start;
 exports.dispatch                     = dispatch;
+exports.nobody                       = nobody;
 exports.QueryTimeout                 = QueryTimeout;
 exports.query                        = query;
 exports.milliseconds                 = milliseconds;
