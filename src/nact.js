@@ -5,10 +5,19 @@ var Curry             = require("bs-platform/lib/js/curry.js");
 var Js_exn            = require("bs-platform/lib/js/js_exn.js");
 var Caml_int32        = require("bs-platform/lib/js/caml_int32.js");
 var Nact_jsMap        = require("./Nact_jsMap.js");
+var Js_primitive      = require("bs-platform/lib/js/js_primitive.js");
 var Nact_stringSet    = require("./Nact_stringSet.js");
 var Caml_exceptions   = require("bs-platform/lib/js/caml_exceptions.js");
 var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
 var References        = require("nact/lib/references");
+
+function defaultTo($$default, opt) {
+  if (opt) {
+    return opt[0];
+  } else {
+    return $$default;
+  }
+}
 
 function mapCtx(untypedCtx) {
   return /* record */[
@@ -22,7 +31,6 @@ function mapCtx(untypedCtx) {
 
 function mapPersistentCtx(untypedCtx) {
   var partial_arg = untypedCtx.persist;
-  var match = untypedCtx.recovering;
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
@@ -30,7 +38,7 @@ function mapPersistentCtx(untypedCtx) {
           /* name */untypedCtx.name,
           /* persist */Curry.__1(partial_arg),
           /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children)),
-          /* recovering */(match == null) ? /* false */0 : match
+          /* recovering */defaultTo(/* false */0, Js_primitive.null_undefined_to_opt(untypedCtx.recovering))
         ];
 }
 
@@ -95,7 +103,7 @@ function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState)
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (possibleState, msg, ctx) {
-    var state = (possibleState == null) ? initialState : possibleState;
+    var state = defaultTo(initialState, (possibleState == null) ? /* None */0 : [possibleState]);
     try {
       return Curry._3(func, state, msg, mapCtx(ctx));
     }
@@ -120,12 +128,12 @@ function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
 }
 
 function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, serializer, stateSerializer, param, func, initialState) {
-  var serializer$1 = serializer ? serializer[0] : (function (prim) {
-        return prim;
-      });
-  var stateSerializer$1 = stateSerializer ? stateSerializer[0] : (function (prim) {
-        return prim;
-      });
+  var serializer$1 = defaultTo((function (prim) {
+          return prim;
+        }), serializer);
+  var stateSerializer$1 = defaultTo((function (prim) {
+          return prim;
+        }), stateSerializer);
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     snapshotEvery: Js_null_undefined.from_opt(snapshotEvery),

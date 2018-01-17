@@ -2,6 +2,12 @@ module StringSet = Nact_stringSet;
 
 open Js.Promise;
 
+let defaultTo = (default, opt) =>
+  switch opt {
+  | Some(opt) => opt
+  | None => default
+  };
+
 type persistenceEngine = Nact_bindings.persistenceEngine;
 
 type actorPath =
@@ -43,11 +49,7 @@ let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
-  recovering:
-    switch (untypedCtx##recovering |> Js.Nullable.to_opt) {
-    | Some(b) => b
-    | None => false
-    },
+  recovering: untypedCtx##recovering |> Js.Nullable.to_opt |> defaultTo(false),
   persist: mapPersist(untypedCtx##persist),
   children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray
 };
@@ -130,11 +132,7 @@ let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), f
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
   let f = (possibleState, msg, ctx) => {
-    let state =
-      switch (Js.Nullable.to_opt(possibleState)) {
-      | None => initialState
-      | Some(concreteState) => concreteState
-      };
+    let state = Js.Nullable.to_opt(possibleState) |> defaultTo(initialState);
     try (func(state, msg, mapCtx(ctx))) {
     | err => reject(err)
     }
@@ -168,16 +166,8 @@ let spawnPersistent =
       func: ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state),
       initialState: 'state
     ) => {
-  let serializer =
-    switch serializer {
-    | Some(serializer) => serializer
-    | None => unsafeCast
-    };
-  let stateSerializer =
-    switch stateSerializer {
-    | Some(serializer) => serializer
-    | None => unsafeCast
-    };
+  let serializer = serializer |> defaultTo(unsafeCast);
+  let stateSerializer = stateSerializer |> defaultTo(unsafeCast);
   let options: Nact_bindings.persistentActorOptions = {
     "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
     "snapshotEvery": Js.Nullable.from_opt(snapshotEvery),
