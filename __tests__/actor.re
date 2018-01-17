@@ -583,33 +583,24 @@ describe(
     testPromise(
       "can stop",
       () => {
-        let stop = (_, ctx) => {
-          ctx.self <-< ChildHasFaulted;
-          resolve(Stop)
-        };
+        let stop = (_, ctx) => resolve(Stop);
         let system = start();
         let parent =
-          spawn(
+          spawnStateless(
             ~whenChildCrashes=stop,
             system,
-            (grandchildHasFaulted, msg, _) =>
-              switch msg {
-              | ChildHasFaulted => ?:true
-              | HasChildFaulted(sender) =>
-                sender <-< grandchildHasFaulted;
-                ?:grandchildHasFaulted
-              },
-            false
+            (sender, {children}) => resolve(sender <-< Nact.StringSet.cardinal(children))
           );
         let child = spawnBrokenCalculator(parent);
         let loggerActor = spawnLoggerActor(system);
-        child <-< (loggerActor, Add((-5)));
-        child <-< (loggerActor, Add(5));
-        delay(40)
+        query(~timeout=100 * milliseconds, parent, (temp) => temp)
+        >=> ((result) => resolve(expect(result) |> toEqual(1)))
+        >=> ((_) => resolve(child <-< (loggerActor, Add((-5)))))
+        >=> (() => delay(40))
         >=> (
           () =>
-            query(~timeout=100 * milliseconds, parent, (temp) => HasChildFaulted(temp))
-            >=> ((result) => ?:(expect(result) |> toEqual(true)))
+            query(~timeout=100 * milliseconds, parent, (temp) => temp)
+            >=> ((result) => ?:(expect(result) |> toEqual(0)))
         )
       }
     );

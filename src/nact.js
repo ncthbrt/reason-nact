@@ -90,7 +90,6 @@ function useStatefulSupervisionPolicy(f, initialState) {
 }
 
 function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState) {
-  var parent = param[0];
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
@@ -104,12 +103,11 @@ function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState)
       return Promise.reject(Js_exn.internalToOCamlException(raw_err));
     }
   };
-  var untypedRef = name ? Nact.spawn(parent, f, name[0], options) : Nact.spawn(parent, f, undefined, options);
+  var untypedRef = Nact.spawn(param[0], f, Js_null_undefined.from_opt(name), options);
   return /* ActorRef */[untypedRef];
 }
 
 function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
-  var parent = param[0];
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
@@ -117,12 +115,11 @@ function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
   var f = function (msg, ctx) {
     return Curry._2(func, msg, mapCtx(ctx));
   };
-  var untypedRef = name ? Nact.spawnStateless(parent, f, name[0], options) : Nact.spawnStateless(parent, f, undefined, options);
+  var untypedRef = Nact.spawnStateless(param[0], f, Js_null_undefined.from_opt(name), options);
   return /* ActorRef */[untypedRef];
 }
 
 function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, serializer, stateSerializer, param, func, initialState) {
-  var parent = param[0];
   var serializer$1 = serializer ? serializer[0] : (function (prim) {
         return prim;
       });
@@ -143,7 +140,7 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrash
       return Promise.reject(Js_exn.internalToOCamlException(raw_err));
     }
   };
-  var untypedRef = name ? Nact.spawnPersistent(parent, f, key, name[0], options) : Nact.spawnPersistent(parent, f, key, undefined, options);
+  var untypedRef = Nact.spawnPersistent(param[0], f, key, Js_null_undefined.from_opt(name), options);
   return /* ActorRef */[untypedRef];
 }
 

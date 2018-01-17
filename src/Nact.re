@@ -139,12 +139,7 @@ let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), f
     | err => reject(err)
     }
   };
-  let untypedRef =
-    switch name {
-    | Some(concreteName) =>
-      Nact_bindings.spawn(parent, f, Js.Nullable.return(concreteName), options)
-    | None => Nact_bindings.spawn(parent, f, Js.Nullable.undefined, options)
-    };
+  let untypedRef = Nact_bindings.spawn(parent, f, Js.Nullable.from_opt(name), options);
   ActorRef(untypedRef)
 };
 
@@ -154,12 +149,7 @@ let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(p
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
   let f = (msg, ctx) => func(msg, mapCtx(ctx));
-  let untypedRef =
-    switch name {
-    | Some(concreteName) =>
-      Nact_bindings.spawnStateless(parent, f, Js.Nullable.return(concreteName), options)
-    | None => Nact_bindings.spawnStateless(parent, f, Js.Nullable.undefined, options)
-    };
+  let untypedRef = Nact_bindings.spawnStateless(parent, f, Js.Nullable.from_opt(name), options);
   ActorRef(untypedRef)
 };
 
@@ -204,11 +194,7 @@ let spawnPersistent =
     }
   };
   let untypedRef =
-    switch name {
-    | Some(concreteName) =>
-      Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.return(concreteName), options)
-    | None => Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.undefined, options)
-    };
+    Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.from_opt(name), options);
   ActorRef(untypedRef)
 };
 
