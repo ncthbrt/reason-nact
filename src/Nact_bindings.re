@@ -32,15 +32,14 @@ type ctx = {
   "children": Nact_jsMap.t(string, actorRef)
 };
 
-type persistentCtx('msgType) = {
+type persistentCtx('msg) = {
   .
-  "sender": Js.nullable(actorRef),
   "parent": actorRef,
   "path": actorPath,
   "self": actorRef,
   "name": string,
   "children": Nact_jsMap.t(string, actorRef),
-  "persist": 'msgType => Js.Promise.t(unit),
+  "persist": 'msg => Js.Promise.t(unit),
   "recovering": Js.Nullable.t(bool)
 };
 
@@ -50,7 +49,7 @@ type statefulActor('state, 'msgType) =
 type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 
 type persistentActor('state, 'msgType) =
-  (Js.nullable('state), 'msgType, persistentCtx('msgType)) => Js.Promise.t('state);
+  (Js.nullable(Js.Json.t), Js.Json.t, persistentCtx('msgType)) => Js.Promise.t('state);
 
 type supervisionAction;
 

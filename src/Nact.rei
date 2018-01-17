@@ -87,6 +87,8 @@ let spawnPersistent:
     ~shutdownAfter: int=?,
     ~snapshotEvery: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
+    ~serializer: Js.Json.t => 'msg=?,
+    ~stateSerializer: Js.Json.t => 'state=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state

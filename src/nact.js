@@ -121,17 +121,23 @@ function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, param, func, initialState) {
+function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, serializer, stateSerializer, param, func, initialState) {
   var parent = param[0];
+  var serializer$1 = serializer ? serializer[0] : (function (prim) {
+        return prim;
+      });
+  var stateSerializer$1 = stateSerializer ? stateSerializer[0] : (function (prim) {
+        return prim;
+      });
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     snapshotEvery: Js_null_undefined.from_opt(snapshotEvery),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
-  var f = function (possibleState, msg, ctx) {
-    var state = (possibleState == null) ? initialState : possibleState;
+  var f = function (state, msg, ctx) {
+    var state$1 = (state == null) ? initialState : Curry._1(stateSerializer$1, state);
     try {
-      return Curry._3(func, state, msg, mapPersistentCtx(ctx));
+      return Curry._3(func, state$1, Curry._1(serializer$1, msg), mapPersistentCtx(ctx));
     }
     catch (raw_err){
       return Promise.reject(Js_exn.internalToOCamlException(raw_err));

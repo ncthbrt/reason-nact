@@ -1,5 +1,7 @@
 module StringSet = Nact_stringSet;
 
+open Js.Promise;
+
 type persistenceEngine = Nact_bindings.persistenceEngine;
 
 type actorPath =
@@ -89,9 +91,9 @@ let mapSupervisionFunction = (optionalF) =>
     Js.Nullable.return(
       (_, err, ctx) =>
         f(err, mapSupervisionCtx(ctx))
-        |> Js.Promise.then_(
+        |> then_(
              (decision) =>
-               (
+               resolve(
                  switch decision {
                  | Stop => ctx##stop
                  | StopAll => ctx##stopAll
@@ -101,7 +103,6 @@ let mapSupervisionFunction = (optionalF) =>
                  | Resume => ctx##resume
                  }
                )
-               |> Js.Promise.resolve
            )
     )
   };
@@ -135,7 +136,7 @@ let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), f
       | Some(concreteState) => concreteState
       };
     try (func(state, msg, mapCtx(ctx))) {
-    | err => Js.Promise.reject(err)
+    | err => reject(err)
     }
   };
   let untypedRef =
@@ -162,6 +163,8 @@ let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(p
   ActorRef(untypedRef)
 };
 
+external unsafeCast : Js.Json.t => 'msg = "%identity";
+
 let spawnPersistent =
     (
       ~key,
@@ -169,23 +172,35 @@ let spawnPersistent =
       ~shutdownAfter=?,
       ~snapshotEvery=?,
       ~whenChildCrashes=?,
+      ~serializer=?,
+      ~stateSerializer=?,
       ActorRef(parent),
-      func,
-      initialState
+      func: ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state),
+      initialState: 'state
     ) => {
+  let serializer =
+    switch serializer {
+    | Some(serializer) => serializer
+    | None => unsafeCast
+    };
+  let stateSerializer =
+    switch stateSerializer {
+    | Some(serializer) => serializer
+    | None => unsafeCast
+    };
   let options: Nact_bindings.persistentActorOptions = {
     "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
     "snapshotEvery": Js.Nullable.from_opt(snapshotEvery),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
-  let f = (possibleState, msg, ctx) => {
+  let f = (state, msg, ctx) => {
     let state =
-      switch (Js.Null_undefined.to_opt(possibleState)) {
+      switch (Js.Nullable.to_opt(state)) {
       | None => initialState
-      | Some(concreteState) => concreteState
+      | Some(state) => stateSerializer(state)
       };
-    try (func(state, msg, mapPersistentCtx(ctx))) {
-    | err => Js.Promise.reject(err)
+    try (func(state, serializer(msg), mapPersistentCtx(ctx))) {
+    | err => reject(err)
     }
   };
   let untypedRef =
@@ -218,8 +233,7 @@ exception QueryTimeout(int);
 
 let query = (~timeout: int, ActorRef(recipient), msgF) => {
   let f = (tempReference) => msgF(ActorRef(tempReference));
-  Nact_bindings.query(recipient, f, timeout)
-  |> Js.Promise.catch((_) => Js.Promise.reject(QueryTimeout(timeout)))
+  Nact_bindings.query(recipient, f, timeout) |> catch((_) => reject(QueryTimeout(timeout)))
 };
 
 let milliseconds = 1;

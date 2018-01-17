@@ -6,10 +6,14 @@ open Nact.Operators;
 
 open Nact;
 
+open Js.Global;
+
+open Js.Promise;
+
 let delay: int => Js.Promise.t(unit) =
   (ms) =>
     Js.Promise.make(
-      (~resolve, ~reject as _) => Js.Global.setTimeout(() => [@bs] resolve((): unit), ms) |> ignore
+      (~resolve, ~reject as _) => setTimeout(() => [@bs] resolve((): unit), ms) |> ignore
     );
 
 module StringCompare = {
@@ -23,11 +27,11 @@ module StringMap = Map.Make(StringCompare);
 external createMockPersistenceEngine : unit => persistenceEngine =
   "MockPersistenceEngine";
 
-let (?:) = (v) => Js.Promise.resolve(v);
+let (?:) = (v) => resolve(v);
 
-let (>=>) = (promise1, promise2) => Js.Promise.then_(promise2, promise1);
+let (>=>) = (promise1, promise2) => then_(promise2, promise1);
 
-let (>/=>) = (promise1, promise2) => Js.Promise.catch(promise2, promise1);
+let (>/=>) = (promise1, promise2) => catch(promise2, promise1);
 
 exception NumberLessThanZeroException(int);
 
@@ -38,7 +42,7 @@ let resetIfNumberLessThanZeroException = (err, _) =>
     | _ => Stop
     }
   )
-  |> Js.Promise.resolve;
+  |> resolve;
 
 type statefulTestActorMsgType =
   | Add(int)
@@ -48,15 +52,13 @@ let spawnBrokenCalculator = (parent) =>
   spawn(
     parent,
     (total, (sender, msg), _) =>
-      (
-        switch msg {
-        | Add(number) => number > 0 ? total + number : raise(NumberLessThanZeroException(number))
-        | GetTotal =>
-          total >-> sender;
-          total
-        }
-      )
-      |> Js.Promise.resolve,
+      switch msg {
+      | Add(number) when number > 0 => resolve(total + number)
+      | Add(number) => raise(NumberLessThanZeroException(number))
+      | GetTotal =>
+        total >-> sender;
+        resolve(total)
+      },
     0
   );
 
@@ -74,10 +76,9 @@ type supervisionMsg('a) =
 
 exception TragicException;
 
-let spawnLoggerActor = (parent) =>
-  spawnStateless(parent, (msg, _) => Js.log(msg) |> Js.Promise.resolve);
+let spawnLoggerActor = (parent) => spawnStateless(parent, (msg, _) => Js.log(msg) |> resolve);
 
-  let echoHello = (temp) => (temp, Echo("hello"));
+let echoHello = (temp) => (temp, Echo("hello"));
 
 describe(
   "Stateless Actor",
@@ -97,9 +98,8 @@ describe(
                 }
               )
           );
-        let queryPromise =
-          query(~timeout=30 * milliseconds, actor, echoHello);
-        queryPromise >=> ((result) => expect(result) |> toBe("hello") |> Js.Promise.resolve)
+        let queryPromise = query(~timeout=30 * milliseconds, actor, echoHello);
+        queryPromise >=> ((result) => expect(result) |> toBe("hello") |> resolve)
       }
     );
     testPromise(
@@ -122,8 +122,8 @@ describe(
         >=> (
           (_) =>
             query(~timeout=30 * milliseconds, actor, echoHello)
-            >=> ((_) => fail("Query should not be have resolved") |> Js.Promise.resolve)
-            >/=> ((_) => pass |> Js.Promise.resolve)
+            >=> ((_) => fail("Query should not be have resolved") |> resolve)
+            >/=> ((_) => pass |> resolve)
         )
       }
     );
@@ -143,11 +143,10 @@ describe(
               )
           );
         stop(actor);
-        let queryPromise =
-          actor <? (echoHello, 30 * milliseconds);
+        let queryPromise = actor <? (echoHello, 30 * milliseconds);
         queryPromise
-        >=> ((_) => fail("Query should not be have resolved") |> Js.Promise.resolve)
-        >/=> ((_) => pass |> Js.Promise.resolve)
+        >=> ((_) => fail("Query should not be have resolved") |> resolve)
+        >/=> ((_) => pass |> resolve)
       }
     );
     testPromise(
@@ -168,8 +167,8 @@ describe(
           );
         let queryPromise = query(~timeout=20 * milliseconds, actor, (temp) => (temp, Ignore));
         queryPromise
-        >=> ((_) => fail("Query should not be have resolved") |> Js.Promise.resolve)
-        >/=> ((_) => pass |> Js.Promise.resolve)
+        >=> ((_) => fail("Query should not be have resolved") |> resolve)
+        >/=> ((_) => pass |> resolve)
       }
     );
     testPromise(
@@ -180,7 +179,7 @@ describe(
           spawnStateless(
             ~whenChildCrashes=resetIfNumberLessThanZeroException,
             system,
-            ((), _) => Js.Promise.resolve()
+            ((), _) => resolve()
           );
         let child = spawnBrokenCalculator(parent);
         let loggerActor = spawnLoggerActor(system);
@@ -220,6 +219,7 @@ describe(
     )
   }
 );
+
 describe(
   "Stateful Actor",
   () => {
@@ -242,7 +242,7 @@ describe(
               ),
             0
           );
-        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
+        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
         actor <-< (loggerActor, Add(5));
         actor <-< (loggerActor, Add(10));
         let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
@@ -265,7 +265,7 @@ describe(
                   total
                 }
               )
-              |> Js.Promise.resolve,
+              |> resolve,
             0
           );
         let parent =
@@ -299,7 +299,7 @@ describe(
           spawn(
             ~whenChildCrashes=resetIfNumberLessThanZeroException,
             system,
-            ((), (), _) => Js.Promise.resolve(),
+            ((), (), _) => resolve(),
             ()
           );
         let child = spawnBrokenCalculator(parent);
@@ -336,11 +336,11 @@ describe(
               ),
             0
           );
-        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
+        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
         actor <-< (loggerActor, Add(5));
         actor <-< (loggerActor, Add(10));
         let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
-        queryPromise >=> ((result) => expect(result) |> toBe(15) |> Js.Promise.resolve)
+        queryPromise >=> ((result) => expect(result) |> toBe(15) |> resolve)
       }
     );
     testPromise(
@@ -358,7 +358,7 @@ describe(
               | Add(number) =>
                 /* Don't add if recovering we want to test snapshotting in particular */
                 let numberToAdd = ctx.recovering ? 0 : number;
-                ctx.persist((sender, msg)) >=> ((_) => Js.Promise.resolve(total + numberToAdd))
+                ctx.persist((sender, msg)) >=> ((_) => resolve(total + numberToAdd))
               | GetTotal =>
                 total >-> sender;
                 ?:total
@@ -366,7 +366,7 @@ describe(
             0
           );
         let actorInstance1 = spawnActor();
-        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> Js.Promise.resolve);
+        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
         actorInstance1 <-< (loggerActor, Add(5));
         actorInstance1 <-< (loggerActor, Add(10));
         actorInstance1 <-< (loggerActor, Add(10));
@@ -377,7 +377,7 @@ describe(
             let actorInstance2 = spawnActor();
             let queryPromise =
               query(~timeout=30 * milliseconds, actorInstance2, (temp) => (temp, GetTotal));
-            queryPromise >=> ((result) => expect(result) |> toBe(15) |> Js.Promise.resolve)
+            queryPromise >=> ((result) => expect(result) |> toBe(15) |> resolve)
           }
         )
       }
@@ -395,7 +395,7 @@ describe(
               switch msg {
               | Add(number) =>
                 /* Don't add if recovering we want to test snapshotting in particular */
-                ctx.persist((sender, msg)) >=> ((_) => Js.Promise.resolve(total + number))
+                ctx.persist((sender, msg)) >=> ((_) => resolve(total + number))
               | GetTotal =>
                 total >-> sender;
                 ?:total
@@ -428,7 +428,7 @@ describe(
             ~key="parent",
             ~whenChildCrashes=resetIfNumberLessThanZeroException,
             system,
-            (__, (), _) => Js.Promise.resolve(true),
+            (__, (), _) => resolve(true),
             true
           );
         let child = spawnBrokenCalculator(parent);
@@ -446,14 +446,14 @@ describe(
         let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
         let dispatchToSelfThatChildHasFaulted = (_, ctx) => {
           ctx.self <-< ChildHasFaulted;
-          Js.Promise.resolve(Stop)
+          resolve(Stop)
         };
         let parent =
           spawn(
             ~whenChildCrashes=dispatchToSelfThatChildHasFaulted,
             system,
             (hasFaulted, msg, _) =>
-              Js.Promise.resolve(
+              resolve(
                 switch msg {
                 | HasChildFaulted(sender) =>
                   sender <-< hasFaulted;
@@ -500,14 +500,14 @@ describe(
         let system = start();
         let resetIfFailureHasOcurredMoreThanOnce =
           useStatefulSupervisionPolicy(
-            (_, state, __) => (state + 1, Js.Promise.resolve(state > 0 ? Reset : Resume)),
+            (_, state, __) => (state + 1, resolve(state > 0 ? Reset : Resume)),
             0
           );
         let parent =
           spawn(
             ~whenChildCrashes=resetIfFailureHasOcurredMoreThanOnce,
             system,
-            (__, (), _) => Js.Promise.resolve(true),
+            (__, (), _) => resolve(true),
             true
           );
         let child = spawnBrokenCalculator(parent);
@@ -530,10 +530,10 @@ describe(
     testPromise(
       "can escalate",
       () => {
-        let escalate = (_, __) => Js.Promise.resolve(Escalate);
+        let escalate = (_, __) => resolve(Escalate);
         let dispatchToSelfThatChildHasFaulted = (_, ctx) => {
           ctx.self <-< ChildHasFaulted;
-          Js.Promise.resolve(Stop)
+          resolve(Stop)
         };
         let system = start();
         let grandparent =
@@ -541,7 +541,7 @@ describe(
             ~whenChildCrashes=dispatchToSelfThatChildHasFaulted,
             system,
             (grandchildHasFaulted, msg, _) =>
-              Js.Promise.resolve(
+              resolve(
                 switch msg {
                 | ChildHasFaulted => true
                 | HasChildFaulted(sender) =>
@@ -551,8 +551,7 @@ describe(
               ),
             false
           );
-        let parent =
-          spawn(~whenChildCrashes=escalate, grandparent, ((), (), _) => Js.Promise.resolve(), ());
+        let parent = spawn(~whenChildCrashes=escalate, grandparent, ((), (), _) => resolve(), ());
         let child = spawnBrokenCalculator(parent);
         let loggerActor = spawnLoggerActor(system);
         child <-< (loggerActor, Add((-5)));
@@ -569,10 +568,9 @@ describe(
     testPromise(
       "can resume",
       () => {
-        let resume = (_, __) => Js.Promise.resolve(Resume);
+        let resume = (_, __) => resolve(Resume);
         let system = start();
-        let parent =
-          spawn(~whenChildCrashes=resume, system, ((), (), _) => Js.Promise.resolve(), ());
+        let parent = spawn(~whenChildCrashes=resume, system, ((), (), _) => resolve(), ());
         let child = spawnBrokenCalculator(parent);
         let loggerActor = spawnLoggerActor(system);
         child <-< (loggerActor, Add(5));
@@ -587,7 +585,7 @@ describe(
       () => {
         let stop = (_, ctx) => {
           ctx.self <-< ChildHasFaulted;
-          Js.Promise.resolve(Stop)
+          resolve(Stop)
         };
         let system = start();
         let parent =
@@ -595,22 +593,21 @@ describe(
             ~whenChildCrashes=stop,
             system,
             (grandchildHasFaulted, msg, _) =>
-              Js.Promise.resolve(
-                switch msg {
-                | ChildHasFaulted => true
-                | HasChildFaulted(sender) =>
-                  sender <-< grandchildHasFaulted;
-                  grandchildHasFaulted
-                }
-              ),
+              switch msg {
+              | ChildHasFaulted => ?:true
+              | HasChildFaulted(sender) =>
+                sender <-< grandchildHasFaulted;
+                ?:grandchildHasFaulted
+              },
             false
           );
         let child = spawnBrokenCalculator(parent);
         let loggerActor = spawnLoggerActor(system);
         child <-< (loggerActor, Add((-5)));
-        delay(30)
+        child <-< (loggerActor, Add(5));
+        delay(40)
         >=> (
-          (_) =>
+          () =>
             query(~timeout=100 * milliseconds, parent, (temp) => HasChildFaulted(temp))
             >=> ((result) => ?:(expect(result) |> toEqual(true)))
         )
@@ -619,14 +616,13 @@ describe(
     testPromise(
       "can stopAll",
       () => {
-        let stopAll = (_, __) => Js.Promise.resolve(StopAll);
+        let stopAll = (_, __) => resolve(StopAll);
         let system = start();
         let parent =
           spawnStateless(
             ~whenChildCrashes=stopAll,
             system,
-            (sender, {children}) =>
-              Js.Promise.resolve(sender <-< Nact.StringSet.cardinal(children))
+            (sender, {children}) => resolve(sender <-< Nact.StringSet.cardinal(children))
           );
         let child1 = spawnBrokenCalculator(parent);
         let child2 = spawnBrokenCalculator(parent);
@@ -644,10 +640,9 @@ describe(
     testPromise(
       "can reset",
       () => {
-        let reset = (_, __) => Js.Promise.resolve(Reset);
+        let reset = (_, __) => resolve(Reset);
         let system = start();
-        let parent =
-          spawn(~whenChildCrashes=reset, system, ((), (), _) => Js.Promise.resolve(), ());
+        let parent = spawn(~whenChildCrashes=reset, system, ((), (), _) => resolve(), ());
         let child = spawnBrokenCalculator(parent);
         let loggerActor = spawnLoggerActor(system);
         child <-< (loggerActor, Add(5));
@@ -660,14 +655,13 @@ describe(
     testPromise(
       "can resetAll",
       () => {
-        let resetAll = (_, __) => Js.Promise.resolve(ResetAll);
+        let resetAll = (_, __) => resolve(ResetAll);
         let system = start();
         let parent =
           spawnStateless(
             ~whenChildCrashes=resetAll,
             system,
-            (sender, {children}) =>
-              Js.Promise.resolve(sender <-< Nact.StringSet.cardinal(children))
+            (sender, {children}) => resolve(sender <-< Nact.StringSet.cardinal(children))
           );
         let child1 = spawnBrokenCalculator(parent);
         let child2 = spawnBrokenCalculator(parent);

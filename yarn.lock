@@ -585,10 +585,6 @@ deep-extend@~0.4.0:
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/deep-extend/-/deep-extend-0.4.2.tgz#48b699c27e334bf89f10892be432f6e4c7d34a7f"
 
-deep-freeze-node@^1.1.3:
-  version "1.1.3"
-  resolved "https://registry.yarnpkg.com/deep-freeze-node/-/deep-freeze-node-1.1.3.tgz#ce9c14b3210e6f5607a578254f4b53fe01dd9467"
-
 deep-is@~0.1.3:
   version "0.1.3"
   resolved "https://registry.yarnpkg.com/deep-is/-/deep-is-0.1.3.tgz#b369d6fb5dbc13eecf524f91b070feedc357cf34"
@@ -1727,11 +1723,10 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-nact@^4.3.0:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/nact/-/nact-4.3.0.tgz#e2856ad316d95d1cc33fcb6a19ab07e60568f0a4"
+nact@^4.4.1:
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/nact/-/nact-4.4.1.tgz#c8e8686cc15b7cecfd59c6d515e00fd7b2839372"
   dependencies:
-    deep-freeze-node "^1.1.3"
     denque "^1.2.2"
     rxjs "^5.4.3"
 
