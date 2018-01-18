@@ -2,6 +2,8 @@ module StringSet = Nact_stringSet;
 
 open Js.Promise;
 
+open Js.Nullable;
+
 let defaultTo = (default, opt) =>
   switch opt {
   | Some(opt) => opt
@@ -126,32 +128,46 @@ let useStatefulSupervisionPolicy = (f, initialState) => {
   }
 };
 
-let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func, initialState) => {
+external unsafeDecoder : Js.Json.t => 'msg = "%identity";
+
+external unsafeEncoder : 'msg => Js.Json.t = "%identity";
+
+let spawn =
+    (
+      ~name=?,
+      ~shutdownAfter=?,
+      ~whenChildCrashes=?,
+      ~decoder=?,
+      ActorRef(parent),
+      func,
+      initialState
+    ) => {
   let options = {
-    "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
+    "shutdownAfter": from_opt(shutdownAfter),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
+  let decoder = decoder |> defaultTo(unsafeDecoder);
   let f = (possibleState, msg, ctx) => {
     let state = Js.Nullable.to_opt(possibleState) |> defaultTo(initialState);
-    try (func(state, msg, mapCtx(ctx))) {
+    try (func(state, decoder(msg), mapCtx(ctx))) {
     | err => reject(err)
     }
   };
-  let untypedRef = Nact_bindings.spawn(parent, f, Js.Nullable.from_opt(name), options);
+  let untypedRef = Nact_bindings.spawn(parent, f, from_opt(name), options);
   ActorRef(untypedRef)
 };
 
-let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func) => {
+let spawnStateless =
+    (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ~decoder=?, ActorRef(parent), func) => {
   let options = {
-    "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
+    "shutdownAfter": from_opt(shutdownAfter),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
-  let f = (msg, ctx) => func(msg, mapCtx(ctx));
-  let untypedRef = Nact_bindings.spawnStateless(parent, f, Js.Nullable.from_opt(name), options);
+  let decoder = decoder |> defaultTo(unsafeDecoder);
+  let f = (msg, ctx) => func(decoder(msg), mapCtx(ctx));
+  let untypedRef = Nact_bindings.spawnStateless(parent, f, from_opt(name), options);
   ActorRef(untypedRef)
 };
-
-external unsafeCast : Js.Json.t => 'msg = "%identity";
 
 let spawnPersistent =
     (
@@ -160,33 +176,38 @@ let spawnPersistent =
       ~shutdownAfter=?,
       ~snapshotEvery=?,
       ~whenChildCrashes=?,
-      ~serializer=?,
-      ~stateSerializer=?,
+      ~decoder=?,
+      ~stateDecoder=?,
+      ~stateEncoder=?,
       ActorRef(parent),
       func: ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state),
       initialState: 'state
     ) => {
-  let serializer = serializer |> defaultTo(unsafeCast);
-  let stateSerializer = stateSerializer |> defaultTo(unsafeCast);
+  let decoder = decoder |> defaultTo(unsafeDecoder);
+  let stateDecoder = stateDecoder |> defaultTo(unsafeDecoder);
+  let stateEncoder = stateEncoder |> defaultTo(unsafeEncoder);
   let options: Nact_bindings.persistentActorOptions = {
-    "shutdownAfter": Js.Nullable.from_opt(shutdownAfter),
-    "snapshotEvery": Js.Nullable.from_opt(snapshotEvery),
+    "shutdownAfter": from_opt(shutdownAfter),
+    "snapshotEvery": from_opt(snapshotEvery),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
   let f = (state, msg, ctx) => {
     let state =
       switch (Js.Nullable.to_opt(state)) {
       | None => initialState
-      | Some(state) => stateSerializer(state)
+      | Some(state) => stateDecoder(state)
       };
-    try (func(state, serializer(msg), mapPersistentCtx(ctx))) {
-    | err => reject(err)
-    }
+    (
+      try (func(state, decoder(msg), mapPersistentCtx(ctx))) {
+      | err => reject(err)
+      }
+    )
+    |> then_((result) => resolve(stateEncoder(result)))
   };
-  let untypedRef =
-    Nact_bindings.spawnPersistent(parent, f, key, Js.Nullable.from_opt(name), options);
+  let untypedRef = Nact_bindings.spawnPersistent(parent, f, key, from_opt(name), options);
   ActorRef(untypedRef)
 };
+
 
 let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
 
@@ -202,6 +223,10 @@ let start = (~persistenceEngine=?, ()) => {
 };
 
 let dispatch = (ActorRef(recipient), msg) => Nact_bindings.dispatch(recipient, msg);
+
+let spawnAdapter = (parent, mapping) => 
+  spawnStateless(parent, (msg, _) => resolve(dispatch(parent, mapping(msg))));
+
 
 let nobody = () => ActorRef(Nact_bindings.nobody());
 

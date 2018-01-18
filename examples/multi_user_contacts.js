@@ -103,7 +103,7 @@ function findContact(param, sender, contactId) {
 var system = Nact.start(/* None */0, /* () */0);
 
 function createContactsService(parent, userId) {
-  return Nact.spawn(/* Some */[userId], /* None */0, /* None */0, parent, (function (state, param, _) {
+  return Nact.spawn(/* Some */[userId], /* None */0, /* None */0, /* None */0, parent, (function (state, param, _) {
                 var msg = param[1];
                 var sender = param[0];
                 var tmp;
@@ -129,7 +129,7 @@ function createContactsService(parent, userId) {
             ]);
 }
 
-var contactsService = Nact.spawn(/* None */0, /* None */0, /* None */0, system, (function (children, param, ctx) {
+var contactsService = Nact.spawn(/* None */0, /* None */0, /* None */0, /* None */0, system, (function (children, param, ctx) {
         var msg = param[2];
         var userId = param[1];
         var sender = param[0];

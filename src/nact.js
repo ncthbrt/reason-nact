@@ -97,15 +97,18 @@ function useStatefulSupervisionPolicy(f, initialState) {
     });
 }
 
-function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState) {
+function spawn(name, shutdownAfter, whenChildCrashes, decoder, param, func, initialState) {
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
+  var decoder$1 = defaultTo((function (prim) {
+          return prim;
+        }), decoder);
   var f = function (possibleState, msg, ctx) {
     var state = defaultTo(initialState, (possibleState == null) ? /* None */0 : [possibleState]);
     try {
-      return Curry._3(func, state, msg, mapCtx(ctx));
+      return Curry._3(func, state, Curry._1(decoder$1, msg), mapCtx(ctx));
     }
     catch (raw_err){
       return Promise.reject(Js_exn.internalToOCamlException(raw_err));
@@ -115,38 +118,48 @@ function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState)
   return /* ActorRef */[untypedRef];
 }
 
-function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
+function spawnStateless(name, shutdownAfter, whenChildCrashes, decoder, param, func) {
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
+  var decoder$1 = defaultTo((function (prim) {
+          return prim;
+        }), decoder);
   var f = function (msg, ctx) {
-    return Curry._2(func, msg, mapCtx(ctx));
+    return Curry._2(func, Curry._1(decoder$1, msg), mapCtx(ctx));
   };
   var untypedRef = Nact.spawnStateless(param[0], f, Js_null_undefined.from_opt(name), options);
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, serializer, stateSerializer, param, func, initialState) {
-  var serializer$1 = defaultTo((function (prim) {
+function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, decoder, stateDecoder, stateEncoder, param, func, initialState) {
+  var decoder$1 = defaultTo((function (prim) {
           return prim;
-        }), serializer);
-  var stateSerializer$1 = defaultTo((function (prim) {
+        }), decoder);
+  var stateDecoder$1 = defaultTo((function (prim) {
           return prim;
-        }), stateSerializer);
+        }), stateDecoder);
+  var stateEncoder$1 = defaultTo((function (prim) {
+          return prim;
+        }), stateEncoder);
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     snapshotEvery: Js_null_undefined.from_opt(snapshotEvery),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (state, msg, ctx) {
-    var state$1 = (state == null) ? initialState : Curry._1(stateSerializer$1, state);
+    var state$1 = (state == null) ? initialState : Curry._1(stateDecoder$1, state);
+    var tmp;
     try {
-      return Curry._3(func, state$1, Curry._1(serializer$1, msg), mapPersistentCtx(ctx));
+      tmp = Curry._3(func, state$1, Curry._1(decoder$1, msg), mapPersistentCtx(ctx));
     }
     catch (raw_err){
-      return Promise.reject(Js_exn.internalToOCamlException(raw_err));
+      tmp = Promise.reject(Js_exn.internalToOCamlException(raw_err));
     }
+    return tmp.then((function (result) {
+                  return Promise.resolve(Curry._1(stateEncoder$1, result));
+                }));
   };
   var untypedRef = Nact.spawnPersistent(param[0], f, key, Js_null_undefined.from_opt(name), options);
   return /* ActorRef */[untypedRef];
@@ -167,8 +180,14 @@ function dispatch(param, msg) {
   return /* () */0;
 }
 
+function spawnAdapter(parent, mapping) {
+  return spawnStateless(/* None */0, /* None */0, /* None */0, /* None */0, parent, (function (msg, _) {
+                return Promise.resolve(dispatch(parent, Curry._1(mapping, msg)));
+              }));
+}
+
 function nobody() {
-  return /* ActorRef */[References.Nobody()];
+  return /* ActorRef */[new References.Nobody()];
 }
 
 var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
@@ -226,6 +245,7 @@ exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
 exports.spawn                        = spawn;
 exports.spawnStateless               = spawnStateless;
 exports.spawnPersistent              = spawnPersistent;
+exports.spawnAdapter                 = spawnAdapter;
 exports.stop                         = stop;
 exports.start                        = start;
 exports.dispatch                     = dispatch;

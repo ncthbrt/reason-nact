@@ -6,9 +6,21 @@ open Nact.Operators;
 
 open Nact;
 
+external unsafeDecoder : Js.Json.t => 'a = "%identity";
+
 open Js.Global;
 
 open Js.Promise;
+
+exception ValueIsNone;
+
+exception DecodingError;
+
+let raiseIfNone = (value) =>
+  switch value {
+  | Some(x) => x
+  | None => raise(ValueIsNone)
+  };
 
 let delay: int => Js.Promise.t(unit) =
   (ms) =>
@@ -62,6 +74,22 @@ let spawnBrokenCalculator = (parent) =>
     0
   );
 
+let spawnCalculator = (parent) =>
+  spawn(
+    parent,
+    (total, (sender, msg), _) =>
+      (
+        switch msg {
+        | Add(number) => total + number
+        | GetTotal =>
+          sender <-< total;
+          total
+        }
+      )
+      |> resolve,
+    0
+  );
+
 type statelessTestActorMsgType =
   | Echo(string)
   | Ignore;
@@ -100,6 +128,31 @@ describe(
           );
         let queryPromise = query(~timeout=30 * milliseconds, actor, echoHello);
         queryPromise >=> ((result) => expect(result) |> toBe("hello") |> resolve)
+      }
+    );
+    testPromise(
+      "can specify a custom decoder",
+      () => {
+        let decoder = (json) =>
+          switch (json |> unsafeDecoder) {
+          | (actor, Add(number)) => (actor, Add(number * 2))
+          | x => x
+          };
+        let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
+        let actor =
+          spawnStateless(
+            ~decoder,
+            system,
+            ((sender, msg), _) =>
+              ?:(
+                switch msg {
+                | Add(number) => sender <-< number
+                | GetTotal => ()
+                }
+              )
+          );
+        let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, Add(5)));
+        queryPromise >=> ((result) => expect(result) |> toBe(10) |> resolve)
       }
     );
     testPromise(
@@ -250,24 +303,38 @@ describe(
       }
     );
     testPromise(
+      "can specify a custom decoder",
+      () => {
+        let decoder = (json) =>
+          switch (json |> unsafeDecoder) {
+          | (actor, Add(number)) => (actor, Add(number * 2))
+          | x => x
+          };
+        let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
+        let actor =
+          spawn(
+            ~decoder,
+            system,
+            (total, (sender, msg), _) =>
+              switch msg {
+              | Add(number) => ?:(total + number)
+              | GetTotal =>
+                total >-> sender;
+                ?:total
+              },
+            0
+          );
+        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
+        actor <-< (loggerActor, Add(5));
+        actor <-< (loggerActor, Add(10));
+        let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
+        queryPromise >=> ((result) => expect(result) |> toBe(30) |> resolve)
+      }
+    );
+    testPromise(
       "can have children",
       () => {
         let system = start();
-        let spawnCalculator = (parent) =>
-          spawn(
-            parent,
-            (total, (sender, msg), _) =>
-              (
-                switch msg {
-                | Add(number) => total + number
-                | GetTotal =>
-                  sender <-< total;
-                  total
-                }
-              )
-              |> resolve,
-            0
-          );
         let parent =
           spawn(
             system,
@@ -341,6 +408,36 @@ describe(
         actor <-< (loggerActor, Add(10));
         let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
         queryPromise >=> ((result) => expect(result) |> toBe(15) |> resolve)
+      }
+    );
+    testPromise(
+      "can specify a custom decoder",
+      () => {
+        let decoder = (json) =>
+          switch (json |> unsafeDecoder) {
+          | (actor, Add(number)) => (actor, Add(number * 2))
+          | x => x
+          };
+        let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
+        let actor =
+          spawnPersistent(
+            ~key="calculator",
+            ~decoder,
+            system,
+            (total, (sender, msg), _) =>
+              switch msg {
+              | Add(number) => ?:(total + number)
+              | GetTotal =>
+                total >-> sender;
+                ?:total
+              },
+            0
+          );
+        let loggerActor = spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
+        actor <-< (loggerActor, Add(5));
+        actor <-< (loggerActor, Add(10));
+        let queryPromise = query(~timeout=30 * milliseconds, actor, (temp) => (temp, GetTotal));
+        queryPromise >=> ((result) => expect(result) |> toBe(30) |> resolve)
       }
     );
     testPromise(
@@ -682,6 +779,48 @@ describe(
             resultPromise >=> ((result) => ?:(expect(result) |> toEqual([|7, 7|])))
           }
         )
+      }
+    )
+  }
+);
+
+describe(
+  "Adapter",
+  () =>
+    testPromise(
+      "it should foward messages to parent",
+      () => {
+        let system = start();
+        let parent = spawnCalculator(system);
+        let adapter = spawnAdapter(parent, (msg) => (nobody(), Add(msg)));
+        adapter <-< 5;
+        adapter <-< 5;
+        delay(10)
+        >=> (() => query(~timeout=100 * milliseconds, parent, (temp) => (temp, GetTotal)))
+        >=> ((result) => ?:(expect(result) |> toEqual(10)))
+      }
+    )
+);
+
+exception QueryShouldNeverResolve;
+
+describe(
+  "Nobody",
+  () => {
+    test(
+      "can dispatch to nobody",
+      () => {
+        let nobody: actorRef(string) = nobody();
+        nobody <-< "hello";
+        pass
+      }
+    );
+    testPromise(
+      "query is rejected when dispatching to nobody",
+      () => {
+        let nobody: actorRef(string) = nobody();
+        let query = nobody <? ((_) => "hello", 10 * milliseconds);
+        query >=> (() => Js.Promise.reject(QueryShouldNeverResolve)) >/=> ((_) => ?:pass)
       }
     )
   }

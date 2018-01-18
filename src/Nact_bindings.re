@@ -44,12 +44,12 @@ type persistentCtx('msg) = {
 };
 
 type statefulActor('state, 'msgType) =
-  (Js.nullable('state), 'msgType, ctx) => Js.Promise.t('state);
+  (Js.nullable('state), Js.Json.t, ctx) => Js.Promise.t('state);
 
-type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
+type statelessActor('msgType) = (Js.Json.t, ctx) => Js.Promise.t(unit);
 
-type persistentActor('state, 'msgType) =
-  (Js.nullable(Js.Json.t), Js.Json.t, persistentCtx('msgType)) => Js.Promise.t('state);
+type persistentActor('msgType) =
+  (Js.nullable(Js.Json.t), Js.Json.t, persistentCtx('msgType)) => Js.Promise.t(Js.Json.t);
 
 type supervisionAction;
 
@@ -96,7 +96,7 @@ external spawnStateless :
 
 type actor;
 
-[@bs.module "nact/lib/references"] [@bs.val "Nobody"] external nobody : unit => actorRef = "";
+[@bs.module "nact/lib/references"] [@bs.new] external nobody : unit => actorRef = "Nobody";
 
 [@bs.module "nact/lib/actor"] [@bs.val "Actor"] external actor : actor = "";
 
@@ -104,13 +104,7 @@ type actor;
 
 [@bs.module "nact"]
 external spawnPersistent :
-  (
-    actorRef,
-    persistentActor('state, 'msgType),
-    string,
-    Js.nullable(string),
-    persistentActorOptions
-  ) =>
+  (actorRef, persistentActor('msgType), string, Js.nullable(string), persistentActorOptions) =>
   actorRef =
   "spawnPersistent";
 

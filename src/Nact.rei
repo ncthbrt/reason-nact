@@ -64,6 +64,7 @@ let spawn:
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
+    ~decoder: Js.Json.t => 'msg=?,
     actorRef('parentMsg),
     statefulActor('state, 'msg, 'parentMsg),
     'state
@@ -75,6 +76,7 @@ let spawnStateless:
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
+    ~decoder: Js.Json.t => 'msg=?,
     actorRef('parentMsg),
     statelessActor('msg, 'parentMsg)
   ) =>
@@ -87,11 +89,19 @@ let spawnPersistent:
     ~shutdownAfter: int=?,
     ~snapshotEvery: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
-    ~serializer: Js.Json.t => 'msg=?,
-    ~stateSerializer: Js.Json.t => 'state=?,
+    ~decoder: Js.Json.t => 'msg=?,
+    ~stateDecoder: Js.Json.t => 'state=?,
+    ~stateEncoder: 'state => Js.Json.t=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state
+  ) =>
+  actorRef('msg);
+
+let spawnAdapter:
+  (    
+    actorRef('parentMsg),
+    'msg => 'parentMsg    
   ) =>
   actorRef('msg);
 
