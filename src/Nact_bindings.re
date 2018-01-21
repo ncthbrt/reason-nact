@@ -22,6 +22,37 @@ type persistenceEngine = {
 
 type actorRef = {. "parent": actorRef, "path": actorPath, "name": string};
 
+module Log = {
+  type logger;
+  [@bs.send]
+  external off : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external trace : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external debug : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external info : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external warn : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external error : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external critical : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external event : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+  [@bs.send]
+  external metrics : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
+    "";
+};
+
 type ctx = {
   .
   "sender": Js.nullable(actorRef),
@@ -29,7 +60,8 @@ type ctx = {
   "path": actorPath,
   "self": actorRef,
   "name": string,
-  "children": Nact_jsMap.t(string, actorRef)
+  "children": Nact_jsMap.t(string, actorRef),
+  "log": Log.logger
 };
 
 type persistentCtx('msg) = {
@@ -40,7 +72,8 @@ type persistentCtx('msg) = {
   "name": string,
   "children": Nact_jsMap.t(string, actorRef),
   "persist": 'msg => Js.Promise.t(unit),
-  "recovering": Js.Nullable.t(bool)
+  "recovering": Js.Nullable.t(bool),
+  "log": Log.logger
 };
 
 type statefulActor('state, 'msgType) =
@@ -112,6 +145,9 @@ type plugin = actorRef => unit;
 
 [@bs.module "nact"] external configurePersistence : persistenceEngine => plugin =
   "configurePersistence";
+
+[@bs.module "nact"] external configureLogging : (actorRef => actorRef) => plugin =
+  "configureLogging";
 
 [@bs.module "nact"] external stop : actorRef => unit = "stop";
 

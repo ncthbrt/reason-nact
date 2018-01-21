@@ -4,14 +4,47 @@ type actorPath;
 
 type persistenceEngine;
 
+type systemMsg;
+
 type actorRef('msg);
+
+module Log: {
+  /* logEngine is an opaque type which dispatches messages to the logging actor */
+  type loggingEngine;
+  type name = string;
+  type logLevel =
+    | Trace
+    | Debug
+    | Info
+    | Warn
+    | Critical;
+  type t =
+    | Message(logLevel, string, Js.Date.t, actorPath)
+    | Error(exn, Js.Date.t, actorPath)
+    | Metrics(string, Js.Date.t, actorPath)
+    | Event(name, Js.Date.t, actorPath);
+  type logger = actorRef(systemMsg) => actorRef(t);
+  let off: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
+  let trace: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
+  let debug: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
+  let info: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
+  let warn: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
+  let error:
+    (~properties: 'properties=?, ~metrics: 'metrics=?, ~exn: exn=?, string, loggingEngine) => unit;
+  let critical: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
+  let event:
+    (~properties: 'properties=?, ~metrics: 'metrics=?, ~name: string, loggingEngine) => unit;
+  let metrics:
+    (~properties: 'properties=?, ~metrics: 'metrics, ~name: string, loggingEngine) => unit;
+};
 
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   path: actorPath,
   self: actorRef('msg),
   children: StringSet.t,
-  name: string
+  name: string,
+  logger: Log.loggingEngine
 };
 
 type persistentCtx('msg, 'parentMsg) = {
@@ -21,7 +54,8 @@ type persistentCtx('msg, 'parentMsg) = {
   name: string,
   persist: 'msg => Js.Promise.t(unit),
   children: StringSet.t,
-  recovering: bool
+  recovering: bool,
+  logger: Log.loggingEngine
 };
 
 type supervisionCtx('msg, 'parentMsg) = {
@@ -98,18 +132,12 @@ let spawnPersistent:
   ) =>
   actorRef('msg);
 
-let spawnAdapter:
-  (    
-    actorRef('parentMsg),
-    'msg => 'parentMsg    
-  ) =>
-  actorRef('msg);
+let spawnAdapter: (actorRef('parentMsg), 'msg => 'parentMsg) => actorRef('msg);
+
+let start:
+  (~persistenceEngine: persistenceEngine=?, ~logger: Log.logger=?, unit) => actorRef(systemMsg);
 
 let stop: actorRef('msg) => unit;
-
-type systemMsg;
-
-let start: (~persistenceEngine: persistenceEngine=?, unit) => actorRef(systemMsg);
 
 let dispatch: (actorRef('msg), 'msg) => unit;
 

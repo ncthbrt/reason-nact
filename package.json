@@ -35,7 +35,7 @@
     "distributed-systems"
   ],
   "devDependencies": {
-    "bs-jest": "^0.2.0",
+    "@glennsl/bs-jest": "^0.3.2",
     "bs-platform": "^2.1.0",
     "coveralls": "^3.0.0",
     "husky": "^0.14.3",
@@ -43,6 +43,6 @@
     "nyc": "^11.3.0"
   },
   "dependencies": {
-    "nact": "^4.4.2"
+    "nact": "^4.4.3"
   }
 }

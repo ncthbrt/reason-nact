@@ -10,6 +10,12 @@ let defaultTo = (default, opt) =>
   | None => default
   };
 
+let mapIfSome = (f, opt) =>
+  switch opt {
+  | Some(value) => Some(f(value))
+  | None => None
+  };
+
 type persistenceEngine = Nact_bindings.persistenceEngine;
 
 type actorPath =
@@ -18,12 +24,66 @@ type actorPath =
 type actorRef('msg) =
   | ActorRef(Nact_bindings.actorRef);
 
+type systemMsg;
+
+module Log = {
+  type message = {message: string};
+  type logger = actorRef(systemMsg) => actorRef(message);
+  open Nact_bindings;
+  type loggingEngine = Nact_bindings.Log.logger;
+  let off = (~properties=?, ~metrics=?, message, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.off(logger, message, properties, metrics)
+  };
+  let trace = (~properties=?, ~metrics=?, message, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.trace(logger, message, properties, metrics)
+  };
+  let debug = (~properties=?, ~metrics=?, message, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.debug(logger, message, properties, metrics)
+  };
+  let info = (~properties=?, ~metrics=?, message, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.info(logger, message, properties, metrics)
+  };
+  let warn = (~properties=?, ~metrics=?, message, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.warn(logger, message, properties, metrics)
+  };
+  let error = (~properties=?, ~metrics=?, message, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.error(logger, message, properties, metrics)
+  };
+  let critical = (~properties=?, ~metrics=?, message, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.critical(logger, message, properties, metrics)
+  };
+  let event = (~properties=?, ~metrics=?, ~name, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    let metrics = Js.Nullable.from_opt(metrics);
+    Log.event(logger, name, properties, metrics)
+  };
+  let metrics = (~properties=?, ~metrics, ~name, logger) => {
+    let properties = Js.Nullable.from_opt(properties);
+    Log.metrics(logger, name, properties, Js.Nullable.return(metrics))
+  };
+};
+
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   path: actorPath,
   self: actorRef('msg),
   children: StringSet.t,
-  name: string
+  name: string,
+  logger: Log.loggingEngine
 };
 
 type persistentCtx('msg, 'parentMsg) = {
@@ -33,7 +93,8 @@ type persistentCtx('msg, 'parentMsg) = {
   name: string,
   persist: 'msg => Js.Promise.t(unit),
   children: StringSet.t,
-  recovering: bool
+  recovering: bool,
+  logger: Log.loggingEngine
 };
 
 let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
@@ -41,7 +102,8 @@ let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
-  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray
+  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
+  logger: untypedCtx##log
 };
 
 let mapPersist = (persist, msg) => persist(msg);
@@ -53,7 +115,8 @@ let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
   path: ActorPath(untypedCtx##path),
   recovering: untypedCtx##recovering |> Js.Nullable.to_opt |> defaultTo(false),
   persist: mapPersist(untypedCtx##persist),
-  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray
+  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
+  logger: untypedCtx##log
 };
 
 type supervisionCtx('msg, 'parentMsg) = {
@@ -208,25 +271,35 @@ let spawnPersistent =
   ActorRef(untypedRef)
 };
 
-
 let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
-
-type systemMsg;
-
-let start = (~persistenceEngine=?, ()) => {
-  let untypedRef =
-    switch persistenceEngine {
-    | Some(engine) => Nact_bindings.start([|Nact_bindings.configurePersistence(engine)|])
-    | None => Nact_bindings.start([||])
-    };
-  ActorRef(untypedRef)
-};
 
 let dispatch = (ActorRef(recipient), msg) => Nact_bindings.dispatch(recipient, msg);
 
-let spawnAdapter = (parent, mapping) => 
+let spawnAdapter = (parent, mapping) =>
   spawnStateless(parent, (msg, _) => resolve(dispatch(parent, mapping(msg))));
 
+let mapLoggingActor = (loggingActorFunction: Log.logger, system) => {
+  open Log;
+  let loggerActor = loggingActorFunction(ActorRef(system));
+  let ActorRef(adapter) = spawnAdapter(loggerActor, (msg) => {message: ""});
+  adapter
+};
+
+let start = (~persistenceEngine=?, ~logger=?, ()) => {
+  let persistenceEngine =
+    persistenceEngine
+    |> mapIfSome((x) => [|Nact_bindings.configurePersistence(x)|])
+    |> defaultTo([||]);
+  let logger =
+    logger
+    |> mapIfSome(
+         (loggerActor) => [|Nact_bindings.configureLogging(mapLoggingActor(loggerActor))|]
+       )
+    |> defaultTo([||]);
+  let untypedRef = Nact_bindings.start(Array.append(persistenceEngine, logger));
+  let system = ActorRef(untypedRef);
+  system
+};
 
 let nobody = () => ActorRef(Nact_bindings.nobody());
 
