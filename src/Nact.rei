@@ -21,10 +21,9 @@ module Log: {
   type t =
     | Message(logLevel, string, Js.Date.t, actorPath)
     | Error(exn, Js.Date.t, actorPath)
-    | Metrics(string, Js.Date.t, actorPath)
-    | Event(name, Js.Date.t, actorPath);
+    | Metric(name, Js.Json.t, Js.Date.t, actorPath)
+    | Event(name, Js.Json.t, Js.Date.t, actorPath);
   type logger = actorRef(systemMsg) => actorRef(t);
-  let off: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
   let trace: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
   let debug: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
   let info: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
