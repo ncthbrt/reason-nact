@@ -16,15 +16,35 @@ type loggingSpyProtocol =
   | GetMessages(actorRef(list(Nact.Log.t)))
   | Log(Nact.Log.t);
 
-/* let createLogger = (system) => {
-     let actor = spawn(system, (state, msg, ctx) => state, []);
-     (actor, spawnAdapter(actor, (logMsg) => Log(logMsg)))
-   }; */
 describe(
   "Log",
   () => {
-    describe("trace", () => ());
-    describe("error", () => ());
-    describe("metric", () => ())
+    let system = ref(nobody());
+    let spy = ref(nobody());
+    let createLogger = (system) => {
+      let actor = spawn(system, (state, _, _) => ?:state, []);
+      spy := actor;
+      spawnAdapter(actor, (logMsg) => Log(logMsg))
+    };
+    beforeEach(() => system := start(~logger=createLogger, ()));
+    afterEach(
+      () => {
+        stop(system^);
+        system := nobody()
+      }
+    );
+    describe(
+      "trace",
+      () => {
+        test("should be able to invoke trace()", () => pass);
+        test("should be able to invoke debug()", () => pass);
+        test("should be able to invoke info()", () => pass);
+        test("should be able to invoke warn()", () => pass);
+        test("should be able to invoke error()", () => pass);
+        test("should be able to invoke critical()", () => pass)
+      }
+    );
+    describe("error", () => test("should be able to invoke error()", () => pass));
+    describe("metric", () => test("should be able to invoke metric()", () => pass))
   }
 );
