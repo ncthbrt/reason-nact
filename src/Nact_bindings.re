@@ -24,33 +24,27 @@ type actorRef = {. "parent": actorRef, "path": actorPath, "name": string};
 
 module Log = {
   type logger;
-  [@bs.send]
-  external off : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external trace : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external debug : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external info : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external warn : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external error : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external critical : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external event : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
-  [@bs.send]
-  external metrics : (logger, string, Js.nullable('properties), Js.nullable('metrics)) => unit =
-    "";
+  type msg = {
+    .
+    "_type": string,
+    "level": Js.nullable(int),
+    "message": Js.nullable(string),
+    "name": Js.nullable(string),
+    "properties": Js.nullable(Js.Json.t),
+    "values": Js.nullable(Js.Json.t),
+    "_exception": Js.nullable(exn),
+    "actor": actorRef,
+    "createdAt": Js.Date.t
+  };
+  [@bs.send] external trace : (logger, string) => unit = "";
+  [@bs.send] external debug : (logger, string) => unit = "";
+  [@bs.send] external info : (logger, string) => unit = "";
+  [@bs.send] external warn : (logger, string) => unit = "";
+  [@bs.send] external error : (logger, string) => unit = "";
+  [@bs.send] external critical : (logger, string) => unit = "";
+  [@bs.send] external event : (logger, string, 'properties) => unit = "";
+  [@bs.send] external metric : (logger, string, 'values) => unit = "";
+  [@bs.send] external _exception : (logger, exn) => unit = "";
 };
 
 type ctx = {

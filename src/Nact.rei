@@ -13,28 +13,29 @@ module Log: {
   type loggingEngine;
   type name = string;
   type logLevel =
+    | Off
     | Trace
     | Debug
     | Info
     | Warn
+    | Error
     | Critical;
   type t =
     | Message(logLevel, string, Js.Date.t, actorPath)
     | Error(exn, Js.Date.t, actorPath)
     | Metric(name, Js.Json.t, Js.Date.t, actorPath)
-    | Event(name, Js.Json.t, Js.Date.t, actorPath);
+    | Event(name, Js.Json.t, Js.Date.t, actorPath)
+    | Unknown(Js.Json.t);
   type logger = actorRef(systemMsg) => actorRef(t);
-  let trace: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
-  let debug: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
-  let info: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
-  let warn: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
-  let error:
-    (~properties: 'properties=?, ~metrics: 'metrics=?, ~exn: exn=?, string, loggingEngine) => unit;
-  let critical: (~properties: 'properties=?, ~metrics: 'metrics=?, string, loggingEngine) => unit;
-  let event:
-    (~properties: 'properties=?, ~metrics: 'metrics=?, ~name: string, loggingEngine) => unit;
-  let metrics:
-    (~properties: 'properties=?, ~metrics: 'metrics, ~name: string, loggingEngine) => unit;
+  let trace: (string, loggingEngine) => unit;
+  let debug: (string, loggingEngine) => unit;
+  let info: (string, loggingEngine) => unit;
+  let warn: (string, loggingEngine) => unit;
+  let error: (string, loggingEngine) => unit;
+  let critical: (string, loggingEngine) => unit;
+  let event: (~name: string, ~properties: 'eventProperties, loggingEngine) => unit;
+  let exception_: (exn, loggingEngine) => unit;
+  let metric: (~name: string, ~values: 'values, loggingEngine) => unit;
 };
 
 type ctx('msg, 'parentMsg) = {

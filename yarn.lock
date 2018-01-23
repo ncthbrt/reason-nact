@@ -2151,9 +2151,9 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-nact@^4.4.3:
-  version "4.4.3"
-  resolved "https://registry.yarnpkg.com/nact/-/nact-4.4.3.tgz#0397c580d2e37e69f6941ca31b5ff381f7f3201b"
+nact@^4.4.4:
+  version "4.4.4"
+  resolved "https://registry.yarnpkg.com/nact/-/nact-4.4.4.tgz#9f2bf5a046a22ab58e1d9a97aa87570e90e434dd"
   dependencies:
     denque "^1.2.2"
     rxjs "^5.4.3"
