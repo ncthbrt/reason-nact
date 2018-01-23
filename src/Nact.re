@@ -12,11 +12,15 @@ let defaultTo = (default, opt) =>
 
 type persistenceEngine = Nact_bindings.persistenceEngine;
 
-type actorPath =
-  | ActorPath(Nact_bindings.actorPath);
-
 type actorRef('msg) =
   | ActorRef(Nact_bindings.actorRef);
+
+module ActorPath = {
+  type t =
+    | ActorPath(Nact_bindings.actorPath);
+  let fromReference = (ActorRef(actor)) => ActorPath(actor##path);
+  let toString = (ActorPath(path)) => path##system ++ "://" ++ String.concat("/", path##parts);
+};
 
 type systemMsg;
 
@@ -33,10 +37,10 @@ module Log = {
     [@bs.as 5] | Error
     [@bs.as 6] | Critical;
   type t =
-    | Message(logLevel, string, Js.Date.t, actorPath)
-    | Error(exn, Js.Date.t, actorPath)
-    | Metric(name, Js.Json.t, Js.Date.t, actorPath)
-    | Event(name, Js.Json.t, Js.Date.t, actorPath)
+    | Message(logLevel, string, Js.Date.t, ActorPath.t)
+    | Error(exn, Js.Date.t, ActorPath.t)
+    | Metric(name, Js.Json.t, Js.Date.t, ActorPath.t)
+    | Event(name, Js.Json.t, Js.Date.t, ActorPath.t)
     | Unknown(Js.Json.t);
   type logger = actorRef(systemMsg) => actorRef(t);
   let trace = (message, loggingEngine) => Nact_bindings.Log.trace(loggingEngine, message);
@@ -49,12 +53,12 @@ module Log = {
     Nact_bindings.Log.event(loggingEngine, name, properties);
   let metric = (~name, ~values, loggingEngine) =>
     Nact_bindings.Log.metric(loggingEngine, name, values);
-  let exception_ = (err, loggingEngine) => Nact_bindings.Log._exception(loggingEngine, err);
+  let exception_ = (err, loggingEngine) => Nact_bindings.Log.exception_(loggingEngine, err);
 };
 
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  path: actorPath,
+  path: ActorPath.t,
   self: actorRef('msg),
   children: StringSet.t,
   name: string,
@@ -63,7 +67,7 @@ type ctx('msg, 'parentMsg) = {
 
 type persistentCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  path: actorPath,
+  path: ActorPath.t,
   self: actorRef('msg),
   name: string,
   persist: 'msg => Js.Promise.t(unit),
@@ -97,7 +101,7 @@ let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
 type supervisionCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   child: string,
-  path: actorPath,
+  path: ActorPath.t,
   self: actorRef('msg),
   name: string,
   children: StringSet.t
@@ -259,15 +263,17 @@ let mapLogLevel: int => Log.logLevel = (level) => Log.logLevelFromJs(level) |> d
 
 let mapLogMessage: Nact_bindings.Log.msg => Log.t =
   (msg) => {
-    let path = ActorPath(msg##actor##path);
+    let path: ActorPath.t = ActorPath(msg##actor##path);
     switch msg##_type {
     | "trace" =>
-      Message(
-        mapLogLevel(msg##level |> to_opt |> defaultTo(0)),
-        msg##message |> Js.Nullable.to_opt |> defaultTo(""),
-        msg##createdAt,
-        path
-      )
+      let result: Log.t =
+        Message(
+          mapLogLevel(msg##level |> to_opt |> defaultTo(0)),
+          msg##message |> Js.Nullable.to_opt |> defaultTo(""),
+          msg##createdAt,
+          path
+        );
+      result
     | "metric" =>
       Metric(
         msg##name |> to_opt |> defaultTo(""),
@@ -284,7 +290,7 @@ let mapLogMessage: Nact_bindings.Log.msg => Log.t =
       )
     | "exception" =>
       Error(
-        msg##_exception |> to_opt |> defaultTo(failwith("Error is undefined")),
+        msg##exception_ |> to_opt |> defaultTo(failwith("Error is undefined")),
         msg##createdAt,
         path
       )

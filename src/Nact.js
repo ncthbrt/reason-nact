@@ -4,6 +4,7 @@ var Nact              = require("nact");
 var Block             = require("bs-platform/lib/js/block.js");
 var Curry             = require("bs-platform/lib/js/curry.js");
 var Js_exn            = require("bs-platform/lib/js/js_exn.js");
+var $$String          = require("bs-platform/lib/js/string.js");
 var Caml_int32        = require("bs-platform/lib/js/caml_int32.js");
 var Nact_jsMap        = require("./Nact_jsMap.js");
 var Pervasives        = require("bs-platform/lib/js/pervasives.js");
@@ -20,6 +21,20 @@ function defaultTo($$default, opt) {
     return $$default;
   }
 }
+
+function fromReference(param) {
+  return /* ActorPath */[param[0].path];
+}
+
+function toString(param) {
+  var path = param[0];
+  return path.system + ("://" + $$String.concat("/", path.parts));
+}
+
+var ActorPath = /* module */[
+  /* fromReference */fromReference,
+  /* toString */toString
+];
 
 function logLevelFromJs(param) {
   if (param <= 6 && 0 <= param) {
@@ -70,7 +85,7 @@ function metric(name, values, loggingEngine) {
 }
 
 function exception_(err, loggingEngine) {
-  loggingEngine._exception(err);
+  loggingEngine.exception_(err);
   return /* () */0;
 }
 
@@ -259,7 +274,7 @@ function mapLogMessage(msg) {
                 ]);
     case "exception" : 
         return /* Error */Block.__(1, [
-                  defaultTo(Pervasives.failwith("Error is undefined"), Js_primitive.null_undefined_to_opt(msg.exception)),
+                  defaultTo(Pervasives.failwith("Error is undefined"), Js_primitive.null_undefined_to_opt(msg.exception_)),
                   msg.createdAt,
                   path
                 ]);
@@ -373,6 +388,7 @@ var messages = 1;
 var message = 1;
 
 exports.StringSet                    = StringSet;
+exports.ActorPath                    = ActorPath;
 exports.Log                          = Log;
 exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
 exports.spawn                        = spawn;

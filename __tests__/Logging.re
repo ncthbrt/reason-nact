@@ -2,11 +2,19 @@ open Js.Promise;
 
 open Nact;
 
+open Nact.Operators;
+
 let (?:) = (v) => resolve(v);
 
 let (>=>) = (promise1, promise2) => then_(promise2, promise1);
 
 let (>/=>) = (promise1, promise2) => catch(promise2, promise1);
+
+let delay: int => Js.Promise.t(unit) =
+  (ms) =>
+    Js.Promise.make(
+      (~resolve, ~reject as _) => Js.Global.setTimeout(() => [@bs] resolve((): unit), ms) |> ignore
+    );
 
 open Jest;
 
@@ -16,15 +24,45 @@ type loggingSpyProtocol =
   | GetMessages(actorRef(list(Nact.Log.t)))
   | Log(Nact.Log.t);
 
+type ctxF('parent) =
+  | ContextF(ctx(ctxF('parent), 'parent) => unit);
+
+let spawnContextExposer: actorRef('a) => actorRef(ctxF('a)) =
+  (system) => spawnStateless(system, (ContextF(msg), ctx) => ?:(msg(ctx)));
+
+let mockDate: unit => unit = [%bs.raw
+  {|
+    function() {
+      var RealDate = global.Date;
+      global.Date = class extends RealDate  {
+       constructor(){
+        return new RealDate(0);
+      }
+    }
+  }
+|}
+];
+
 describe(
   "Log",
   () => {
     let system = ref(nobody());
     let spy = ref(nobody());
     let createLogger = (system) => {
-      let actor = spawn(system, (state, _, _) => ?:state, []);
-      spy := actor;
-      spawnAdapter(actor, (logMsg) => Log(logMsg))
+      spy :=
+        spawn(
+          system,
+          (state, msg, _) =>
+            switch msg {
+            | GetMessages(x) =>
+              Js.log(state);
+              x <-< state;
+              ?:state
+            | Log(log) => ?:[log, ...state]
+            },
+          []
+        );
+      spawnAdapter(spy^, (logMsg) => Log(logMsg))
     };
     beforeEach(() => system := start(~logger=createLogger, ()));
     afterEach(
@@ -36,15 +74,130 @@ describe(
     describe(
       "trace",
       () => {
-        test("should be able to invoke trace()", () => pass);
-        test("should be able to invoke debug()", () => pass);
-        test("should be able to invoke info()", () => pass);
-        test("should be able to invoke warn()", () => pass);
-        test("should be able to invoke error()", () => pass);
-        test("should be able to invoke critical()", () => pass)
+        testPromise(
+          "should be able to invoke trace()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer <-< ContextF((ctx) => Log.trace("testMessage", ctx.logger));
+            let expectedMsg =
+              Log.Message(Trace, "testMessage", Js.Date.make(), ActorPath.fromReference(exposer));
+            delay(100)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        );
+        testPromise(
+          "should be able to invoke debug()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer <-< ContextF((ctx) => Log.debug("testMessage", ctx.logger));
+            let expectedMsg =
+              Log.Message(Debug, "testMessage", Js.Date.make(), ActorPath.fromReference(exposer));
+            delay(100)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        );
+        testPromise(
+          "should be able to invoke info()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer <-< ContextF((ctx) => Log.info("testMessage", ctx.logger));
+            let expectedMsg =
+              Log.Message(Info, "testMessage", Js.Date.make(), ActorPath.fromReference(exposer));
+            delay(100)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        );
+        testPromise(
+          "should be able to invoke warn()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer <-< ContextF((ctx) => Log.warn("testMessage", ctx.logger));
+            let expectedMsg =
+              Log.Message(Warn, "testMessage", Js.Date.make(), ActorPath.fromReference(exposer));
+            delay(100)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        );
+        testPromise(
+          "should be able to invoke error()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer <-< ContextF((ctx) => Log.error("testMessage", ctx.logger));
+            let expectedMsg =
+              Log.Message(Error, "testMessage", Js.Date.make(), ActorPath.fromReference(exposer));
+            delay(100)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        );
+        testPromise(
+          "should be able to invoke critical()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer <-< ContextF((ctx) => Log.critical("testMessage", ctx.logger));
+            let expectedMsg =
+              Log.Message(
+                Critical,
+                "testMessage",
+                Js.Date.make(),
+                ActorPath.fromReference(exposer)
+              );
+            delay(100)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        )
       }
     );
-    describe("error", () => test("should be able to invoke error()", () => pass));
-    describe("metric", () => test("should be able to invoke metric()", () => pass))
+    describe(
+      "error",
+      () =>
+        testPromise(
+          "should be able to invoke exception()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer <-< ContextF((ctx) => Log.exception_(failwith("testMessage"), ctx.logger));
+            let expectedMsg =
+              Log.Error(failwith("testMessage"), Js.Date.make(), ActorPath.fromReference(exposer));
+            delay(50)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        )
+    );
+    describe(
+      "metric",
+      () =>
+        testPromise(
+          "should be able to invoke metric()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer
+            <-< ContextF((ctx) => Log.metric(~name="testMessage", ~values=[|1|], ctx.logger));
+            let expectedMsg =
+              Log.Metric(
+                "testMessage",
+                Js.Json.parseExn("[1]"),
+                Js.Date.make(),
+                ActorPath.fromReference(exposer)
+              );
+            delay(50)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        )
+    )
   }
 );

@@ -1,4 +1,4 @@
-type actorPath;
+type actorPath = {. "parts": list(string), "system": string};
 
 type observable;
 
@@ -32,7 +32,7 @@ module Log = {
     "name": Js.nullable(string),
     "properties": Js.nullable(Js.Json.t),
     "values": Js.nullable(Js.Json.t),
-    "_exception": Js.nullable(exn),
+    "exception_": Js.nullable(exn),
     "actor": actorRef,
     "createdAt": Js.Date.t
   };
@@ -44,7 +44,7 @@ module Log = {
   [@bs.send] external critical : (logger, string) => unit = "";
   [@bs.send] external event : (logger, string, 'properties) => unit = "";
   [@bs.send] external metric : (logger, string, 'values) => unit = "";
-  [@bs.send] external _exception : (logger, exn) => unit = "";
+  [@bs.send] external exception_ : (logger, exn) => unit = "";
 };
 
 type ctx = {

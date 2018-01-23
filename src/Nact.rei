@@ -1,12 +1,12 @@
 module StringSet = Nact_stringSet;
 
-type actorPath;
-
 type persistenceEngine;
 
 type systemMsg;
 
 type actorRef('msg);
+
+module ActorPath: {type t; let fromReference: actorRef(_) => t; let toString: t => string;};
 
 module Log: {
   /* logEngine is an opaque type which dispatches messages to the logging actor */
@@ -21,10 +21,10 @@ module Log: {
     | Error
     | Critical;
   type t =
-    | Message(logLevel, string, Js.Date.t, actorPath)
-    | Error(exn, Js.Date.t, actorPath)
-    | Metric(name, Js.Json.t, Js.Date.t, actorPath)
-    | Event(name, Js.Json.t, Js.Date.t, actorPath)
+    | Message(logLevel, string, Js.Date.t, ActorPath.t)
+    | Error(exn, Js.Date.t, ActorPath.t)
+    | Metric(name, Js.Json.t, Js.Date.t, ActorPath.t)
+    | Event(name, Js.Json.t, Js.Date.t, ActorPath.t)
     | Unknown(Js.Json.t);
   type logger = actorRef(systemMsg) => actorRef(t);
   let trace: (string, loggingEngine) => unit;
@@ -40,7 +40,7 @@ module Log: {
 
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  path: actorPath,
+  path: ActorPath.t,
   self: actorRef('msg),
   children: StringSet.t,
   name: string,
@@ -49,7 +49,7 @@ type ctx('msg, 'parentMsg) = {
 
 type persistentCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  path: actorPath,
+  path: ActorPath.t,
   self: actorRef('msg),
   name: string,
   persist: 'msg => Js.Promise.t(unit),
@@ -61,7 +61,7 @@ type persistentCtx('msg, 'parentMsg) = {
 type supervisionCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   child: string,
-  path: actorPath,
+  path: ActorPath.t,
   self: actorRef('msg),
   name: string,
   children: StringSet.t
