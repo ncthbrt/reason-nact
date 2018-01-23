@@ -1,18 +1,18 @@
 'use strict';
 
-var Nact              = require("nact");
-var Block             = require("bs-platform/lib/js/block.js");
-var Curry             = require("bs-platform/lib/js/curry.js");
-var Js_exn            = require("bs-platform/lib/js/js_exn.js");
-var $$String          = require("bs-platform/lib/js/string.js");
-var Caml_int32        = require("bs-platform/lib/js/caml_int32.js");
-var Nact_jsMap        = require("./Nact_jsMap.js");
-var Pervasives        = require("bs-platform/lib/js/pervasives.js");
-var Js_primitive      = require("bs-platform/lib/js/js_primitive.js");
-var Nact_stringSet    = require("./Nact_stringSet.js");
-var Caml_exceptions   = require("bs-platform/lib/js/caml_exceptions.js");
-var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
-var References        = require("nact/lib/references");
+var Nact                    = require("nact");
+var Block                   = require("bs-platform/lib/js/block.js");
+var Curry                   = require("bs-platform/lib/js/curry.js");
+var Js_exn                  = require("bs-platform/lib/js/js_exn.js");
+var $$String                = require("bs-platform/lib/js/string.js");
+var Caml_int32              = require("bs-platform/lib/js/caml_int32.js");
+var Nact_jsMap              = require("./Nact_jsMap.js");
+var Js_primitive            = require("bs-platform/lib/js/js_primitive.js");
+var Nact_stringSet          = require("./Nact_stringSet.js");
+var Caml_exceptions         = require("bs-platform/lib/js/caml_exceptions.js");
+var Js_null_undefined       = require("bs-platform/lib/js/js_null_undefined.js");
+var References              = require("nact/lib/references");
+var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 function defaultTo($$default, opt) {
   if (opt) {
@@ -85,7 +85,7 @@ function metric(name, values, loggingEngine) {
 }
 
 function exception_(err, loggingEngine) {
-  loggingEngine.exception_(err);
+  loggingEngine.exception(err);
   return /* () */0;
 }
 
@@ -274,7 +274,10 @@ function mapLogMessage(msg) {
                 ]);
     case "exception" : 
         return /* Error */Block.__(1, [
-                  defaultTo(Pervasives.failwith("Error is undefined"), Js_primitive.null_undefined_to_opt(msg.exception_)),
+                  defaultTo([
+                        Caml_builtin_exceptions.failure,
+                        "Error is undefined"
+                      ], Js_primitive.null_undefined_to_opt(msg.exception)),
                   msg.createdAt,
                   path
                 ]);

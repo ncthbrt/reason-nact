@@ -290,7 +290,7 @@ let mapLogMessage: Nact_bindings.Log.msg => Log.t =
       )
     | "exception" =>
       Error(
-        msg##exception_ |> to_opt |> defaultTo(failwith("Error is undefined")),
+        msg##_exception |> to_opt |> defaultTo(Failure("Error is undefined")),
         msg##createdAt,
         path
       )

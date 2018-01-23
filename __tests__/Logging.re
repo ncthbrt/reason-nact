@@ -55,7 +55,6 @@ describe(
           (state, msg, _) =>
             switch msg {
             | GetMessages(x) =>
-              Js.log(state);
               x <-< state;
               ?:state
             | Log(log) => ?:[log, ...state]
@@ -167,9 +166,9 @@ describe(
           () => {
             mockDate();
             let exposer = spawnContextExposer(system^);
-            exposer <-< ContextF((ctx) => Log.exception_(failwith("testMessage"), ctx.logger));
+            exposer <-< ContextF((ctx) => Log.exception_(Failure("testMessage"), ctx.logger));
             let expectedMsg =
-              Log.Error(failwith("testMessage"), Js.Date.make(), ActorPath.fromReference(exposer));
+              Log.Error(Failure("testMessage"), Js.Date.make(), ActorPath.fromReference(exposer));
             delay(50)
             >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
             >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
