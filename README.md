@@ -32,7 +32,11 @@ With out of the box support for event sourcing, and a considered implementation 
 
 Nact is no silver bullet, but it is evolving to tackle ever more demanding use cases. Perhaps one of them is yours?
 
-To get started, head to https://nact.io
+## Getting started
+
+Run `npm install --save reason-nact` and add `reason-nact` to the `bs-dependencies` in `bsconfig.json`. 
+
+Full documentation at https://nact.io
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact?ref=badge_large)
