@@ -20,6 +20,10 @@ open Jest;
 
 open ExpectJs;
 
+[@bs.module "nact/test/mock-persistence-engine"] [@bs.new]
+external createMockPersistenceEngine : unit => persistenceEngine =
+  "MockPersistenceEngine";
+
 type loggingSpyProtocol =
   | GetMessages(actorRef(list(Nact.Log.t)))
   | Log(Nact.Log.t);
@@ -68,6 +72,13 @@ describe(
       () => {
         stop(system^);
         system := nobody()
+      }
+    );
+    test(
+      "should be able to setup both the persistence engine and logger",
+      () => {
+        system := start(~logger=createLogger, ~persistenceEngine=createMockPersistenceEngine(), ());
+        pass
       }
     );
     describe(
@@ -187,6 +198,29 @@ describe(
             <-< ContextF((ctx) => Log.metric(~name="testMessage", ~values=[|1|], ctx.logger));
             let expectedMsg =
               Log.Metric(
+                "testMessage",
+                Js.Json.parseExn("[1]"),
+                Js.Date.make(),
+                ActorPath.fromReference(exposer)
+              );
+            delay(50)
+            >=> (() => spy^ <? ((temp) => GetMessages(temp), 100 * milliseconds))
+            >=> ((logs) => ?:(expect(logs) |> toEqual([expectedMsg])))
+          }
+        )
+    );
+    describe(
+      "event",
+      () =>
+        testPromise(
+          "should be able to invoke event()",
+          () => {
+            mockDate();
+            let exposer = spawnContextExposer(system^);
+            exposer
+            <-< ContextF((ctx) => Log.event(~name="testMessage", ~properties=[|1|], ctx.logger));
+            let expectedMsg =
+              Log.Event(
                 "testMessage",
                 Js.Json.parseExn("[1]"),
                 Js.Date.make(),

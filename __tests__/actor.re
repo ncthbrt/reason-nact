@@ -825,3 +825,19 @@ describe(
     )
   }
 );
+
+describe(
+  "ActorPath",
+  () =>
+    test(
+      "toString() should correctly format actor path",
+      () => {
+        let system = start();
+        let systemName = ActorPath.systemName(system |> ActorPath.fromReference);
+        let expectedPath = "system:" ++ systemName ++ "//name";
+        let actor = spawnStateless(system, ~name="name", (_, _) => ?:());
+        let pathStr = ActorPath.fromReference(actor) |> ActorPath.toString;
+        expect(pathStr) |> toBe(expectedPath)
+      }
+    )
+);

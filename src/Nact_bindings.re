@@ -27,7 +27,7 @@ module Log = {
   type msg = {
     .
     "_type": string,
-    "level": Js.nullable(int),
+    "level": int,
     "message": Js.nullable(string),
     "name": Js.nullable(string),
     "properties": Js.nullable(Js.Json.t),

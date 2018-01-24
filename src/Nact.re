@@ -15,14 +15,21 @@ type persistenceEngine = Nact_bindings.persistenceEngine;
 type actorRef('msg) =
   | ActorRef(Nact_bindings.actorRef);
 
+type actorPath =
+  | ActorPath(Nact_bindings.actorPath);
+
 module ActorPath = {
-  type t =
-    | ActorPath(Nact_bindings.actorPath);
   let fromReference = (ActorRef(actor)) => ActorPath(actor##path);
-  let toString = (ActorPath(path)) => path##system ++ "://" ++ String.concat("/", path##parts);
+  let systemName = (ActorPath(path)) => path##system;
+  let toString = (ActorPath(path)) =>
+    "system:" ++ path##system ++ "//" ++ String.concat("/", path##parts);
 };
 
 type systemMsg;
+
+external unsafeDecoder : Js.Json.t => 'msg = "%identity";
+
+external unsafeEncoder : 'msg => Js.Json.t = "%identity";
 
 module Log = {
   type loggingEngine = Nact_bindings.Log.logger;
@@ -37,11 +44,49 @@ module Log = {
     [@bs.as 5] | Error
     [@bs.as 6] | Critical;
   type t =
-    | Message(logLevel, string, Js.Date.t, ActorPath.t)
-    | Error(exn, Js.Date.t, ActorPath.t)
-    | Metric(name, Js.Json.t, Js.Date.t, ActorPath.t)
-    | Event(name, Js.Json.t, Js.Date.t, ActorPath.t)
-    | Unknown(Js.Json.t);
+    | Message(logLevel, string, Js.Date.t, actorPath)
+    | Error(exn, Js.Date.t, actorPath)
+    | Metric(name, Js.Json.t, Js.Date.t, actorPath)
+    | Event(name, Js.Json.t, Js.Date.t, actorPath)
+    | Unknown(Js.Json.t, Js.Date.t, actorPath);
+  type jsLog = Nact_bindings.Log.msg;
+  let fromJsLog: jsLog => t =
+    (msg) => {
+      let path = ActorPath(msg##actor##path);
+      let createdAt = msg##createdAt;
+      switch msg##_type {
+      | "trace" =>
+        let result =
+          Message(
+            logLevelFromJs(msg##level) |> defaultTo(Off),
+            msg##message |> Js.Nullable.to_opt |> defaultTo(""),
+            createdAt,
+            path
+          );
+        result
+      | "metric" =>
+        Metric(
+          msg##name |> to_opt |> defaultTo(""),
+          msg##values |> to_opt |> defaultTo(Js.Json.null),
+          createdAt,
+          path
+        )
+      | "event" =>
+        Event(
+          msg##name |> to_opt |> defaultTo(""),
+          msg##properties |> to_opt |> defaultTo(Js.Json.null),
+          createdAt,
+          path
+        )
+      | "exception" =>
+        Error(
+          msg##_exception |> to_opt |> defaultTo(Failure("Error is undefined")),
+          createdAt,
+          path
+        )
+      | _ => Unknown(msg |> unsafeEncoder, createdAt, path)
+      }
+    };
   type logger = actorRef(systemMsg) => actorRef(t);
   let trace = (message, loggingEngine) => Nact_bindings.Log.trace(loggingEngine, message);
   let debug = (message, loggingEngine) => Nact_bindings.Log.debug(loggingEngine, message);
@@ -58,7 +103,7 @@ module Log = {
 
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  path: ActorPath.t,
+  path: actorPath,
   self: actorRef('msg),
   children: StringSet.t,
   name: string,
@@ -67,7 +112,7 @@ type ctx('msg, 'parentMsg) = {
 
 type persistentCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  path: ActorPath.t,
+  path: actorPath,
   self: actorRef('msg),
   name: string,
   persist: 'msg => Js.Promise.t(unit),
@@ -101,7 +146,7 @@ let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
 type supervisionCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   child: string,
-  path: ActorPath.t,
+  path: actorPath,
   self: actorRef('msg),
   name: string,
   children: StringSet.t
@@ -169,10 +214,6 @@ let useStatefulSupervisionPolicy = (f, initialState) => {
     promise
   }
 };
-
-external unsafeDecoder : Js.Json.t => 'msg = "%identity";
-
-external unsafeEncoder : 'msg => Js.Json.t = "%identity";
 
 let spawn =
     (
@@ -259,48 +300,9 @@ let nobody = () => ActorRef(Nact_bindings.nobody());
 let spawnAdapter = (parent, mapping) =>
   spawnStateless(parent, (msg, _) => resolve(dispatch(parent, mapping(msg))));
 
-let mapLogLevel: int => Log.logLevel = (level) => Log.logLevelFromJs(level) |> defaultTo(Log.Off);
-
-let mapLogMessage: Nact_bindings.Log.msg => Log.t =
-  (msg) => {
-    let path: ActorPath.t = ActorPath(msg##actor##path);
-    switch msg##_type {
-    | "trace" =>
-      let result: Log.t =
-        Message(
-          mapLogLevel(msg##level |> to_opt |> defaultTo(0)),
-          msg##message |> Js.Nullable.to_opt |> defaultTo(""),
-          msg##createdAt,
-          path
-        );
-      result
-    | "metric" =>
-      Metric(
-        msg##name |> to_opt |> defaultTo(""),
-        msg##values |> to_opt |> defaultTo(Js.Json.null),
-        msg##createdAt,
-        path
-      )
-    | "event" =>
-      Event(
-        msg##name |> to_opt |> defaultTo(""),
-        msg##properties |> to_opt |> defaultTo(Js.Json.null),
-        msg##createdAt,
-        path
-      )
-    | "exception" =>
-      Error(
-        msg##_exception |> to_opt |> defaultTo(Failure("Error is undefined")),
-        msg##createdAt,
-        path
-      )
-    | _ => Unknown(msg |> unsafeEncoder)
-    }
-  };
-
 let mapLoggingActor = (loggingActorFunction: Log.logger, system) => {
   let loggerActor = loggingActorFunction(ActorRef(system));
-  let ActorRef(adapter) = spawnAdapter(loggerActor, mapLogMessage);
+  let ActorRef(adapter) = spawnAdapter(loggerActor, Log.fromJsLog);
   adapter
 };
 

@@ -26,13 +26,18 @@ function fromReference(param) {
   return /* ActorPath */[param[0].path];
 }
 
+function systemName(param) {
+  return param[0].system;
+}
+
 function toString(param) {
   var path = param[0];
-  return path.system + ("://" + $$String.concat("/", path.parts));
+  return "system:" + (path.system + ("//" + $$String.concat("/", path.parts)));
 }
 
 var ActorPath = /* module */[
   /* fromReference */fromReference,
+  /* systemName */systemName,
   /* toString */toString
 ];
 
@@ -41,6 +46,50 @@ function logLevelFromJs(param) {
     return /* Some */[param - 0 | 0];
   } else {
     return /* None */0;
+  }
+}
+
+function fromJsLog(msg) {
+  var path = /* ActorPath */[msg.actor.path];
+  var createdAt = msg.createdAt;
+  var match = msg.type;
+  switch (match) {
+    case "event" : 
+        return /* Event */Block.__(3, [
+                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
+                  defaultTo(null, Js_primitive.null_undefined_to_opt(msg.properties)),
+                  createdAt,
+                  path
+                ]);
+    case "exception" : 
+        return /* Error */Block.__(1, [
+                  defaultTo([
+                        Caml_builtin_exceptions.failure,
+                        "Error is undefined"
+                      ], Js_primitive.null_undefined_to_opt(msg.exception)),
+                  createdAt,
+                  path
+                ]);
+    case "metric" : 
+        return /* Metric */Block.__(2, [
+                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
+                  defaultTo(null, Js_primitive.null_undefined_to_opt(msg.values)),
+                  createdAt,
+                  path
+                ]);
+    case "trace" : 
+        return /* Message */Block.__(0, [
+                  defaultTo(/* Off */0, logLevelFromJs(msg.level)),
+                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.message)),
+                  createdAt,
+                  path
+                ]);
+    default:
+      return /* Unknown */Block.__(4, [
+                msg,
+                createdAt,
+                path
+              ]);
   }
 }
 
@@ -257,52 +306,9 @@ function spawnAdapter(parent, mapping) {
               }));
 }
 
-function mapLogLevel(level) {
-  return defaultTo(/* Off */0, logLevelFromJs(level));
-}
-
-function mapLogMessage(msg) {
-  var path = /* ActorPath */[msg.actor.path];
-  var match = msg.type;
-  switch (match) {
-    case "event" : 
-        return /* Event */Block.__(3, [
-                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
-                  defaultTo(null, Js_primitive.null_undefined_to_opt(msg.properties)),
-                  msg.createdAt,
-                  path
-                ]);
-    case "exception" : 
-        return /* Error */Block.__(1, [
-                  defaultTo([
-                        Caml_builtin_exceptions.failure,
-                        "Error is undefined"
-                      ], Js_primitive.null_undefined_to_opt(msg.exception)),
-                  msg.createdAt,
-                  path
-                ]);
-    case "metric" : 
-        return /* Metric */Block.__(2, [
-                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
-                  defaultTo(null, Js_primitive.null_undefined_to_opt(msg.values)),
-                  msg.createdAt,
-                  path
-                ]);
-    case "trace" : 
-        return /* Message */Block.__(0, [
-                  mapLogLevel(defaultTo(0, Js_primitive.null_undefined_to_opt(msg.level))),
-                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.message)),
-                  msg.createdAt,
-                  path
-                ]);
-    default:
-      return /* Unknown */Block.__(4, [msg]);
-  }
-}
-
 function mapLoggingActor(loggingActorFunction, system) {
   var loggerActor = Curry._1(loggingActorFunction, /* ActorRef */[system]);
-  return spawnAdapter(loggerActor, mapLogMessage)[0];
+  return spawnAdapter(loggerActor, fromJsLog)[0];
 }
 
 function start(persistenceEngine, logger, _) {
