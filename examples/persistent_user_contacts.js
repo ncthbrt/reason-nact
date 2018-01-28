@@ -109,7 +109,7 @@ function findContact(param, sender, contactId) {
 var system = Nact.start(/* Some */[new MockPersistenceEngine.MockPersistenceEngine()], /* None */0, /* () */0);
 
 function createContactsService(parent, userId) {
-  return Nact.spawnPersistent("contacts" + userId, /* Some */[userId], /* Some */[Caml_int32.imul(15, Nact.minutes)], /* Some */[Caml_int32.imul(10, Nact.messages)], /* None */0, /* None */0, /* None */0, /* None */0, parent, (function (state, param, param$1) {
+  return Nact.spawnPersistent("contacts" + userId, /* Some */[userId], /* Some */[Caml_int32.imul(15, Nact.minutes)], /* Some */[Caml_int32.imul(10, Nact.messages)], /* None */0, /* None */0, /* None */0, /* None */0, /* None */0, parent, (function (state, param, param$1) {
                 var msg = param[1];
                 var sender = param[0];
                 var promise1 = Curry._1(param$1[/* persist */4], /* tuple */[
@@ -141,7 +141,7 @@ function createContactsService(parent, userId) {
             ]);
 }
 
-var contactsService = Nact.spawn(/* None */0, /* None */0, /* None */0, /* None */0, system, (function (children, param, ctx) {
+var contactsService = Nact.spawn(/* None */0, /* None */0, /* None */0, system, (function (children, param, ctx) {
         var msg = param[2];
         var userId = param[1];
         var sender = param[0];

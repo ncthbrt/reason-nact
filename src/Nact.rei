@@ -26,6 +26,7 @@ module Log: {
     | Warn
     | Error
     | Critical;
+  let logLevelToString: logLevel => string;
   type t =
     | Message(logLevel, string, Js.Date.t, actorPath)
     | Error(exn, Js.Date.t, actorPath)
@@ -104,7 +105,6 @@ let spawn:
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
-    ~decoder: Js.Json.t => 'msg=?,
     actorRef('parentMsg),
     statefulActor('state, 'msg, 'parentMsg),
     'state
@@ -116,7 +116,6 @@ let spawnStateless:
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
-    ~decoder: Js.Json.t => 'msg=?,
     actorRef('parentMsg),
     statelessActor('msg, 'parentMsg)
   ) =>
@@ -132,6 +131,7 @@ let spawnPersistent:
     ~decoder: Js.Json.t => 'msg=?,
     ~stateDecoder: Js.Json.t => 'state=?,
     ~stateEncoder: 'state => Js.Json.t=?,
+    ~encoder: 'msg => Js.Json.t=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state

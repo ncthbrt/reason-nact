@@ -49,47 +49,76 @@ function logLevelFromJs(param) {
   }
 }
 
+function logLevelToString(param) {
+  switch (param) {
+    case 0 : 
+        return "off";
+    case 1 : 
+        return "trace";
+    case 2 : 
+        return "debug";
+    case 3 : 
+        return "info";
+    case 4 : 
+        return "warn";
+    case 5 : 
+        return "error";
+    case 6 : 
+        return "critical";
+    
+  }
+}
+
 function fromJsLog(msg) {
-  var path = /* ActorPath */[msg.actor.path];
-  var createdAt = msg.createdAt;
+  var a = defaultTo(new References.Nobody(), Js_primitive.null_undefined_to_opt(msg.actor));
+  var path = /* ActorPath */[a.path];
+  var createdAt = defaultTo(new Date(), Js_primitive.null_undefined_to_opt(msg.createdAt));
   var match = msg.type;
-  switch (match) {
-    case "event" : 
-        return /* Event */Block.__(3, [
-                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
-                  defaultTo(null, Js_primitive.null_undefined_to_opt(msg.properties)),
+  if (match == null) {
+    return /* Unknown */Block.__(4, [
+              msg,
+              createdAt,
+              path
+            ]);
+  } else {
+    switch (match) {
+      case "event" : 
+          return /* Event */Block.__(3, [
+                    defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
+                    defaultTo(null, Js_primitive.null_undefined_to_opt(msg.properties)),
+                    createdAt,
+                    path
+                  ]);
+      case "exception" : 
+          return /* Error */Block.__(1, [
+                    defaultTo([
+                          Caml_builtin_exceptions.failure,
+                          "Error is undefined"
+                        ], Js_primitive.null_undefined_to_opt(msg.exception)),
+                    createdAt,
+                    path
+                  ]);
+      case "metric" : 
+          return /* Metric */Block.__(2, [
+                    defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
+                    defaultTo(null, Js_primitive.null_undefined_to_opt(msg.values)),
+                    createdAt,
+                    path
+                  ]);
+      case "trace" : 
+          return /* Message */Block.__(0, [
+                    defaultTo(/* Off */0, logLevelFromJs(defaultTo(0, Js_primitive.null_undefined_to_opt(msg.level)))),
+                    defaultTo("", Js_primitive.null_undefined_to_opt(msg.message)),
+                    createdAt,
+                    path
+                  ]);
+      default:
+        return /* Unknown */Block.__(4, [
+                  msg,
                   createdAt,
                   path
                 ]);
-    case "exception" : 
-        return /* Error */Block.__(1, [
-                  defaultTo([
-                        Caml_builtin_exceptions.failure,
-                        "Error is undefined"
-                      ], Js_primitive.null_undefined_to_opt(msg.exception)),
-                  createdAt,
-                  path
-                ]);
-    case "metric" : 
-        return /* Metric */Block.__(2, [
-                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
-                  defaultTo(null, Js_primitive.null_undefined_to_opt(msg.values)),
-                  createdAt,
-                  path
-                ]);
-    case "trace" : 
-        return /* Message */Block.__(0, [
-                  defaultTo(/* Off */0, logLevelFromJs(msg.level)),
-                  defaultTo("", Js_primitive.null_undefined_to_opt(msg.message)),
-                  createdAt,
-                  path
-                ]);
-    default:
-      return /* Unknown */Block.__(4, [
-                msg,
-                createdAt,
-                path
-              ]);
+    }
   }
 }
 
@@ -149,14 +178,16 @@ function mapCtx(untypedCtx) {
         ];
 }
 
-function mapPersistentCtx(untypedCtx) {
+function mapPersistentCtx(untypedCtx, encoder) {
   var partial_arg = untypedCtx.persist;
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
-          /* persist */Curry.__1(partial_arg),
+          /* persist */(function (param) {
+              return Curry._1(partial_arg, Curry._1(encoder, param));
+            }),
           /* children */Nact_stringSet.fromJsArray(Nact_jsMap.keys(untypedCtx.children)),
           /* recovering */defaultTo(/* false */0, Js_primitive.null_undefined_to_opt(untypedCtx.recovering)),
           /* logger */untypedCtx.log
@@ -218,18 +249,15 @@ function useStatefulSupervisionPolicy(f, initialState) {
     });
 }
 
-function spawn(name, shutdownAfter, whenChildCrashes, decoder, param, func, initialState) {
+function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState) {
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
-  var decoder$1 = defaultTo((function (prim) {
-          return prim;
-        }), decoder);
   var f = function (possibleState, msg, ctx) {
     var state = defaultTo(initialState, (possibleState == null) ? /* None */0 : [possibleState]);
     try {
-      return Curry._3(func, state, Curry._1(decoder$1, msg), mapCtx(ctx));
+      return Curry._3(func, state, msg, mapCtx(ctx));
     }
     catch (raw_err){
       return Promise.reject(Js_exn.internalToOCamlException(raw_err));
@@ -239,22 +267,24 @@ function spawn(name, shutdownAfter, whenChildCrashes, decoder, param, func, init
   return /* ActorRef */[untypedRef];
 }
 
-function spawnStateless(name, shutdownAfter, whenChildCrashes, decoder, param, func) {
+function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
-  var decoder$1 = defaultTo((function (prim) {
-          return prim;
-        }), decoder);
   var f = function (msg, ctx) {
-    return Curry._2(func, Curry._1(decoder$1, msg), mapCtx(ctx));
+    try {
+      return Curry._2(func, msg, mapCtx(ctx));
+    }
+    catch (exn){
+      return Promise.resolve(/* () */0);
+    }
   };
   var untypedRef = Nact.spawnStateless(param[0], f, Js_null_undefined.from_opt(name), options);
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, decoder, stateDecoder, stateEncoder, param, func, initialState) {
+function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, decoder, stateDecoder, stateEncoder, encoder, param, func, initialState) {
   var decoder$1 = defaultTo((function (prim) {
           return prim;
         }), decoder);
@@ -264,6 +294,9 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrash
   var stateEncoder$1 = defaultTo((function (prim) {
           return prim;
         }), stateEncoder);
+  var encoder$1 = defaultTo((function (prim) {
+          return prim;
+        }), encoder);
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
     snapshotEvery: Js_null_undefined.from_opt(snapshotEvery),
@@ -273,7 +306,7 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrash
     var state$1 = (state == null) ? initialState : Curry._1(stateDecoder$1, state);
     var tmp;
     try {
-      tmp = Curry._3(func, state$1, Curry._1(decoder$1, msg), mapPersistentCtx(ctx));
+      tmp = Curry._3(func, state$1, Curry._1(decoder$1, msg), mapPersistentCtx(ctx, encoder$1));
     }
     catch (raw_err){
       tmp = Promise.reject(Js_exn.internalToOCamlException(raw_err));
@@ -301,7 +334,7 @@ function nobody() {
 }
 
 function spawnAdapter(parent, mapping) {
-  return spawnStateless(/* None */0, /* None */0, /* None */0, /* None */0, parent, (function (msg, _) {
+  return spawnStateless(/* None */0, /* None */0, /* None */0, parent, (function (msg, _) {
                 return Promise.resolve(dispatch(parent, Curry._1(mapping, msg)));
               }));
 }
@@ -317,9 +350,9 @@ function start(persistenceEngine, logger, _) {
     var persistence = persistenceEngine[0];
     if (logger) {
       var logger$1 = logger[0];
-      untypedRef = Nact.start(Nact.configureLogging((function (param) {
+      untypedRef = Nact.start(Nact.configurePersistence(persistence), Nact.configureLogging((function (param) {
                   return mapLoggingActor(logger$1, param);
-                })), Nact.configurePersistence(persistence));
+                })));
     } else {
       untypedRef = Nact.start(Nact.configurePersistence(persistence));
     }
@@ -373,6 +406,7 @@ var Operators = /* module */[
 var StringSet = 0;
 
 var Log = [
+  logLevelToString,
   trace,
   debug,
   info,

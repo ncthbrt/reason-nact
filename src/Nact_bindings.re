@@ -26,15 +26,15 @@ module Log = {
   type logger;
   type msg = {
     .
-    "_type": string,
-    "level": int,
+    "_type": Js.nullable(string),
+    "level": Js.nullable(int),
     "message": Js.nullable(string),
     "name": Js.nullable(string),
     "properties": Js.nullable(Js.Json.t),
     "values": Js.nullable(Js.Json.t),
     "_exception": Js.nullable(exn),
-    "actor": actorRef,
-    "createdAt": Js.Date.t
+    "actor": Js.nullable(actorRef),
+    "createdAt": Js.nullable(Js.Date.t)
   };
   [@bs.send] external trace : (logger, string) => unit = "";
   [@bs.send] external debug : (logger, string) => unit = "";
@@ -71,9 +71,9 @@ type persistentCtx('msg) = {
 };
 
 type statefulActor('state, 'msgType) =
-  (Js.nullable('state), Js.Json.t, ctx) => Js.Promise.t('state);
+  (Js.nullable('state), 'msgType, ctx) => Js.Promise.t('state);
 
-type statelessActor('msgType) = (Js.Json.t, ctx) => Js.Promise.t(unit);
+type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 
 type persistentActor('msgType) =
   (Js.nullable(Js.Json.t), Js.Json.t, persistentCtx('msgType)) => Js.Promise.t(Js.Json.t);
@@ -114,12 +114,12 @@ type persistentActorOptions = {
 [@bs.module "nact"]
 external spawn :
   (actorRef, statefulActor('state, 'msgType), Js.nullable(string), actorOptions) => actorRef =
-  "spawn";
+  "";
 
 [@bs.module "nact"]
 external spawnStateless :
   (actorRef, statelessActor('msgType), Js.nullable(string), actorOptions) => actorRef =
-  "spawnStateless";
+  "";
 
 type actor;
 
@@ -127,28 +127,24 @@ type actor;
 
 [@bs.module "nact/lib/actor"] [@bs.val "Actor"] external actor : actor = "";
 
-[@bs.send] external getSafeTimeout : (actor, int) => int = "getSafeTimeout";
-
 [@bs.module "nact"]
 external spawnPersistent :
   (actorRef, persistentActor('msgType), string, Js.nullable(string), persistentActorOptions) =>
   actorRef =
-  "spawnPersistent";
+  "";
 
 type plugin = actorRef => unit;
 
-[@bs.module "nact"] external configurePersistence : persistenceEngine => plugin =
-  "configurePersistence";
+[@bs.module "nact"] external configurePersistence : persistenceEngine => plugin = "";
 
-[@bs.module "nact"] external configureLogging : (actorRef => actorRef) => plugin =
-  "configureLogging";
+[@bs.module "nact"] external configureLogging : (actorRef => actorRef) => plugin = "";
 
-[@bs.module "nact"] external stop : actorRef => unit = "stop";
+[@bs.module "nact"] external stop : actorRef => unit = "";
 
-[@bs.module "nact"] [@bs.splice] external start : array(plugin) => actorRef = "start";
+[@bs.module "nact"] [@bs.splice] external start : array(plugin) => actorRef = "";
 
-[@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "dispatch";
+[@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "";
 
 [@bs.module "nact"]
 external query : (actorRef, actorRef => 'msgType, int) => Js.Promise.t('expectedResult) =
-  "query";
+  "";

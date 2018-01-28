@@ -43,6 +43,15 @@ module Log = {
     [@bs.as 4] | Warn
     [@bs.as 5] | Error
     [@bs.as 6] | Critical;
+  let logLevelToString =
+    fun
+    | Off => "off"
+    | Trace => "trace"
+    | Debug => "debug"
+    | Info => "info"
+    | Warn => "warn"
+    | Error => "error"
+    | Critical => "critical";
   type t =
     | Message(logLevel, string, Js.Date.t, actorPath)
     | Error(exn, Js.Date.t, actorPath)
@@ -52,33 +61,37 @@ module Log = {
   type jsLog = Nact_bindings.Log.msg;
   let fromJsLog: jsLog => t =
     (msg) => {
-      let path = ActorPath(msg##actor##path);
-      let createdAt = msg##createdAt;
-      switch msg##_type {
-      | "trace" =>
+      let path =
+        msg##actor
+        |> Js.Nullable.to_opt
+        |> defaultTo(Nact_bindings.nobody())
+        |> ((a) => ActorPath(a##path));
+      let createdAt = msg##createdAt |> Js.Nullable.to_opt |> defaultTo(Js.Date.make());
+      switch (Js.Nullable.to_opt(msg##_type)) {
+      | Some("trace") =>
         let result =
           Message(
-            logLevelFromJs(msg##level) |> defaultTo(Off),
+            msg##level |> Js.Nullable.to_opt |> defaultTo(0) |> logLevelFromJs |> defaultTo(Off),
             msg##message |> Js.Nullable.to_opt |> defaultTo(""),
             createdAt,
             path
           );
         result
-      | "metric" =>
+      | Some("metric") =>
         Metric(
           msg##name |> to_opt |> defaultTo(""),
           msg##values |> to_opt |> defaultTo(Js.Json.null),
           createdAt,
           path
         )
-      | "event" =>
+      | Some("event") =>
         Event(
           msg##name |> to_opt |> defaultTo(""),
           msg##properties |> to_opt |> defaultTo(Js.Json.null),
           createdAt,
           path
         )
-      | "exception" =>
+      | Some("exception") =>
         Error(
           msg##_exception |> to_opt |> defaultTo(Failure("Error is undefined")),
           createdAt,
@@ -130,15 +143,15 @@ let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
   logger: untypedCtx##log
 };
 
-let mapPersist = (persist, msg) => persist(msg);
+let mapPersist = (encoder, persist, msg) => persist(encoder(msg));
 
-let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
+let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming), encoder) => {
   name: untypedCtx##name,
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
   recovering: untypedCtx##recovering |> Js.Nullable.to_opt |> defaultTo(false),
-  persist: mapPersist(untypedCtx##persist),
+  persist: mapPersist(encoder, untypedCtx##persist),
   children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
   logger: untypedCtx##log
 };
@@ -215,24 +228,14 @@ let useStatefulSupervisionPolicy = (f, initialState) => {
   }
 };
 
-let spawn =
-    (
-      ~name=?,
-      ~shutdownAfter=?,
-      ~whenChildCrashes=?,
-      ~decoder=?,
-      ActorRef(parent),
-      func,
-      initialState
-    ) => {
+let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func, initialState) => {
   let options = {
     "shutdownAfter": from_opt(shutdownAfter),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
-  let decoder = decoder |> defaultTo(unsafeDecoder);
-  let f = (possibleState, msg, ctx) => {
+  let f = (possibleState: Js.nullable('state), msg: 'msg, ctx) => {
     let state = Js.Nullable.to_opt(possibleState) |> defaultTo(initialState);
-    try (func(state, decoder(msg), mapCtx(ctx))) {
+    try (func(state, msg, mapCtx(ctx))) {
     | err => reject(err)
     }
   };
@@ -240,14 +243,15 @@ let spawn =
   ActorRef(untypedRef)
 };
 
-let spawnStateless =
-    (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ~decoder=?, ActorRef(parent), func) => {
+let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func) => {
   let options = {
     "shutdownAfter": from_opt(shutdownAfter),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
   };
-  let decoder = decoder |> defaultTo(unsafeDecoder);
-  let f = (msg, ctx) => func(decoder(msg), mapCtx(ctx));
+  let f = (msg, ctx) =>
+    try (func(msg, mapCtx(ctx))) {
+    | _ => Js.Promise.resolve()
+    };
   let untypedRef = Nact_bindings.spawnStateless(parent, f, from_opt(name), options);
   ActorRef(untypedRef)
 };
@@ -262,6 +266,7 @@ let spawnPersistent =
       ~decoder=?,
       ~stateDecoder=?,
       ~stateEncoder=?,
+      ~encoder=?,
       ActorRef(parent),
       func: ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state),
       initialState: 'state
@@ -269,6 +274,7 @@ let spawnPersistent =
   let decoder = decoder |> defaultTo(unsafeDecoder);
   let stateDecoder = stateDecoder |> defaultTo(unsafeDecoder);
   let stateEncoder = stateEncoder |> defaultTo(unsafeEncoder);
+  let encoder = encoder |> defaultTo(unsafeEncoder);
   let options: Nact_bindings.persistentActorOptions = {
     "shutdownAfter": from_opt(shutdownAfter),
     "snapshotEvery": from_opt(snapshotEvery),
@@ -281,7 +287,7 @@ let spawnPersistent =
       | Some(state) => stateDecoder(state)
       };
     (
-      try (func(state, decoder(msg), mapPersistentCtx(ctx))) {
+      try (func(state, decoder(msg), mapPersistentCtx(ctx, encoder))) {
       | err => reject(err)
       }
     )
@@ -311,8 +317,8 @@ let start = (~persistenceEngine=?, ~logger=?, ()) => {
     switch (persistenceEngine, logger) {
     | (Some(persistence), Some(logger)) =>
       Nact_bindings.start([|
-        Nact_bindings.configureLogging(mapLoggingActor(logger)),
-        Nact_bindings.configurePersistence(persistence)
+        Nact_bindings.configurePersistence(persistence),
+        Nact_bindings.configureLogging(mapLoggingActor(logger))
       |])
     | (None, Some(logger)) =>
       Nact_bindings.start([|Nact_bindings.configureLogging(mapLoggingActor(logger))|])
