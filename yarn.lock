@@ -16,6 +16,10 @@
   dependencies:
     jest "^22.0.4"
 
+"@glennsl/bs-json@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@glennsl/bs-json/-/bs-json-1.1.2.tgz#294c63eea060036e9df9b413caf42fa3ccd5afe3"
+
 "@types/node@*":
   version "9.3.0"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-9.3.0.tgz#3a129cda7c4e5df2409702626892cb4b96546dd5"
