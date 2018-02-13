@@ -41,6 +41,44 @@ var ActorPath = /* module */[
   /* toString */toString
 ];
 
+
+var WrappedVariant = '_wvariant';
+var WrappedEvent = '_wevent';
+function unsafeEncoder(obj) {
+  console.log(obj);
+  var serialized = JSON.stringify(obj, function (key, value) {
+    if (value && Array.isArray(value) && value.tag !== undefined) {
+      var r = {};
+      r.values = value.slice();
+      r.tag = value.tag;
+      r.type = WrappedVariant;
+      return r;
+    } else {
+      return value;
+    }
+  });
+  console.log(serialized);
+  return { serialized, type: WrappedEvent };
+};
+
+function unsafeDecoder(result) {
+  if(result && typeof(result) === 'object' && result.type === WrappedEvent) {
+    return JSON.parse(result.serialized, (key, value) => {
+      if (value && typeof (value) === 'object' && value.type === WrappedVariant) {
+        var values = value.values;
+        values.tag = value.tag;
+        return values;
+      } else {
+        return value;
+      }
+    });
+  } else {
+    return result;
+  }
+};
+
+;
+
 function logLevelFromJs(param) {
   if (param <= 6 && 0 <= param) {
     return /* Some */[param - 0 | 0];
@@ -76,7 +114,7 @@ function fromJsLog(msg) {
   var match = msg.type;
   if (match == null) {
     return /* Unknown */Block.__(4, [
-              msg,
+              unsafeEncoder(msg),
               createdAt,
               path
             ]);
@@ -114,7 +152,7 @@ function fromJsLog(msg) {
                   ]);
       default:
         return /* Unknown */Block.__(4, [
-                  msg,
+                  unsafeEncoder(msg),
                   createdAt,
                   path
                 ]);
@@ -286,16 +324,16 @@ function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
 
 function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, decoder, stateDecoder, stateEncoder, encoder, param, func, initialState) {
   var decoder$1 = defaultTo((function (prim) {
-          return prim;
+          return unsafeDecoder(prim);
         }), decoder);
   var stateDecoder$1 = defaultTo((function (prim) {
-          return prim;
+          return unsafeDecoder(prim);
         }), stateDecoder);
   var stateEncoder$1 = defaultTo((function (prim) {
-          return prim;
+          return unsafeEncoder(prim);
         }), stateEncoder);
   var encoder$1 = defaultTo((function (prim) {
-          return prim;
+          return unsafeEncoder(prim);
         }), encoder);
   var options = {
     shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
@@ -454,4 +492,4 @@ exports.hours                        = hours;
 exports.messages                     = messages;
 exports.message                      = message;
 exports.Operators                    = Operators;
-/* nact Not a pure module */
+/*  Not a pure module */

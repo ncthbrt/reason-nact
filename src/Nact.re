@@ -27,22 +27,61 @@ module ActorPath = {
 
 type systemMsg;
 
-external unsafeDecoder : Js.Json.t => 'msg = "%identity";
+[%%bs.raw
+  {|
+/* This code is to handle how bucklescript sometimes represents variants */
+ 
+var WrappedVariant = '_wvariant';
+var WrappedEvent = '_wevent';
+function unsafeEncoder(obj) {  
+  var serialized = JSON.stringify(obj, function (key, value) {
+    if (value && Array.isArray(value) && value.tag !== undefined) {
+      var r = {};
+      r.values = value.slice();
+      r.tag = value.tag;
+      r.type = WrappedVariant;
+      return r;
+    } else {
+      return value;
+    }
+  });  
+  return { serialized, type: WrappedEvent };
+};
 
-external unsafeEncoder : 'msg => Js.Json.t = "%identity";
+function unsafeDecoder(result) {
+  if(result && typeof(result) === 'object' && result.type === WrappedEvent) {
+    return JSON.parse(result.serialized, (key, value) => {
+      if (value && typeof (value) === 'object' && value.type === WrappedVariant) {
+        var values = value.values;
+        values.tag = value.tag;
+        return values;
+      } else {
+        return value;
+      }
+    });
+  } else {
+    return result;
+  }
+};
+|}
+];
+
+[@bs.val] external unsafeDecoder : Js.Json.t => 'msg = "unsafeDecoder";
+
+[@bs.val] external unsafeEncoder : 'msg => Js.Json.t = "unsafeEncoder";
 
 module Log = {
   type loggingEngine = Nact_bindings.Log.logger;
   type name = string;
   [@bs.deriving jsConverter]
   type logLevel =
-    [@bs.as 0] | Off
-    [@bs.as 1] | Trace
-    [@bs.as 2] | Debug
-    [@bs.as 3] | Info
-    [@bs.as 4] | Warn
-    [@bs.as 5] | Error
-    [@bs.as 6] | Critical;
+    | [@bs.as 0] Off
+    | [@bs.as 1] Trace
+    | [@bs.as 2] Debug
+    | [@bs.as 3] Info
+    | [@bs.as 4] Warn
+    | [@bs.as 5] Error
+    | [@bs.as 6] Critical;
   let logLevelToString =
     fun
     | Off => "off"
@@ -60,23 +99,28 @@ module Log = {
     | Unknown(Js.Json.t, Js.Date.t, actorPath);
   type jsLog = Nact_bindings.Log.msg;
   let fromJsLog: jsLog => t =
-    (msg) => {
+    msg => {
       let path =
         msg##actor
         |> Js.Nullable.to_opt
         |> defaultTo(Nact_bindings.nobody())
-        |> ((a) => ActorPath(a##path));
-      let createdAt = msg##createdAt |> Js.Nullable.to_opt |> defaultTo(Js.Date.make());
+        |> (a => ActorPath(a##path));
+      let createdAt =
+        msg##createdAt |> Js.Nullable.to_opt |> defaultTo(Js.Date.make());
       switch (Js.Nullable.to_opt(msg##_type)) {
       | Some("trace") =>
         let result =
           Message(
-            msg##level |> Js.Nullable.to_opt |> defaultTo(0) |> logLevelFromJs |> defaultTo(Off),
+            msg##level
+            |> Js.Nullable.to_opt
+            |> defaultTo(0)
+            |> logLevelFromJs
+            |> defaultTo(Off),
             msg##message |> Js.Nullable.to_opt |> defaultTo(""),
             createdAt,
             path
           );
-        result
+        result;
       | Some("metric") =>
         Metric(
           msg##name |> to_opt |> defaultTo(""),
@@ -98,20 +142,27 @@ module Log = {
           path
         )
       | _ => Unknown(msg |> unsafeEncoder, createdAt, path)
-      }
+      };
     };
   type logger = actorRef(systemMsg) => actorRef(t);
-  let trace = (message, loggingEngine) => Nact_bindings.Log.trace(loggingEngine, message);
-  let debug = (message, loggingEngine) => Nact_bindings.Log.debug(loggingEngine, message);
-  let info = (message, loggingEngine) => Nact_bindings.Log.info(loggingEngine, message);
-  let warn = (message, loggingEngine) => Nact_bindings.Log.warn(loggingEngine, message);
-  let error = (message, loggingEngine) => Nact_bindings.Log.error(loggingEngine, message);
-  let critical = (message, loggingEngine) => Nact_bindings.Log.critical(loggingEngine, message);
+  let trace = (message, loggingEngine) =>
+    Nact_bindings.Log.trace(loggingEngine, message);
+  let debug = (message, loggingEngine) =>
+    Nact_bindings.Log.debug(loggingEngine, message);
+  let info = (message, loggingEngine) =>
+    Nact_bindings.Log.info(loggingEngine, message);
+  let warn = (message, loggingEngine) =>
+    Nact_bindings.Log.warn(loggingEngine, message);
+  let error = (message, loggingEngine) =>
+    Nact_bindings.Log.error(loggingEngine, message);
+  let critical = (message, loggingEngine) =>
+    Nact_bindings.Log.critical(loggingEngine, message);
   let event = (~name, ~properties, loggingEngine) =>
     Nact_bindings.Log.event(loggingEngine, name, properties);
   let metric = (~name, ~values, loggingEngine) =>
     Nact_bindings.Log.metric(loggingEngine, name, values);
-  let exception_ = (err, loggingEngine) => Nact_bindings.Log.exception_(loggingEngine, err);
+  let exception_ = (err, loggingEngine) =>
+    Nact_bindings.Log.exception_(loggingEngine, err);
 };
 
 type ctx('msg, 'parentMsg) = {
@@ -145,7 +196,8 @@ let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
 
 let mapPersist = (encoder, persist, msg) => persist(encoder(msg));
 
-let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming), encoder) => {
+let mapPersistentCtx =
+    (untypedCtx: Nact_bindings.persistentCtx('incoming), encoder) => {
   name: untypedCtx##name,
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
@@ -186,35 +238,35 @@ type supervisionPolicy('msg, 'parentMsg) =
   (exn, supervisionCtx('msg, 'parentMsg)) => Js.Promise.t(supervisionAction);
 
 type statefulSupervisionPolicy('msg, 'parentMsg, 'state) =
-  (exn, 'state, supervisionCtx('msg, 'parentMsg)) => ('state, Js.Promise.t(supervisionAction));
+  (exn, 'state, supervisionCtx('msg, 'parentMsg)) =>
+  ('state, Js.Promise.t(supervisionAction));
 
-let mapSupervisionFunction = (optionalF) =>
+let mapSupervisionFunction = optionalF =>
   switch optionalF {
   | None => Js.Nullable.undefined
   | Some(f) =>
-    Js.Nullable.return(
-      (_, err, ctx) =>
-        f(err, mapSupervisionCtx(ctx))
-        |> then_(
-             (decision) =>
-               resolve(
-                 switch decision {
-                 | Stop => ctx##stop
-                 | StopAll => ctx##stopAll
-                 | Reset => ctx##reset
-                 | ResetAll => ctx##resetAll
-                 | Escalate => ctx##escalate
-                 | Resume => ctx##resume
-                 }
-               )
+    Js.Nullable.return((_, err, ctx) =>
+      f(err, mapSupervisionCtx(ctx))
+      |> then_(decision =>
+           resolve(
+             switch decision {
+             | Stop => ctx##stop
+             | StopAll => ctx##stopAll
+             | Reset => ctx##reset
+             | ResetAll => ctx##resetAll
+             | Escalate => ctx##escalate
+             | Resume => ctx##resume
+             }
            )
+         )
     )
   };
 
 type statefulActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, ctx('msg, 'parentMsg)) => Js.Promise.t('state);
 
-type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Promise.t(unit);
+type statelessActor('msg, 'parentMsg) =
+  ('msg, ctx('msg, 'parentMsg)) => Js.Promise.t(unit);
 
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
@@ -224,11 +276,19 @@ let useStatefulSupervisionPolicy = (f, initialState) => {
   (err, ctx) => {
     let (nextState, promise) = f(err, state^, ctx);
     state := nextState;
-    promise
-  }
+    promise;
+  };
 };
 
-let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func, initialState) => {
+let spawn =
+    (
+      ~name=?,
+      ~shutdownAfter=?,
+      ~whenChildCrashes=?,
+      ActorRef(parent),
+      func,
+      initialState
+    ) => {
   let options = {
     "shutdownAfter": from_opt(shutdownAfter),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
@@ -237,13 +297,14 @@ let spawn = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), f
     let state = Js.Nullable.to_opt(possibleState) |> defaultTo(initialState);
     try (func(state, msg, mapCtx(ctx))) {
     | err => reject(err)
-    }
+    };
   };
   let untypedRef = Nact_bindings.spawn(parent, f, from_opt(name), options);
-  ActorRef(untypedRef)
+  ActorRef(untypedRef);
 };
 
-let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func) => {
+let spawnStateless =
+    (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func) => {
   let options = {
     "shutdownAfter": from_opt(shutdownAfter),
     "whenChildCrashes": mapSupervisionFunction(whenChildCrashes)
@@ -252,8 +313,9 @@ let spawnStateless = (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(p
     try (func(msg, mapCtx(ctx))) {
     | _ => Js.Promise.resolve()
     };
-  let untypedRef = Nact_bindings.spawnStateless(parent, f, from_opt(name), options);
-  ActorRef(untypedRef)
+  let untypedRef =
+    Nact_bindings.spawnStateless(parent, f, from_opt(name), options);
+  ActorRef(untypedRef);
 };
 
 let spawnPersistent =
@@ -268,7 +330,8 @@ let spawnPersistent =
       ~stateEncoder=?,
       ~encoder=?,
       ActorRef(parent),
-      func: ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state),
+      func:
+        ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state),
       initialState: 'state
     ) => {
   let decoder = decoder |> defaultTo(unsafeDecoder);
@@ -291,15 +354,17 @@ let spawnPersistent =
       | err => reject(err)
       }
     )
-    |> then_((result) => resolve(stateEncoder(result)))
+    |> then_(result => resolve(stateEncoder(result)));
   };
-  let untypedRef = Nact_bindings.spawnPersistent(parent, f, key, from_opt(name), options);
-  ActorRef(untypedRef)
+  let untypedRef =
+    Nact_bindings.spawnPersistent(parent, f, key, from_opt(name), options);
+  ActorRef(untypedRef);
 };
 
 let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
 
-let dispatch = (ActorRef(recipient), msg) => Nact_bindings.dispatch(recipient, msg);
+let dispatch = (ActorRef(recipient), msg) =>
+  Nact_bindings.dispatch(recipient, msg);
 
 let nobody = () => ActorRef(Nact_bindings.nobody());
 
@@ -309,7 +374,7 @@ let spawnAdapter = (parent, mapping) =>
 let mapLoggingActor = (loggingActorFunction: Log.logger, system) => {
   let loggerActor = loggingActorFunction(ActorRef(system));
   let ActorRef(adapter) = spawnAdapter(loggerActor, Log.fromJsLog);
-  adapter
+  adapter;
 };
 
 let start = (~persistenceEngine=?, ~logger=?, ()) => {
@@ -321,19 +386,22 @@ let start = (~persistenceEngine=?, ~logger=?, ()) => {
         Nact_bindings.configureLogging(mapLoggingActor(logger))
       |])
     | (None, Some(logger)) =>
-      Nact_bindings.start([|Nact_bindings.configureLogging(mapLoggingActor(logger))|])
+      Nact_bindings.start([|
+        Nact_bindings.configureLogging(mapLoggingActor(logger))
+      |])
     | (Some(persistence), None) =>
       Nact_bindings.start([|Nact_bindings.configurePersistence(persistence)|])
     | (None, None) => Nact_bindings.start([||])
     };
-  ActorRef(untypedRef)
+  ActorRef(untypedRef);
 };
 
 exception QueryTimeout(int);
 
 let query = (~timeout: int, ActorRef(recipient), msgF) => {
-  let f = (tempReference) => msgF(ActorRef(tempReference));
-  Nact_bindings.query(recipient, f, timeout) |> catch((_) => reject(QueryTimeout(timeout)))
+  let f = tempReference => msgF(ActorRef(tempReference));
+  Nact_bindings.query(recipient, f, timeout)
+  |> catch((_) => reject(QueryTimeout(timeout)));
 };
 
 let milliseconds = 1;
