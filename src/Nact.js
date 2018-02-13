@@ -42,10 +42,11 @@ var ActorPath = /* module */[
 ];
 
 
+/* This code is to handle how bucklescript sometimes represents variants */
+ 
 var WrappedVariant = '_wvariant';
 var WrappedEvent = '_wevent';
-function unsafeEncoder(obj) {
-  console.log(obj);
+function unsafeEncoder(obj) {  
   var serialized = JSON.stringify(obj, function (key, value) {
     if (value && Array.isArray(value) && value.tag !== undefined) {
       var r = {};
@@ -56,8 +57,7 @@ function unsafeEncoder(obj) {
     } else {
       return value;
     }
-  });
-  console.log(serialized);
+  });  
   return { serialized, type: WrappedEvent };
 };
 
