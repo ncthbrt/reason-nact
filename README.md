@@ -4,10 +4,11 @@
 
 
 <!-- Badges -->
-[![Travis branch](https://img.shields.io/travis/ncthbrt/reason-nact/master.svg?style=flat-square)]()
+[![Travis branch](https://img.shields.io/travis/ncthbrt/reason-nact/master.svg?style=flat-square)](http://travis-ci.org/ncthbrt/reason-nact)
 [![Coveralls](https://img.shields.io/coveralls/ncthbrt/reason-nact.svg?style=flat-square)]() [![Dependencies](https://david-dm.org/ncthbrt/nact.svg?branch=master&style=flat-square)](https://david-dm.org/ncthbrt/reason-nact) 
 
 [![npm](https://img.shields.io/npm/v/nact.svg?style=flat-square)](https://www.npmjs.com/package/reason-nact) [![we are reactive](https://img.shields.io/badge/we_are-reactive-blue.svg?style=flat-square)](https://www.reactivemanifesto.org/)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact?ref=badge_shield)
 
 Any and all feedback, comments and suggestions are welcome. Please open an issue if you find anything unclear or misleading in the documentation. 
 
@@ -15,7 +16,6 @@ This is the repository for the ReasonML bindings for nact. If you'd like to view
 
 # Sponsored by 
 [![Root Logo](https://raw.githubusercontent.com/ncthbrt/nact/master/root-logo.svg?sanitize=true)](https://root.co.za)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact?ref=badge_shield)
 
 ## Nact is redux but for the server
 
