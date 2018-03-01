@@ -30,6 +30,6 @@ setTimeout((function () {
       }), 100);
 
 exports.system = system;
-exports.ping   = ping;
-exports.pong   = pong;
+exports.ping = ping;
+exports.pong = pong;
 /* system Not a pure module */

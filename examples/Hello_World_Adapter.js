@@ -1,6 +1,6 @@
 'use strict';
 
-var Nact       = require("../src/Nact.js");
+var Nact = require("../src/Nact.js");
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
 var system = Nact.start(/* None */0, /* None */0, /* () */0);
@@ -29,8 +29,8 @@ var hello = Nact.spawn(/* Some */["hello"], /* None */0, /* None */0, system, (f
 
 Nact.Operators[/* <-< */0](hello, /* Hello */[world]);
 
-exports.system                   = system;
-exports.world                    = world;
+exports.system = system;
+exports.world = world;
 exports.createAdapterIfNotExists = createAdapterIfNotExists;
-exports.hello                    = hello;
+exports.hello = hello;
 /* system Not a pure module */

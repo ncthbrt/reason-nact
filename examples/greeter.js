@@ -10,6 +10,6 @@ var greeter = Nact.spawnStateless(/* Some */["greeter"], /* None */0, /* None */
 
 Nact.dispatch(greeter, /* record */[/* name */"Erlich Bachman"]);
 
-exports.system  = system;
+exports.system = system;
 exports.greeter = greeter;
 /* system Not a pure module */

@@ -1,14 +1,14 @@
 'use strict';
 
-var $$Map                   = require("bs-platform/lib/js/map.js");
-var Nact                    = require("../src/Nact.js");
-var Block                   = require("bs-platform/lib/js/block.js");
-var Curry                   = require("bs-platform/lib/js/curry.js");
-var Caml_obj                = require("bs-platform/lib/js/caml_obj.js");
+var $$Map = require("bs-platform/lib/js/map.js");
+var Nact = require("../src/Nact.js");
+var Block = require("bs-platform/lib/js/block.js");
+var Curry = require("bs-platform/lib/js/curry.js");
+var Caml_primitive = require("bs-platform/lib/js/caml_primitive.js");
 var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 function compare(param, param$1) {
-  return Caml_obj.caml_int_compare(param[0], param$1[0]);
+  return Caml_primitive.caml_int_compare(param[0], param$1[0]);
 }
 
 var ContactIdCompare = /* module */[/* compare */compare];
@@ -168,15 +168,15 @@ promise1$1.then((function (result) {
       }));
 
 exports.ContactIdCompare = ContactIdCompare;
-exports.ContactIdMap     = ContactIdMap;
-exports.createContact    = createContact;
-exports.removeContact    = removeContact;
-exports.updateContact    = updateContact;
-exports.findContact      = findContact;
-exports.system           = system;
-exports.contactsService  = contactsService;
-exports.createErlich     = createErlich;
-exports.createDinesh     = createDinesh;
-exports.findDinsheh      = findDinsheh;
-exports.$great$eq$great  = $great$eq$great;
+exports.ContactIdMap = ContactIdMap;
+exports.createContact = createContact;
+exports.removeContact = removeContact;
+exports.updateContact = updateContact;
+exports.findContact = findContact;
+exports.system = system;
+exports.contactsService = contactsService;
+exports.createErlich = createErlich;
+exports.createDinesh = createDinesh;
+exports.findDinsheh = findDinsheh;
+exports.$great$eq$great = $great$eq$great;
 /* ContactIdMap Not a pure module */

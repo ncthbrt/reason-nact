@@ -1,10 +1,10 @@
 'use strict';
 
-var Nact                  = require("../src/Nact.js");
-var Curry                 = require("bs-platform/lib/js/curry.js");
-var $$String              = require("bs-platform/lib/js/string.js");
-var Json_decode           = require("@glennsl/bs-json/src/Json_decode.bs.js");
-var Json_encode           = require("@glennsl/bs-json/src/Json_encode.bs.js");
+var Nact = require("../src/Nact.js");
+var Curry = require("bs-platform/lib/js/curry.js");
+var $$String = require("bs-platform/lib/js/string.js");
+var Json_decode = require("@glennsl/bs-json/src/Json_decode.bs.js");
+var Json_encode = require("@glennsl/bs-json/src/Json_encode.bs.js");
 var MockPersistenceEngine = require("nact/test/mock-persistence-engine");
 
 function toPositionInAlphabet(c) {
@@ -96,13 +96,13 @@ Nact.Operators[/* <-< */0](actor, {
 
 var a = /* "a" */97;
 
-exports.a                      = a;
-exports.toPositionInAlphabet   = toPositionInAlphabet;
+exports.a = a;
+exports.toPositionInAlphabet = toPositionInAlphabet;
 exports.fromPositionInAlphabet = fromPositionInAlphabet;
-exports.rot13                  = rot13;
-exports.jsonDecoder            = jsonDecoder;
-exports.decoder                = decoder;
-exports.encoder                = encoder;
-exports.system                 = system;
-exports.actor                  = actor;
+exports.rot13 = rot13;
+exports.jsonDecoder = jsonDecoder;
+exports.decoder = decoder;
+exports.encoder = encoder;
+exports.system = system;
+exports.actor = actor;
 /* system Not a pure module */

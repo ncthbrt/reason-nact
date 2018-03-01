@@ -8,5 +8,5 @@ function keys(map) {
 }
 
 exports.Bindings = Bindings;
-exports.keys     = keys;
+exports.keys = keys;
 /* No side effect */

@@ -28,6 +28,6 @@ Nact.Operators[/* <-< */0](statefulGreeter, /* record */[/* name */"Erlich"]);
 
 Nact.Operators[/* <-< */0](statefulGreeter, /* record */[/* name */"Dinesh"]);
 
-exports.system          = system;
+exports.system = system;
 exports.statefulGreeter = statefulGreeter;
 /* system Not a pure module */

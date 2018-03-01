@@ -1,7 +1,7 @@
 'use strict';
 
-var Nact         = require("../src/Nact.js");
-var $$String     = require("bs-platform/lib/js/string.js");
+var Nact = require("../src/Nact.js");
+var $$String = require("bs-platform/lib/js/string.js");
 var Js_primitive = require("bs-platform/lib/js/js_primitive.js");
 
 function defaultTo($$default, param) {
@@ -82,9 +82,9 @@ var stringClassifierActor = Nact.spawnStateless(/* None */0, /* None */0, /* Non
         return Promise.resolve("mutation".indexOf($$String.lowercase(msg)) >= 0 ? Nact.Log[/* event */7]("receivedEvilMessage", msg, ctx[/* logger */5]) : Nact.Log[/* info */3]("Received message: " + msg, ctx[/* logger */5]));
       }));
 
-exports.defaultTo             = defaultTo;
-exports.getLogText            = getLogText;
-exports.consoleLogger         = consoleLogger;
-exports.system                = system;
+exports.defaultTo = defaultTo;
+exports.getLogText = getLogText;
+exports.consoleLogger = consoleLogger;
+exports.system = system;
 exports.stringClassifierActor = stringClassifierActor;
 /* system Not a pure module */

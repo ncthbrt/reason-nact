@@ -1,17 +1,17 @@
 'use strict';
 
-var Nact                    = require("nact");
-var Block                   = require("bs-platform/lib/js/block.js");
-var Curry                   = require("bs-platform/lib/js/curry.js");
-var Js_exn                  = require("bs-platform/lib/js/js_exn.js");
-var $$String                = require("bs-platform/lib/js/string.js");
-var Caml_int32              = require("bs-platform/lib/js/caml_int32.js");
-var Nact_jsMap              = require("./Nact_jsMap.js");
-var Js_primitive            = require("bs-platform/lib/js/js_primitive.js");
-var Nact_stringSet          = require("./Nact_stringSet.js");
-var Caml_exceptions         = require("bs-platform/lib/js/caml_exceptions.js");
-var Js_null_undefined       = require("bs-platform/lib/js/js_null_undefined.js");
-var References              = require("nact/lib/references");
+var Nact = require("nact");
+var Block = require("bs-platform/lib/js/block.js");
+var Curry = require("bs-platform/lib/js/curry.js");
+var Js_exn = require("bs-platform/lib/js/js_exn.js");
+var $$String = require("bs-platform/lib/js/string.js");
+var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
+var Nact_jsMap = require("./Nact_jsMap.js");
+var Js_primitive = require("bs-platform/lib/js/js_primitive.js");
+var Nact_stringSet = require("./Nact_stringSet.js");
+var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
+var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
+var References = require("nact/lib/references");
 var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 function defaultTo($$default, opt) {
@@ -43,10 +43,10 @@ var ActorPath = /* module */[
 
 
 /* This code is to handle how bucklescript sometimes represents variants */
- 
+
 var WrappedVariant = '_wvariant';
 var WrappedEvent = '_wevent';
-function unsafeEncoder(obj) {  
+function unsafeEncoder(obj) {
   var serialized = JSON.stringify(obj, function (key, value) {
     if (value && Array.isArray(value) && value.tag !== undefined) {
       var r = {};
@@ -57,7 +57,7 @@ function unsafeEncoder(obj) {
     } else {
       return value;
     }
-  });  
+  });
   return { serialized, type: WrappedEvent };
 };
 
@@ -289,7 +289,7 @@ function useStatefulSupervisionPolicy(f, initialState) {
 
 function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState) {
   var options = {
-    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
+    shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (possibleState, msg, ctx) {
@@ -301,13 +301,13 @@ function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState)
       return Promise.reject(Js_exn.internalToOCamlException(raw_err));
     }
   };
-  var untypedRef = Nact.spawn(param[0], f, Js_null_undefined.from_opt(name), options);
+  var untypedRef = Nact.spawn(param[0], f, Js_null_undefined.fromOption(name), options);
   return /* ActorRef */[untypedRef];
 }
 
 function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
   var options = {
-    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
+    shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (msg, ctx) {
@@ -318,7 +318,7 @@ function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
       return Promise.resolve(/* () */0);
     }
   };
-  var untypedRef = Nact.spawnStateless(param[0], f, Js_null_undefined.from_opt(name), options);
+  var untypedRef = Nact.spawnStateless(param[0], f, Js_null_undefined.fromOption(name), options);
   return /* ActorRef */[untypedRef];
 }
 
@@ -336,8 +336,8 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrash
           return unsafeEncoder(prim);
         }), encoder);
   var options = {
-    shutdownAfter: Js_null_undefined.from_opt(shutdownAfter),
-    snapshotEvery: Js_null_undefined.from_opt(snapshotEvery),
+    shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
+    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery),
     whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
   };
   var f = function (state, msg, ctx) {
@@ -353,7 +353,7 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrash
                   return Promise.resolve(Curry._1(stateEncoder$1, result));
                 }));
   };
-  var untypedRef = Nact.spawnPersistent(param[0], f, key, Js_null_undefined.from_opt(name), options);
+  var untypedRef = Nact.spawnPersistent(param[0], f, key, Js_null_undefined.fromOption(name), options);
   return /* ActorRef */[untypedRef];
 }
 
@@ -468,28 +468,28 @@ var messages = 1;
 
 var message = 1;
 
-exports.StringSet                    = StringSet;
-exports.ActorPath                    = ActorPath;
-exports.Log                          = Log;
+exports.StringSet = StringSet;
+exports.ActorPath = ActorPath;
+exports.Log = Log;
 exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
-exports.spawn                        = spawn;
-exports.spawnStateless               = spawnStateless;
-exports.spawnPersistent              = spawnPersistent;
-exports.spawnAdapter                 = spawnAdapter;
-exports.start                        = start;
-exports.stop                         = stop;
-exports.dispatch                     = dispatch;
-exports.nobody                       = nobody;
-exports.QueryTimeout                 = QueryTimeout;
-exports.query                        = query;
-exports.milliseconds                 = milliseconds;
-exports.millisecond                  = millisecond;
-exports.seconds                      = seconds;
-exports.second                       = second;
-exports.minutes                      = minutes;
-exports.minute                       = minute;
-exports.hours                        = hours;
-exports.messages                     = messages;
-exports.message                      = message;
-exports.Operators                    = Operators;
+exports.spawn = spawn;
+exports.spawnStateless = spawnStateless;
+exports.spawnPersistent = spawnPersistent;
+exports.spawnAdapter = spawnAdapter;
+exports.start = start;
+exports.stop = stop;
+exports.dispatch = dispatch;
+exports.nobody = nobody;
+exports.QueryTimeout = QueryTimeout;
+exports.query = query;
+exports.milliseconds = milliseconds;
+exports.millisecond = millisecond;
+exports.seconds = seconds;
+exports.second = second;
+exports.minutes = minutes;
+exports.minute = minute;
+exports.hours = hours;
+exports.messages = messages;
+exports.message = message;
+exports.Operators = Operators;
 /*  Not a pure module */
