@@ -40,7 +40,8 @@ module Log: {
   let warn: (string, loggingEngine) => unit;
   let error: (string, loggingEngine) => unit;
   let critical: (string, loggingEngine) => unit;
-  let event: (~name: string, ~properties: 'eventProperties, loggingEngine) => unit;
+  let event:
+    (~name: string, ~properties: 'eventProperties, loggingEngine) => unit;
   let exception_: (exn, loggingEngine) => unit;
   let metric: (~name: string, ~values: 'values, loggingEngine) => unit;
 };
@@ -51,7 +52,7 @@ type ctx('msg, 'parentMsg) = {
   self: actorRef('msg),
   children: StringSet.t,
   name: string,
-  logger: Log.loggingEngine
+  logger: Log.loggingEngine,
 };
 
 type persistentCtx('msg, 'parentMsg) = {
@@ -62,16 +63,15 @@ type persistentCtx('msg, 'parentMsg) = {
   persist: 'msg => Js.Promise.t(unit),
   children: StringSet.t,
   recovering: bool,
-  logger: Log.loggingEngine
+  logger: Log.loggingEngine,
 };
 
 type supervisionCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  child: string,
   path: actorPath,
   self: actorRef('msg),
   name: string,
-  children: StringSet.t
+  children: StringSet.t,
 };
 
 type supervisionAction =
@@ -85,16 +85,19 @@ type supervisionAction =
 type statefulActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, ctx('msg, 'parentMsg)) => Js.Promise.t('state);
 
-type statelessActor('msg, 'parentMsg) = ('msg, ctx('msg, 'parentMsg)) => Js.Promise.t(unit);
+type statelessActor('msg, 'parentMsg) =
+  ('msg, ctx('msg, 'parentMsg)) => Js.Promise.t(unit);
 
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
 type supervisionPolicy('msg, 'parentMsg) =
-  (exn, supervisionCtx('msg, 'parentMsg)) => Js.Promise.t(supervisionAction);
+  ('msg, exn, supervisionCtx('msg, 'parentMsg)) =>
+  Js.Promise.t(supervisionAction);
 
 type statefulSupervisionPolicy('msg, 'parentMsg, 'state) =
-  (exn, 'state, supervisionCtx('msg, 'parentMsg)) => ('state, Js.Promise.t(supervisionAction));
+  ('msg, exn, 'state, supervisionCtx('msg, 'parentMsg)) =>
+  ('state, Js.Promise.t(supervisionAction));
 
 let useStatefulSupervisionPolicy:
   (statefulSupervisionPolicy('msg, 'parentMsg, 'state), 'state) =>
@@ -104,7 +107,7 @@ let spawn:
   (
     ~name: string=?,
     ~shutdownAfter: int=?,
-    ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
+    ~onCrash: supervisionPolicy('msg, 'parentMsg)=?,
     actorRef('parentMsg),
     statefulActor('state, 'msg, 'parentMsg),
     'state
@@ -115,7 +118,7 @@ let spawnStateless:
   (
     ~name: string=?,
     ~shutdownAfter: int=?,
-    ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
+    ~onCrash: supervisionPolicy('msg, 'parentMsg)=?,
     actorRef('parentMsg),
     statelessActor('msg, 'parentMsg)
   ) =>
@@ -127,7 +130,7 @@ let spawnPersistent:
     ~name: string=?,
     ~shutdownAfter: int=?,
     ~snapshotEvery: int=?,
-    ~whenChildCrashes: supervisionPolicy('msg, 'parentMsg)=?,
+    ~onCrash: supervisionPolicy('msg, 'parentMsg)=?,
     ~decoder: Js.Json.t => 'msg=?,
     ~stateDecoder: Js.Json.t => 'state=?,
     ~stateEncoder: 'state => Js.Json.t=?,
@@ -138,10 +141,12 @@ let spawnPersistent:
   ) =>
   actorRef('msg);
 
-let spawnAdapter: (actorRef('parentMsg), 'msg => 'parentMsg) => actorRef('msg);
+let spawnAdapter:
+  (actorRef('parentMsg), 'msg => 'parentMsg) => actorRef('msg);
 
 let start:
-  (~persistenceEngine: persistenceEngine=?, ~logger: Log.logger=?, unit) => actorRef(systemMsg);
+  (~persistenceEngine: persistenceEngine=?, ~logger: Log.logger=?, unit) =>
+  actorRef(systemMsg);
 
 let stop: actorRef('msg) => unit;
 
@@ -151,7 +156,9 @@ let nobody: unit => actorRef('a);
 
 exception QueryTimeout(int);
 
-let query: (~timeout: int, actorRef('msg), actorRef('outgoing) => 'msg) => Js.Promise.t('outgoing);
+let query:
+  (~timeout: int, actorRef('msg), actorRef('outgoing) => 'msg) =>
+  Js.Promise.t('outgoing);
 
 let milliseconds: int;
 
@@ -174,5 +181,7 @@ let message: int;
 module Operators: {
   let (<-<): (actorRef('a), 'a) => unit;
   let (>->): ('a, actorRef('a)) => unit;
-  let (<?): (actorRef('msg), (actorRef('outgoing) => 'msg, int)) => Js.Promise.t('outgoing);
+  let (<?):
+    (actorRef('msg), (actorRef('outgoing) => 'msg, int)) =>
+    Js.Promise.t('outgoing);
 };

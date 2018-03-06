@@ -67,6 +67,8 @@ function unsafeDecoder(result) {
 
 [@bs.val] external unsafeDecoder : Js.Json.t => 'msg = "unsafeDecoder";
 
+external magicDecoder : Js.Json.t => 'msg = "%identity";
+
 [@bs.val] external unsafeEncoder : 'msg => Js.Json.t = "unsafeEncoder";
 
 module Log = {
@@ -212,7 +214,6 @@ let mapPersistentCtx =
 
 type supervisionCtx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
-  child: string,
   path: actorPath,
   self: actorRef('msg),
   name: string,
@@ -225,7 +226,6 @@ let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
   children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
-  child: untypedCtx##child##name,
 };
 
 type supervisionAction =
@@ -237,18 +237,20 @@ type supervisionAction =
   | Resume;
 
 type supervisionPolicy('msg, 'parentMsg) =
-  (exn, supervisionCtx('msg, 'parentMsg)) => Js.Promise.t(supervisionAction);
+  ('msg, exn, supervisionCtx('msg, 'parentMsg)) =>
+  Js.Promise.t(supervisionAction);
 
 type statefulSupervisionPolicy('msg, 'parentMsg, 'state) =
-  (exn, 'state, supervisionCtx('msg, 'parentMsg)) =>
+  ('msg, exn, 'state, supervisionCtx('msg, 'parentMsg)) =>
   ('state, Js.Promise.t(supervisionAction));
 
-let mapSupervisionFunction = optionalF =>
+let mapSupervisionFunction = (optionalF, decoder) => {
+  let decoder = decoder |> Js.Option.getWithDefault(magicDecoder);
   switch (optionalF) {
   | None => Js.Nullable.undefined
   | Some(f) =>
-    Js.Nullable.return((_, err, ctx) =>
-      f(err, mapSupervisionCtx(ctx))
+    Js.Nullable.return((msg, err, ctx) =>
+      f(decoder(msg), err, mapSupervisionCtx(ctx))
       |> then_(decision =>
            resolve(
              switch (decision) {
@@ -263,6 +265,7 @@ let mapSupervisionFunction = optionalF =>
          )
     )
   };
+};
 
 type statefulActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, ctx('msg, 'parentMsg)) => Js.Promise.t('state);
@@ -275,8 +278,8 @@ type persistentActor('state, 'msg, 'parentMsg) =
 
 let useStatefulSupervisionPolicy = (f, initialState) => {
   let state = ref(initialState);
-  (err, ctx) => {
-    let (nextState, promise) = f(err, state^, ctx);
+  (msg, err, ctx) => {
+    let (nextState, promise) = f(msg, err, state^, ctx);
     state := nextState;
     promise;
   };
@@ -286,14 +289,14 @@ let spawn =
     (
       ~name=?,
       ~shutdownAfter=?,
-      ~whenChildCrashes=?,
+      ~onCrash=?,
       ActorRef(parent),
       func,
       initialState,
     ) => {
   let options = {
     "shutdownAfter": fromOption(shutdownAfter),
-    "whenChildCrashes": mapSupervisionFunction(whenChildCrashes),
+    "onCrash": mapSupervisionFunction(onCrash, None),
   };
   let f = (possibleState: Js.nullable('state), msg: 'msg, ctx) => {
     let state =
@@ -307,10 +310,10 @@ let spawn =
 };
 
 let spawnStateless =
-    (~name=?, ~shutdownAfter=?, ~whenChildCrashes=?, ActorRef(parent), func) => {
+    (~name=?, ~shutdownAfter=?, ~onCrash=?, ActorRef(parent), func) => {
   let options = {
     "shutdownAfter": fromOption(shutdownAfter),
-    "whenChildCrashes": mapSupervisionFunction(whenChildCrashes),
+    "onCrash": mapSupervisionFunction(onCrash, None),
   };
   let f = (msg, ctx) =>
     try (func(msg, mapCtx(ctx))) {
@@ -327,7 +330,7 @@ let spawnPersistent =
       ~name=?,
       ~shutdownAfter=?,
       ~snapshotEvery=?,
-      ~whenChildCrashes=?,
+      ~onCrash=?,
       ~decoder=?,
       ~stateDecoder=?,
       ~stateEncoder=?,
@@ -342,10 +345,10 @@ let spawnPersistent =
   let stateDecoder = stateDecoder |> defaultTo(unsafeDecoder);
   let stateEncoder = stateEncoder |> defaultTo(unsafeEncoder);
   let encoder = encoder |> defaultTo(unsafeEncoder);
-  let options: Nact_bindings.persistentActorOptions = {
+  let options: Nact_bindings.persistentActorOptions('msg, 'parentMsg) = {
     "shutdownAfter": fromOption(shutdownAfter),
+    "onCrash": mapSupervisionFunction(onCrash, Some(decoder)),
     "snapshotEvery": fromOption(snapshotEvery),
-    "whenChildCrashes": mapSupervisionFunction(whenChildCrashes),
   };
   let f = (state, msg, ctx) => {
     let state =

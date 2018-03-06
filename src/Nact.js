@@ -5,6 +5,7 @@ var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var Js_exn = require("bs-platform/lib/js/js_exn.js");
 var $$String = require("bs-platform/lib/js/string.js");
+var Js_option = require("bs-platform/lib/js/js_option.js");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Nact_jsMap = require("./Nact_jsMap.js");
 var Js_primitive = require("bs-platform/lib/js/js_primitive.js");
@@ -235,7 +236,6 @@ function mapPersistentCtx(untypedCtx, encoder) {
 function mapSupervisionCtx(untypedCtx) {
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
-          /* child */untypedCtx.child.name,
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
@@ -243,11 +243,14 @@ function mapSupervisionCtx(untypedCtx) {
         ];
 }
 
-function mapSupervisionFunction(optionalF) {
+function mapSupervisionFunction(optionalF, decoder) {
+  var decoder$1 = Js_option.getWithDefault((function (prim) {
+          return prim;
+        }), decoder);
   if (optionalF) {
     var f = optionalF[0];
-    return (function (_, err, ctx) {
-        return Curry._2(f, err, mapSupervisionCtx(ctx)).then((function (decision) {
+    return (function (msg, err, ctx) {
+        return Curry._3(f, Curry._1(decoder$1, msg), err, mapSupervisionCtx(ctx)).then((function (decision) {
                       var tmp;
                       switch (decision) {
                         case 0 : 
@@ -280,17 +283,17 @@ function mapSupervisionFunction(optionalF) {
 
 function useStatefulSupervisionPolicy(f, initialState) {
   var state = [initialState];
-  return (function (err, ctx) {
-      var match = Curry._3(f, err, state[0], ctx);
+  return (function (msg, err, ctx) {
+      var match = Curry._4(f, msg, err, state[0], ctx);
       state[0] = match[0];
       return match[1];
     });
 }
 
-function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState) {
+function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
+    onCrash: mapSupervisionFunction(onCrash, /* None */0)
   };
   var f = function (possibleState, msg, ctx) {
     var state = defaultTo(initialState, (possibleState == null) ? /* None */0 : [possibleState]);
@@ -305,10 +308,10 @@ function spawn(name, shutdownAfter, whenChildCrashes, param, func, initialState)
   return /* ActorRef */[untypedRef];
 }
 
-function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
+function spawnStateless(name, shutdownAfter, onCrash, param, func) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
+    onCrash: mapSupervisionFunction(onCrash, /* None */0)
   };
   var f = function (msg, ctx) {
     try {
@@ -322,7 +325,7 @@ function spawnStateless(name, shutdownAfter, whenChildCrashes, param, func) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrashes, decoder, stateDecoder, stateEncoder, encoder, param, func, initialState) {
+function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decoder, stateDecoder, stateEncoder, encoder, param, func, initialState) {
   var decoder$1 = defaultTo((function (prim) {
           return unsafeDecoder(prim);
         }), decoder);
@@ -337,8 +340,8 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, whenChildCrash
         }), encoder);
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery),
-    whenChildCrashes: mapSupervisionFunction(whenChildCrashes)
+    onCrash: mapSupervisionFunction(onCrash, /* Some */[decoder$1]),
+    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery)
   };
   var f = function (state, msg, ctx) {
     var state$1 = (state == null) ? initialState : Curry._1(stateDecoder$1, state);
