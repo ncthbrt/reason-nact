@@ -34,7 +34,7 @@ type systemMsg;
 var WrappedVariant = '_wvariant';
 var WrappedEvent = '_wevent';
 function unsafeEncoder(obj) {
-  var serialized = JSON.stringify(obj, function (key, value) {
+  var data = JSON.stringify(obj, function (key, value) {
     if (value && Array.isArray(value) && value.tag !== undefined) {
       var r = {};
       r.values = value.slice();
@@ -45,12 +45,13 @@ function unsafeEncoder(obj) {
       return value;
     }
   });
-  return { serialized, type: WrappedEvent };
+  return { data: JSON.parse(data), type: WrappedEvent };
 };
 
 function unsafeDecoder(result) {
   if(result && typeof(result) === 'object' && result.type === WrappedEvent) {
-    return JSON.parse(result.serialized, (key, value) => {
+    var serialized = result.serialized || JSON.stringify(result.data);
+    return JSON.parse(serialized, (key, value) => {
       if (value && typeof (value) === 'object' && value.type === WrappedVariant) {
         var values = value.values;
         values.tag = value.tag;

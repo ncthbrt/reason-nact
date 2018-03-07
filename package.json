@@ -1,6 +1,6 @@
 {
   "name": "reason-nact",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed",
   "repository": "https://github.com/ncthbrt/reason-nact",
   "author": "Nick Cuthbert (https://github.com/ncthbrt)",
