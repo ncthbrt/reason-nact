@@ -287,6 +287,14 @@ describe("Stateful Actor", () => {
   });
 });
 
+describe("System", () =>
+  test("Can name system", () => {
+    let system = start(~name="albert", ());
+    expect(ActorPath.systemName(ActorPath.fromReference(system)))
+    |> toEqual("albert");
+  })
+);
+
 describe("Persistent Actor", () => {
   testPromise("allows queries to resolve", () => {
     let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
