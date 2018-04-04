@@ -1,5 +1,3 @@
-module StringSet = Nact_stringSet;
-
 open Js.Promise;
 
 open Js.Nullable;
@@ -173,7 +171,7 @@ type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   path: actorPath,
   self: actorRef('msg),
-  children: StringSet.t,
+  children: Belt.Set.String.t,
   name: string,
   logger: Log.loggingEngine,
 };
@@ -184,7 +182,7 @@ type persistentCtx('msg, 'parentMsg) = {
   self: actorRef('msg),
   name: string,
   persist: 'msg => Js.Promise.t(unit),
-  children: StringSet.t,
+  children: Belt.Set.String.t,
   recovering: bool,
   logger: Log.loggingEngine,
 };
@@ -194,7 +192,8 @@ let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
-  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
+  children:
+    untypedCtx##children |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
   logger: untypedCtx##log,
 };
 
@@ -209,7 +208,8 @@ let mapPersistentCtx =
   recovering:
     untypedCtx##recovering |> Js.Nullable.toOption |> defaultTo(false),
   persist: mapPersist(encoder, untypedCtx##persist),
-  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
+  children:
+    untypedCtx##children |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
   logger: untypedCtx##log,
 };
 
@@ -218,7 +218,7 @@ type supervisionCtx('msg, 'parentMsg) = {
   path: actorPath,
   self: actorRef('msg),
   name: string,
-  children: StringSet.t,
+  children: Belt.Set.String.t,
 };
 
 let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
@@ -226,7 +226,8 @@ let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
-  children: untypedCtx##children |> Nact_jsMap.keys |> StringSet.fromJsArray,
+  children:
+    untypedCtx##children |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
 };
 
 type supervisionAction =
@@ -387,25 +388,31 @@ let mapLoggingActor = (loggingActorFunction: Log.logger, system) => {
   adapter;
 };
 
-let start = (~persistenceEngine=?, ~logger=?, ()) => {
-  let untypedRef =
-    switch (persistenceEngine, logger) {
-    | (Some(persistence), Some(logger)) =>
-      Nact_bindings.start([|
-        Nact_bindings.configurePersistence(persistence),
-        Nact_bindings.configureLogging(mapLoggingActor(logger)),
-      |])
-    | (None, Some(logger)) =>
-      Nact_bindings.start([|
-        Nact_bindings.configureLogging(mapLoggingActor(logger)),
-      |])
-    | (Some(persistence), None) =>
-      Nact_bindings.start([|
-        Nact_bindings.configurePersistence(persistence),
-      |])
-    | (None, None) => Nact_bindings.start([||])
+let start = (~name: option(string)=?, ~persistenceEngine=?, ~logger=?, ()) => {
+  let plugins =
+    switch (persistenceEngine) {
+    | Some(engine) => [Nact_bindings.configurePersistence(engine)]
+    | None => []
     };
-  ActorRef(untypedRef);
+  let plugins =
+    switch (logger) {
+    | Some(logger) => [
+        Nact_bindings.configureLogging(mapLoggingActor(logger)),
+        ...plugins,
+      ]
+    | None => plugins
+    };
+  let plugins =
+    switch (name) {
+    | Some(name) => [Obj.magic({"name": name}), ...plugins]
+    | None => plugins
+    };
+  switch (plugins) {
+  | [a, b, c] => ActorRef(Nact_bindings.start([|a, b, c|]))
+  | [a, b] => ActorRef(Nact_bindings.start([|a, b|]))
+  | [a] => ActorRef(Nact_bindings.start([|a|]))
+  | _ => ActorRef(Nact_bindings.start([||]))
+  };
 };
 
 exception QueryTimeout(int);

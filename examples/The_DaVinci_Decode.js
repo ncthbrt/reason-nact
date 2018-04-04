@@ -30,15 +30,15 @@ function jsonDecoder(json) {
 
 function decoder(json) {
   var msg = jsonDecoder(json);
-  if (msg.version) {
+  if (msg.version === 0) {
     return {
             version: msg.version,
-            text: msg.text
+            text: rot13(msg.text)
           };
   } else {
     return {
             version: msg.version,
-            text: rot13(msg.text)
+            text: msg.text
           };
   }
 }
@@ -59,7 +59,7 @@ function encoder(msg) {
             ]);
 }
 
-var system = Nact.start(/* Some */[new MockPersistenceEngine.MockPersistenceEngine()], /* None */0, /* () */0);
+var system = Nact.start(/* None */0, /* Some */[new MockPersistenceEngine.MockPersistenceEngine()], /* None */0, /* () */0);
 
 var actor = Nact.spawnPersistent("da-vinci-code", /* None */0, /* None */0, /* None */0, /* None */0, /* Some */[decoder], /* None */0, /* None */0, /* Some */[encoder], system, (function (state, msg, ctx) {
         console.log(msg.text);

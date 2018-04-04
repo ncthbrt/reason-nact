@@ -76,7 +76,7 @@ function consoleLogger(system) {
               }));
 }
 
-var system = Nact.start(/* None */0, /* Some */[consoleLogger], /* () */0);
+var system = Nact.start(/* None */0, /* None */0, /* Some */[consoleLogger], /* () */0);
 
 var stringClassifierActor = Nact.spawnStateless(/* None */0, /* None */0, /* None */0, system, (function (msg, ctx) {
         return Promise.resolve("mutation".indexOf($$String.lowercase(msg)) >= 0 ? Nact.Log[/* event */7]("receivedEvilMessage", msg, ctx[/* logger */5]) : Nact.Log[/* info */3]("Received message: " + msg, ctx[/* logger */5]));

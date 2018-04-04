@@ -8,3 +8,4 @@ coverage/
 /lib/**/*.js
 /__tests__/**/*.js
 *.log
+/examples/**/*.js

@@ -12,14 +12,15 @@ type contactId =
 
 module ContactIdCompare = {
   type t = contactId;
-  let compare = (ContactId(left), ContactId(right)) => compare(left, right);
+  let compare = (ContactId(left), ContactId(right)) =>
+    compare(left, right);
 };
 
 module ContactIdMap = Map.Make(ContactIdCompare);
 
 type contact = {
   name: string,
-  email: string
+  email: string,
 };
 
 type contactResponseMsg =
@@ -34,14 +35,14 @@ type contactMsg =
 
 type contactsServiceState = {
   contacts: ContactIdMap.t(contact),
-  seqNumber: int
+  seqNumber: int,
 };
 
 let createContact = ({contacts, seqNumber}, sender, contact) => {
   let contactId = ContactId(seqNumber);
   dispatch(sender, (contactId, Success(contact)));
   let nextContacts = ContactIdMap.add(contactId, contact, contacts);
-  {contacts: nextContacts, seqNumber: seqNumber + 1}
+  {contacts: nextContacts, seqNumber: seqNumber + 1};
 };
 
 let removeContact = ({contacts, seqNumber}, sender, contactId) => {
@@ -49,25 +50,26 @@ let removeContact = ({contacts, seqNumber}, sender, contactId) => {
   let msg =
     if (contacts === nextContacts) {
       let contact = ContactIdMap.find(contactId, contacts);
-      (contactId, Success(contact))
+      (contactId, Success(contact));
     } else {
-      (contactId, NotFound)
+      (contactId, NotFound);
     };
   dispatch(sender, msg);
-  {contacts: nextContacts, seqNumber}
+  {contacts: nextContacts, seqNumber};
 };
 
 let updateContact = ({contacts, seqNumber}, sender, contactId, contact) => {
   let nextContacts =
-    ContactIdMap.remove(contactId, contacts) |> ContactIdMap.add(contactId, contact);
+    ContactIdMap.remove(contactId, contacts)
+    |> ContactIdMap.add(contactId, contact);
   let msg =
     if (nextContacts === contacts) {
-      (contactId, Success(contact))
+      (contactId, Success(contact));
     } else {
-      (contactId, NotFound)
+      (contactId, NotFound);
     };
   dispatch(sender, msg);
-  {contacts: nextContacts, seqNumber}
+  {contacts: nextContacts, seqNumber};
 };
 
 let findContact = ({contacts, seqNumber}, sender, contactId) => {
@@ -76,7 +78,7 @@ let findContact = ({contacts, seqNumber}, sender, contactId) => {
     | Not_found => (contactId, NotFound)
     };
   dispatch(sender, msg);
-  {contacts, seqNumber}
+  {contacts, seqNumber};
 };
 
 let system = start();
@@ -87,15 +89,16 @@ let createContactsService = (parent, userId) =>
     parent,
     (state, (sender, msg), _) =>
       (
-        switch msg {
+        switch (msg) {
         | CreateContact(contact) => createContact(state, sender, contact)
         | RemoveContact(contactId) => removeContact(state, sender, contactId)
-        | UpdateContact(contactId, contact) => updateContact(state, sender, contactId, contact)
+        | UpdateContact(contactId, contact) =>
+          updateContact(state, sender, contactId, contact)
         | FindContact(contactId) => findContact(state, sender, contactId)
         }
       )
       |> Js.Promise.resolve,
-    {contacts: ContactIdMap.empty, seqNumber: 0}
+    {contacts: ContactIdMap.empty, seqNumber: 0},
   );
 
 let contactsService =
@@ -107,47 +110,41 @@ let contactsService =
         | _ => None
         };
       Js.Promise.resolve(
-        switch potentialChild {
+        switch (potentialChild) {
         | Some(child) =>
           dispatch(child, (sender, msg));
-          children
+          children;
         | None =>
           let child = createContactsService(ctx.self, userId);
           dispatch(child, (sender, msg));
-          StringMap.add(userId, child, children)
-        }
-      )
+          StringMap.add(userId, child, children);
+        },
+      );
     },
-    StringMap.empty
+    StringMap.empty,
   );
 
 let createErlich =
-  query(
-    ~timeout=100,
-    contactsService,
-    (tempReference) => (
+  query(~timeout=100, contactsService, tempReference =>
+    (
       tempReference,
       "0",
-      CreateContact({name: "Erlich Bachman", email: "erlich@aviato.com"})
+      CreateContact({name: "Erlich Bachman", email: "erlich@aviato.com"}),
     )
   );
 
 let createDinesh = (_) =>
-  query(
-    ~timeout=100,
-    contactsService,
-    (tempReference) => (
+  query(~timeout=100, contactsService, tempReference =>
+    (
       tempReference,
       "1",
-      CreateContact({name: "Dinesh Chugtai", email: "dinesh@piedpiper.com"})
+      CreateContact({name: "Dinesh Chugtai", email: "dinesh@piedpiper.com"}),
     )
   );
 
 let findDinsheh = ((contactId, _)) =>
-  query(
-    ~timeout=100,
-    contactsService,
-    (tempReference) => (tempReference, "1", FindContact(contactId))
+  query(~timeout=100, contactsService, tempReference =>
+    (tempReference, "1", FindContact(contactId))
   );
 
 let (>=>) = (promise1, promise2) => Js.Promise.then_(promise2, promise1);
@@ -156,8 +153,8 @@ createErlich
 >=> createDinesh
 >=> findDinsheh
 >=> (
-  (result) => {
+  result => {
     Js.log(result);
-    Js.Promise.resolve()
+    Js.Promise.resolve();
   }
 );

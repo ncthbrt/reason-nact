@@ -610,7 +610,7 @@ describe("supervision policy", () => {
     let system = start();
     let parent =
       spawnStateless(system, (sender, {children}) =>
-        resolve(sender <-< Nact.StringSet.cardinal(children))
+        resolve(sender <-< Belt.Set.String.size(children))
       );
     let child1 = spawnBrokenCalculator(stopAll, parent);
     let child2 = spawnBrokenCalculator(stopAll, parent);
@@ -641,7 +641,7 @@ describe("supervision policy", () => {
     let system = start();
     let parent =
       spawnStateless(system, (sender, {children}) =>
-        resolve(sender <-< Nact.StringSet.cardinal(children))
+        resolve(sender <-< Belt.Set.String.size(children))
       );
     let child1 = spawnBrokenCalculator(resetAll, parent);
     let child2 = spawnBrokenCalculator(resetAll, parent);

@@ -2,7 +2,7 @@ Arguments:
   /usr/local/Cellar/node/9.6.1/bin/node /usr/local/Cellar/yarn/1.5.1/libexec/bin/yarn.js run test
 
 PATH: 
-  /Users/ncthbrt/.opam/4.02.3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Users/ncthbrt/.opam/4.02.3/bin
+  /Users/ncthbrt/.opam/4.02.3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/share/dotnet:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Users/ncthbrt/.opam/4.02.3/bin
 
 Yarn version: 
   1.5.1
@@ -16,7 +16,7 @@ Platform:
 npm manifest: 
   {
     "name": "reason-nact",
-    "version": "1.4.6",
+    "version": "3.0.0",
     "description": "let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed",
     "repository": "https://github.com/ncthbrt/reason-nact",
     "author": "Nick Cuthbert (https://github.com/ncthbrt)",
@@ -53,14 +53,14 @@ npm manifest:
     "devDependencies": {
       "@glennsl/bs-jest": "^0.3.2",
       "@glennsl/bs-json": "^1.1.2",
-      "bs-platform": "^2.2.2",
+      "bs-platform": "^2.2.3",
       "coveralls": "^3.0.0",
       "husky": "^0.14.3",
       "jest": "^21.2.1",
       "nyc": "^11.3.0"
     },
     "dependencies": {
-      "nact": "^5.0.0"
+      "nact": "^6.0.0"
     }
   }
 
@@ -491,9 +491,9 @@ Lockfile:
     dependencies:
       resolve "1.1.7"
   
-  bs-platform@^2.2.2:
-    version "2.2.2"
-    resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-2.2.2.tgz#95ff37719771bbf310e8376fedd1148865c0da19"
+  bs-platform@^2.2.3:
+    version "2.2.3"
+    resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-2.2.3.tgz#d905ae10a5f3621e6a739041dfa0b58483a2174f"
   
   bser@^2.0.0:
     version "2.0.0"
@@ -2225,12 +2225,11 @@ Lockfile:
     version "2.0.0"
     resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
   
-  nact@^5.0.0:
-    version "5.0.0"
-    resolved "https://registry.yarnpkg.com/nact/-/nact-5.0.0.tgz#40932c622a6bc55430ae55f301db4a916c3612c3"
+  nact@^6.0.0:
+    version "6.0.0"
+    resolved "https://registry.yarnpkg.com/nact/-/nact-6.0.0.tgz#e71f8da8fc11bef87fcd37a47d4ad1f5d34add83"
     dependencies:
       denque "^1.2.2"
-      rxjs "^5.4.3"
   
   nan@^2.3.0:
     version "2.8.0"
@@ -2805,12 +2804,6 @@ Lockfile:
     dependencies:
       glob "^7.0.5"
   
-  rxjs@^5.4.3:
-    version "5.5.5"
-    resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.5.5.tgz#e164f11d38eaf29f56f08c3447f74ff02dd84e97"
-    dependencies:
-      symbol-observable "1.0.1"
-  
   safe-buffer@^5.0.1, safe-buffer@^5.1.1, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
     version "5.1.1"
     resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.1.tgz#893312af69b2123def71f57889001671eeb2c853"
@@ -3041,10 +3034,6 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-4.5.0.tgz#be7a0de484dec5c5cddf8b3d59125044912f635b"
     dependencies:
       has-flag "^2.0.0"
-  
-  symbol-observable@1.0.1:
-    version "1.0.1"
-    resolved "https://registry.yarnpkg.com/symbol-observable/-/symbol-observable-1.0.1.tgz#8340fc4702c3122df5d22288f88283f513d3fdd4"
   
   symbol-tree@^3.2.1:
     version "3.2.2"

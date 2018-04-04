@@ -3,7 +3,7 @@
 var Nact = require("../src/Nact.js");
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
-var system = Nact.start(/* None */0, /* None */0, /* () */0);
+var system = Nact.start(/* None */0, /* None */0, /* None */0, /* () */0);
 
 var world = Nact.spawnStateless(/* Some */["world"], /* None */0, /* None */0, system, (function (param, ctx) {
         console.log("world!!");

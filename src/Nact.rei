@@ -1,5 +1,3 @@
-module StringSet = Nact_stringSet;
-
 type persistenceEngine;
 
 type systemMsg;
@@ -50,7 +48,7 @@ type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   path: actorPath,
   self: actorRef('msg),
-  children: StringSet.t,
+  children: Belt.Set.String.t,
   name: string,
   logger: Log.loggingEngine,
 };
@@ -61,7 +59,7 @@ type persistentCtx('msg, 'parentMsg) = {
   self: actorRef('msg),
   name: string,
   persist: 'msg => Js.Promise.t(unit),
-  children: StringSet.t,
+  children: Belt.Set.String.t,
   recovering: bool,
   logger: Log.loggingEngine,
 };
@@ -71,7 +69,7 @@ type supervisionCtx('msg, 'parentMsg) = {
   path: actorPath,
   self: actorRef('msg),
   name: string,
-  children: StringSet.t,
+  children: Belt.Set.String.t,
 };
 
 type supervisionAction =
@@ -145,7 +143,12 @@ let spawnAdapter:
   (actorRef('parentMsg), 'msg => 'parentMsg) => actorRef('msg);
 
 let start:
-  (~persistenceEngine: persistenceEngine=?, ~logger: Log.logger=?, unit) =>
+  (
+    ~name: string=?,
+    ~persistenceEngine: persistenceEngine=?,
+    ~logger: Log.logger=?,
+    unit
+  ) =>
   actorRef(systemMsg);
 
 let stop: actorRef('msg) => unit;

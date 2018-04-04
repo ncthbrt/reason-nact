@@ -2,7 +2,7 @@
 
 var Nact = require("../src/Nact.js");
 
-var system = Nact.start(/* None */0, /* None */0, /* () */0);
+var system = Nact.start(/* None */0, /* None */0, /* None */0, /* () */0);
 
 var ping = Nact.spawnStateless(/* Some */["ping"], /* None */0, /* None */0, system, (function (param, ctx) {
         console.log(param[1]);

@@ -106,7 +106,7 @@ function findContact(param, sender, contactId) {
         ];
 }
 
-var system = Nact.start(/* Some */[new MockPersistenceEngine.MockPersistenceEngine()], /* None */0, /* () */0);
+var system = Nact.start(/* None */0, /* Some */[new MockPersistenceEngine.MockPersistenceEngine()], /* None */0, /* () */0);
 
 function createContactsService(parent, userId) {
   return Nact.spawnPersistent("contacts" + userId, /* Some */[userId], /* Some */[Caml_int32.imul(15, Nact.minutes)], /* Some */[Caml_int32.imul(10, Nact.messages)], /* None */0, /* None */0, /* None */0, /* None */0, /* None */0, parent, (function (state, param, param$1) {
