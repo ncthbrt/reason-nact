@@ -112,10 +112,10 @@ function createContactsService(parent, userId) {
   return Nact.spawnPersistent("contacts" + userId, /* Some */[userId], /* Some */[Caml_int32.imul(15, Nact.minutes)], /* Some */[Caml_int32.imul(10, Nact.messages)], /* None */0, /* None */0, /* None */0, /* None */0, /* None */0, parent, (function (state, param, param$1) {
                 var msg = param[1];
                 var sender = param[0];
-                var promise1 = Curry._1(param$1[/* persist */4], /* tuple */[
-                      sender,
-                      msg
-                    ]);
+                var promise1 = param$1[/* recovering */6] ? Promise.resolve(/* () */0) : Curry._1(param$1[/* persist */4], /* tuple */[
+                        sender,
+                        msg
+                      ]);
                 return promise1.then((function () {
                               var tmp;
                               switch (msg.tag | 0) {
