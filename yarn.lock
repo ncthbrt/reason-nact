@@ -658,9 +658,9 @@ delegates@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
 
-denque@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/denque/-/denque-1.2.2.tgz#e06cf7cf0da8badc88cbdaabf8fc0a70d659f1d4"
+denque@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/denque/-/denque-1.2.3.tgz#98c50c8dd8cdfae318cc5859cc8ee3da0f9b0cc2"
 
 detect-indent@^4.0.0:
   version "4.0.0"
@@ -2155,11 +2155,11 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-nact@^6.0.0:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/nact/-/nact-6.0.0.tgz#e71f8da8fc11bef87fcd37a47d4ad1f5d34add83"
+nact@^6.0.3:
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/nact/-/nact-6.0.3.tgz#fd911f7ccee5da7ce347095ec0cbe6eefbdfd2fd"
   dependencies:
-    denque "^1.2.2"
+    denque "^1.2.3"
 
 nan@^2.3.0:
   version "2.8.0"
