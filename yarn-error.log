@@ -1,8 +1,8 @@
 Arguments: 
-  /usr/local/Cellar/node/9.6.1/bin/node /usr/local/Cellar/yarn/1.5.1/libexec/bin/yarn.js run test
+  /usr/local/Cellar/node/9.6.1/bin/node /usr/local/Cellar/yarn/1.5.1/libexec/bin/yarn.js run local-test
 
 PATH: 
-  /Users/ncthbrt/.opam/4.02.3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/share/dotnet:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Users/ncthbrt/.opam/4.02.3/bin
+  /usr/local/lib/node_modules/npm/node_modules/npm-lifecycle/node-gyp-bin:/Users/ncthbrt/git/reason-nact/node_modules/.bin:/usr/local/Cellar/git/2.15.0/libexec/git-core:/Users/ncthbrt/.opam/4.02.3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/share/dotnet:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/usr/local/bin:/usr/local
 
 Yarn version: 
   1.5.1
@@ -16,7 +16,7 @@ Platform:
 npm manifest: 
   {
     "name": "reason-nact",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "description": "let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed",
     "repository": "https://github.com/ncthbrt/reason-nact",
     "author": "Nick Cuthbert (https://github.com/ncthbrt)",
@@ -60,7 +60,7 @@ npm manifest:
       "nyc": "^11.3.0"
     },
     "dependencies": {
-      "nact": "^6.0.0"
+      "nact": "^6.0.3"
     }
   }
 
@@ -728,9 +728,9 @@ Lockfile:
     version "1.0.0"
     resolved "https://registry.yarnpkg.com/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
   
-  denque@^1.2.2:
-    version "1.2.2"
-    resolved "https://registry.yarnpkg.com/denque/-/denque-1.2.2.tgz#e06cf7cf0da8badc88cbdaabf8fc0a70d659f1d4"
+  denque@^1.2.3:
+    version "1.2.3"
+    resolved "https://registry.yarnpkg.com/denque/-/denque-1.2.3.tgz#98c50c8dd8cdfae318cc5859cc8ee3da0f9b0cc2"
   
   detect-indent@^4.0.0:
     version "4.0.0"
@@ -2225,11 +2225,11 @@ Lockfile:
     version "2.0.0"
     resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
   
-  nact@^6.0.0:
-    version "6.0.0"
-    resolved "https://registry.yarnpkg.com/nact/-/nact-6.0.0.tgz#e71f8da8fc11bef87fcd37a47d4ad1f5d34add83"
+  nact@^6.0.3:
+    version "6.0.3"
+    resolved "https://registry.yarnpkg.com/nact/-/nact-6.0.3.tgz#fd911f7ccee5da7ce347095ec0cbe6eefbdfd2fd"
     dependencies:
-      denque "^1.2.2"
+      denque "^1.2.3"
   
   nan@^2.3.0:
     version "2.8.0"
@@ -3349,7 +3349,7 @@ Trace:
   Error: Command failed.
   Exit code: 1
   Command: sh
-  Arguments: -c jest --coverage && yarn run coverage
+  Arguments: -c jest --coverage
   Directory: /Users/ncthbrt/git/reason-nact
   Output:
   

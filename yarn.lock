@@ -2155,9 +2155,9 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-nact@^6.0.3:
-  version "6.0.3"
-  resolved "https://registry.yarnpkg.com/nact/-/nact-6.0.3.tgz#fd911f7ccee5da7ce347095ec0cbe6eefbdfd2fd"
+nact@^6.0.4:
+  version "6.0.4"
+  resolved "https://registry.yarnpkg.com/nact/-/nact-6.0.4.tgz#58e9e33463ef623746c367768226febd9bde73d4"
   dependencies:
     denque "^1.2.3"
 
