@@ -10,15 +10,15 @@
     esutils "^2.0.2"
     js-tokens "^3.0.0"
 
-"@glennsl/bs-jest@^0.3.2":
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/@glennsl/bs-jest/-/bs-jest-0.3.2.tgz#b15f131c1c6c0988e2cfadccbb32f7047ee6b517"
+"@glennsl/bs-jest@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@glennsl/bs-jest/-/bs-jest-0.4.2.tgz#c8bd899aca0feae5927f4778cbdeb4c46bb2eef9"
   dependencies:
     jest "^22.0.4"
 
-"@glennsl/bs-json@^1.1.2":
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@glennsl/bs-json/-/bs-json-1.1.2.tgz#294c63eea060036e9df9b413caf42fa3ccd5afe3"
+"@glennsl/bs-json@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@glennsl/bs-json/-/bs-json-1.2.0.tgz#8a2175458cf425614d20bb5542a2eb92b09bd4fc"
 
 "@types/node@*":
   version "9.3.0"
