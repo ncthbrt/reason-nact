@@ -4,7 +4,15 @@ type systemMsg;
 
 type actorRef('msg);
 
+type untypedRef;
+
 type actorPath;
+
+module Interop: {
+  let fromUntypedRef: untypedRef => actorRef('msg);
+  let toUntypedRef: actorRef('msg) => untypedRef;
+  let dispatch: (untypedRef, 'msg) => unit;
+};
 
 module ActorPath: {
   let fromReference: actorRef(_) => actorPath;

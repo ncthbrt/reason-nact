@@ -10,8 +10,16 @@ let defaultTo = (default, opt) =>
 
 type persistenceEngine = Nact_bindings.persistenceEngine;
 
+type untypedRef = Nact_bindings.actorRef;
+
 type actorRef('msg) =
   | ActorRef(Nact_bindings.actorRef);
+
+module Interop = {
+  let fromUntypedRef = reference => ActorRef(reference);
+  let toUntypedRef = (ActorRef(reference)) => reference;
+  let dispatch = Nact_bindings.dispatch;
+};
 
 type actorPath =
   | ActorPath(Nact_bindings.actorPath);

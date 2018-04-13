@@ -1,6 +1,5 @@
 {
   "name": "reason-nact",
-  "version": "1.4.4",
   "sources": [
     {
       "dir": "src"

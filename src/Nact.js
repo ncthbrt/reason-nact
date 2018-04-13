@@ -23,6 +23,25 @@ function defaultTo($$default, opt) {
   }
 }
 
+function fromUntypedRef(reference) {
+  return /* ActorRef */[reference];
+}
+
+function toUntypedRef(param) {
+  return param[0];
+}
+
+function dispatch(prim, prim$1) {
+  Nact.dispatch(prim, prim$1);
+  return /* () */0;
+}
+
+var Interop = /* module */[
+  /* fromUntypedRef */fromUntypedRef,
+  /* toUntypedRef */toUntypedRef,
+  /* dispatch */dispatch
+];
+
 function fromReference(param) {
   return /* ActorPath */[param[0].path];
 }
@@ -366,7 +385,7 @@ function stop(param) {
   return /* () */0;
 }
 
-function dispatch(param, msg) {
+function dispatch$1(param, msg) {
   Nact.dispatch(param[0], msg);
   return /* () */0;
 }
@@ -377,7 +396,7 @@ function nobody() {
 
 function spawnAdapter(parent, mapping) {
   return spawnStateless(/* None */0, /* None */0, /* None */0, parent, (function (msg, _) {
-                return Promise.resolve(dispatch(parent, Curry._1(mapping, msg)));
+                return Promise.resolve(dispatch$1(parent, Curry._1(mapping, msg)));
               }));
 }
 
@@ -450,10 +469,10 @@ var minutes = Caml_int32.imul(60, seconds);
 
 var hours = Caml_int32.imul(60, minutes);
 
-var $less$neg$less = dispatch;
+var $less$neg$less = dispatch$1;
 
 function $great$neg$great(msg, actorRef) {
-  return dispatch(actorRef, msg);
+  return dispatch$1(actorRef, msg);
 }
 
 function $less$unknown(actor, param) {
@@ -491,6 +510,7 @@ var messages = 1;
 
 var message = 1;
 
+exports.Interop = Interop;
 exports.ActorPath = ActorPath;
 exports.Log = Log;
 exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
@@ -500,7 +520,7 @@ exports.spawnPersistent = spawnPersistent;
 exports.spawnAdapter = spawnAdapter;
 exports.start = start;
 exports.stop = stop;
-exports.dispatch = dispatch;
+exports.dispatch = dispatch$1;
 exports.nobody = nobody;
 exports.QueryTimeout = QueryTimeout;
 exports.query = query;
