@@ -248,7 +248,7 @@ function mapPersistentCtx(untypedCtx, encoder) {
               return Curry._1(partial_arg, Curry._1(encoder, param));
             }),
           /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children)),
-          /* recovering */defaultTo(/* false */0, Js_primitive.null_undefined_to_opt(untypedCtx.recovering)),
+          /* recovering */defaultTo(false, Js_primitive.null_undefined_to_opt(untypedCtx.recovering)),
           /* logger */untypedCtx.log
         ];
 }

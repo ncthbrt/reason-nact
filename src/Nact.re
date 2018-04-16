@@ -29,6 +29,7 @@ module ActorPath = {
   let systemName = (ActorPath(path)) => path##system;
   let toString = (ActorPath(path)) =>
     "system:" ++ path##system ++ "//" ++ String.concat("/", path##parts);
+  let parts = (ActorPath(path)) => path##parts;
 };
 
 type systemMsg;

@@ -1,6 +1,6 @@
 {
   "name": "reason-nact",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed",
   "repository": "https://github.com/ncthbrt/reason-nact",
   "author": "Nick Cuthbert (https://github.com/ncthbrt)",
@@ -36,14 +36,14 @@
   ],
   "devDependencies": {
     "@glennsl/bs-jest": "^0.4.2",
-    "@glennsl/bs-json": "^1.2.0",
-    "bs-platform": "^2.2.3",
+    "@glennsl/bs-json": "^1.3.1",
+    "bs-platform": "^3.0.0",
     "coveralls": "^3.0.0",
     "husky": "^0.14.3",
     "jest": "^21.2.1",
     "nyc": "^11.3.0"
   },
   "dependencies": {
-    "nact": "^6.0.4"
+    "nact": "^6.1.0"
   }
 }
