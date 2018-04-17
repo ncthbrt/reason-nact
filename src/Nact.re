@@ -77,6 +77,8 @@ function unsafeDecoder(result) {
 
 external magicDecoder : Js.Json.t => 'msg = "%identity";
 
+external magicEncoder : 'msg => Js.Json.t = "%identity";
+
 [@bs.val] external unsafeEncoder : 'msg => Js.Json.t = "unsafeEncoder";
 
 module Log = {
@@ -361,7 +363,7 @@ let spawnPersistent =
   let stateEncoder =
     stateEncoder
     |> defaultTo(
-         Belt.Option.isSome(snapshotEvery) ? unsafeDecoder : magicDecoder,
+         Belt.Option.isSome(snapshotEvery) ? unsafeEncoder : magicEncoder,
        );
   let encoder = encoder |> defaultTo(unsafeEncoder);
   let options: Nact_bindings.persistentActorOptions('msg, 'parentMsg) = {

@@ -8,6 +8,7 @@ var $$String = require("bs-platform/lib/js/string.js");
 var Js_option = require("bs-platform/lib/js/js_option.js");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Nact_jsMap = require("./Nact_jsMap.js");
+var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
 var Js_primitive = require("bs-platform/lib/js/js_primitive.js");
 var Belt_SetString = require("bs-platform/lib/js/belt_SetString.js");
 var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
@@ -55,10 +56,15 @@ function toString(param) {
   return "system:" + (path.system + ("//" + $$String.concat("/", path.parts)));
 }
 
+function parts(param) {
+  return param[0].parts;
+}
+
 var ActorPath = /* module */[
   /* fromReference */fromReference,
   /* systemName */systemName,
-  /* toString */toString
+  /* toString */toString,
+  /* parts */parts
 ];
 
 
@@ -349,12 +355,18 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decod
   var decoder$1 = defaultTo((function (prim) {
           return unsafeDecoder(prim);
         }), decoder);
-  var stateDecoder$1 = defaultTo((function (prim) {
-          return unsafeDecoder(prim);
-        }), stateDecoder);
-  var stateEncoder$1 = defaultTo((function (prim) {
-          return unsafeEncoder(prim);
-        }), stateEncoder);
+  var match = Belt_Option.isSome(snapshotEvery);
+  var stateDecoder$1 = defaultTo(match ? (function (prim) {
+            return unsafeDecoder(prim);
+          }) : (function (prim) {
+            return prim;
+          }), stateDecoder);
+  var match$1 = Belt_Option.isSome(snapshotEvery);
+  var stateEncoder$1 = defaultTo(match$1 ? (function (prim) {
+            return unsafeEncoder(prim);
+          }) : (function (prim) {
+            return prim;
+          }), stateEncoder);
   var encoder$1 = defaultTo((function (prim) {
           return unsafeEncoder(prim);
         }), encoder);

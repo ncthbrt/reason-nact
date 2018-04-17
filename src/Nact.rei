@@ -18,6 +18,7 @@ module ActorPath: {
   let fromReference: actorRef(_) => actorPath;
   let systemName: actorPath => string;
   let toString: actorPath => string;
+  let parts: actorPath => list(string);
 };
 
 module Log: {
