@@ -353,8 +353,16 @@ let spawnPersistent =
       initialState: 'state,
     ) => {
   let decoder = decoder |> defaultTo(unsafeDecoder);
-  let stateDecoder = stateDecoder |> defaultTo(unsafeDecoder);
-  let stateEncoder = stateEncoder |> defaultTo(unsafeEncoder);
+  let stateDecoder =
+    stateDecoder
+    |> defaultTo(
+         Belt.Option.isSome(snapshotEvery) ? unsafeDecoder : magicDecoder,
+       );
+  let stateEncoder =
+    stateEncoder
+    |> defaultTo(
+         Belt.Option.isSome(snapshotEvery) ? unsafeDecoder : magicDecoder,
+       );
   let encoder = encoder |> defaultTo(unsafeEncoder);
   let options: Nact_bindings.persistentActorOptions('msg, 'parentMsg) = {
     "shutdownAfter": fromOption(shutdownAfter),
