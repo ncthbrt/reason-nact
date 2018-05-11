@@ -1,6 +1,6 @@
 type actorPath = {
   .
-  "parts": list(string),
+  "parts": array(string),
   "system": string,
 };
 
@@ -38,31 +38,6 @@ type actorRef = {
   "name": string,
 };
 
-module Log = {
-  type logger;
-  type msg = {
-    .
-    "_type": Js.nullable(string),
-    "level": Js.nullable(int),
-    "message": Js.nullable(string),
-    "name": Js.nullable(string),
-    "properties": Js.nullable(Js.Json.t),
-    "values": Js.nullable(Js.Json.t),
-    "_exception": Js.nullable(exn),
-    "actor": Js.nullable(actorRef),
-    "createdAt": Js.nullable(Js.Date.t),
-  };
-  [@bs.send] external trace : (logger, string) => unit = "";
-  [@bs.send] external debug : (logger, string) => unit = "";
-  [@bs.send] external info : (logger, string) => unit = "";
-  [@bs.send] external warn : (logger, string) => unit = "";
-  [@bs.send] external error : (logger, string) => unit = "";
-  [@bs.send] external critical : (logger, string) => unit = "";
-  [@bs.send] external event : (logger, string, 'properties) => unit = "";
-  [@bs.send] external metric : (logger, string, 'values) => unit = "";
-  [@bs.send "exception"] external exception_ : (logger, exn) => unit = "";
-};
-
 type ctx = {
   .
   "parent": actorRef,
@@ -70,7 +45,6 @@ type ctx = {
   "self": actorRef,
   "name": string,
   "children": Nact_jsMap.t(string, actorRef),
-  "log": Log.logger,
 };
 
 type persistentCtx('msg) = {
@@ -82,7 +56,6 @@ type persistentCtx('msg) = {
   "children": Nact_jsMap.t(string, actorRef),
   "persist": 'msg => Js.Promise.t(unit),
   "recovering": Js.Nullable.t(bool),
-  "log": Log.logger,
 };
 
 type statefulActor('state, 'msgType) =
@@ -90,9 +63,8 @@ type statefulActor('state, 'msgType) =
 
 type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 
-type persistentActor('msgType) =
-  (Js.nullable(Js.Json.t), Js.Json.t, persistentCtx('msgType)) =>
-  Js.Promise.t(Js.Json.t);
+type persistentActor('msg, 'state) =
+  (Js.nullable('state), 'msg, persistentCtx('msg)) => Js.Promise.t('state);
 
 type supervisionAction;
 
@@ -112,7 +84,7 @@ type supervisionCtx = {
 };
 
 type supervisionFunction('msg, 'parentMsg) =
-  (Js.Json.t, exn, supervisionCtx) => Js.Promise.t(supervisionAction);
+  ('msg, exn, supervisionCtx) => Js.Promise.t(supervisionAction);
 
 type actorOptions('msg, 'parentMsg) = {
   .
@@ -120,11 +92,15 @@ type actorOptions('msg, 'parentMsg) = {
   "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),
 };
 
-type persistentActorOptions('msg, 'parentMsg) = {
+type persistentActorOptions('msg, 'parentMsg, 'state) = {
   .
   "shutdownAfter": Js.Nullable.t(int),
   "snapshotEvery": Js.Nullable.t(int),
   "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),
+  "decoder": Js.Json.t => 'msg,
+  "encoder": 'msg => Js.Json.t,
+  "snapshotEncoder": 'state => Js.Json.t,
+  "snapshotDecoder": Js.Json.t => 'state,
 };
 
 [@bs.module "nact"]
@@ -160,10 +136,10 @@ external nobody : unit => actorRef = "Nobody";
 external spawnPersistent :
   (
     actorRef,
-    persistentActor('msgType),
+    persistentActor('msgType, 'state),
     string,
     Js.nullable(string),
-    persistentActorOptions('msgType, 'parentMsg)
+    persistentActorOptions('msgType, 'parentMsg, 'state)
   ) =>
   actorRef =
   "";
@@ -172,9 +148,6 @@ type plugin = actorRef => unit;
 
 [@bs.module "nact"]
 external configurePersistence : persistenceEngine => plugin = "";
-
-[@bs.module "nact"]
-external configureLogging : (actorRef => actorRef) => plugin = "";
 
 [@bs.module "nact"] external stop : actorRef => unit = "";
 

@@ -100,7 +100,7 @@ function findContact(param, sender, contactId) {
         ];
 }
 
-var system = Nact.start(/* None */0, /* None */0, /* None */0, /* () */0);
+var system = Nact.start(/* None */0, /* None */0, /* () */0);
 
 function createContactsService(parent, userId) {
   return Nact.spawn(/* Some */[userId], /* None */0, /* None */0, parent, (function (state, param, _) {

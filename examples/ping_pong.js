@@ -2,9 +2,9 @@
 
 var Nact = require("../src/Nact.js");
 
-var system = Nact.start(/* None */0, /* None */0, /* None */0, /* () */0);
+var system = Nact.start(/* None */0, /* None */0, /* () */0);
 
-var ping = Nact.spawnStateless(/* Some */["ping"], /* None */0, /* None */0, system, (function (param, ctx) {
+var ping = Nact.spawnStateless(/* Some */["ping"], /* None */0, system, (function (param, ctx) {
         console.log(param[1]);
         return Promise.resolve(Nact.Operators[/* <-< */0](param[0], /* Msg */[
                         ctx[/* self */2],
@@ -12,7 +12,7 @@ var ping = Nact.spawnStateless(/* Some */["ping"], /* None */0, /* None */0, sys
                       ]));
       }));
 
-var pong = Nact.spawnStateless(/* Some */["pong"], /* None */0, /* None */0, system, (function (param, ctx) {
+var pong = Nact.spawnStateless(/* Some */["pong"], /* None */0, system, (function (param, ctx) {
         console.log(param[1]);
         return Promise.resolve(Nact.Operators[/* <-< */0](param[0], /* Msg */[
                         ctx[/* self */2],

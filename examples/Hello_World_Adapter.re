@@ -16,12 +16,12 @@ let world: actorRef(world) =
     system,
     (World(sender), ctx) => {
       print_endline("world!!");
-      sender <-< World(ctx.self) |> Js.Promise.resolve
-    }
+      sender <-< World(ctx.self) |> Js.Promise.resolve;
+    },
   );
 
 let createAdapterIfNotExists = (parent, adapterOpt) =>
-  switch adapterOpt {
+  switch (adapterOpt) {
   | Some(adapter) => adapter
   | None => spawnAdapter(parent, (World(sender)) => Hello(sender))
   };
@@ -34,9 +34,9 @@ let hello =
       let adapter = createAdapterIfNotExists(ctx.self, adapterOpt);
       print_string("Hello ");
       sender <-< World(adapter);
-      Js.Promise.resolve(Some(adapter))
+      Js.Promise.resolve(Some(adapter));
     },
-    None
+    None,
   );
 
 hello <-< Hello(world);

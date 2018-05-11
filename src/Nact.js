@@ -1,11 +1,10 @@
 'use strict';
 
 var Nact = require("nact");
-var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var Js_exn = require("bs-platform/lib/js/js_exn.js");
 var $$String = require("bs-platform/lib/js/string.js");
-var Js_option = require("bs-platform/lib/js/js_option.js");
+var Belt_List = require("bs-platform/lib/js/belt_List.js");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Nact_jsMap = require("./Nact_jsMap.js");
 var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
@@ -14,15 +13,6 @@ var Belt_SetString = require("bs-platform/lib/js/belt_SetString.js");
 var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
 var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
 var References = require("nact/lib/references");
-var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
-
-function defaultTo($$default, opt) {
-  if (opt) {
-    return opt[0];
-  } else {
-    return $$default;
-  }
-}
 
 function fromUntypedRef(reference) {
   return /* ActorRef */[reference];
@@ -53,11 +43,11 @@ function systemName(param) {
 
 function toString(param) {
   var path = param[0];
-  return "system:" + (path.system + ("//" + $$String.concat("/", path.parts)));
+  return "system:" + (path.system + ("//" + $$String.concat("/", Belt_List.fromArray(path.parts))));
 }
 
 function parts(param) {
-  return param[0].parts;
+  return Belt_List.fromArray(param[0].parts);
 }
 
 var ActorPath = /* module */[
@@ -106,156 +96,25 @@ function unsafeDecoder(result) {
 
 ;
 
-function logLevelFromJs(param) {
-  if (param <= 6 && 0 <= param) {
-    return /* Some */[param - 0 | 0];
-  } else {
-    return /* None */0;
-  }
-}
-
-function logLevelToString(param) {
-  switch (param) {
-    case 0 : 
-        return "off";
-    case 1 : 
-        return "trace";
-    case 2 : 
-        return "debug";
-    case 3 : 
-        return "info";
-    case 4 : 
-        return "warn";
-    case 5 : 
-        return "error";
-    case 6 : 
-        return "critical";
-    
-  }
-}
-
-function fromJsLog(msg) {
-  var a = defaultTo(new References.Nobody(), Js_primitive.null_undefined_to_opt(msg.actor));
-  var path = /* ActorPath */[a.path];
-  var createdAt = defaultTo(new Date(), Js_primitive.null_undefined_to_opt(msg.createdAt));
-  var match = msg.type;
-  if (match == null) {
-    return /* Unknown */Block.__(4, [
-              unsafeEncoder(msg),
-              createdAt,
-              path
-            ]);
-  } else {
-    switch (match) {
-      case "event" : 
-          return /* Event */Block.__(3, [
-                    defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
-                    defaultTo(null, Js_primitive.null_undefined_to_opt(msg.properties)),
-                    createdAt,
-                    path
-                  ]);
-      case "exception" : 
-          return /* Error */Block.__(1, [
-                    defaultTo([
-                          Caml_builtin_exceptions.failure,
-                          "Error is undefined"
-                        ], Js_primitive.null_undefined_to_opt(msg.exception)),
-                    createdAt,
-                    path
-                  ]);
-      case "metric" : 
-          return /* Metric */Block.__(2, [
-                    defaultTo("", Js_primitive.null_undefined_to_opt(msg.name)),
-                    defaultTo(null, Js_primitive.null_undefined_to_opt(msg.values)),
-                    createdAt,
-                    path
-                  ]);
-      case "trace" : 
-          return /* Message */Block.__(0, [
-                    defaultTo(/* Off */0, logLevelFromJs(defaultTo(0, Js_primitive.null_undefined_to_opt(msg.level)))),
-                    defaultTo("", Js_primitive.null_undefined_to_opt(msg.message)),
-                    createdAt,
-                    path
-                  ]);
-      default:
-        return /* Unknown */Block.__(4, [
-                  unsafeEncoder(msg),
-                  createdAt,
-                  path
-                ]);
-    }
-  }
-}
-
-function trace(message, loggingEngine) {
-  loggingEngine.trace(message);
-  return /* () */0;
-}
-
-function debug(message, loggingEngine) {
-  loggingEngine.debug(message);
-  return /* () */0;
-}
-
-function info(message, loggingEngine) {
-  loggingEngine.info(message);
-  return /* () */0;
-}
-
-function warn(message, loggingEngine) {
-  loggingEngine.warn(message);
-  return /* () */0;
-}
-
-function error(message, loggingEngine) {
-  loggingEngine.error(message);
-  return /* () */0;
-}
-
-function critical(message, loggingEngine) {
-  loggingEngine.critical(message);
-  return /* () */0;
-}
-
-function $$event(name, properties, loggingEngine) {
-  loggingEngine.event(name, properties);
-  return /* () */0;
-}
-
-function metric(name, values, loggingEngine) {
-  loggingEngine.metric(name, values);
-  return /* () */0;
-}
-
-function exception_(err, loggingEngine) {
-  loggingEngine.exception(err);
-  return /* () */0;
-}
-
 function mapCtx(untypedCtx) {
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children)),
-          /* name */untypedCtx.name,
-          /* logger */untypedCtx.log
+          /* name */untypedCtx.name
         ];
 }
 
-function mapPersistentCtx(untypedCtx, encoder) {
-  var partial_arg = untypedCtx.persist;
+function mapPersistentCtx(untypedCtx) {
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
-          /* persist */(function (param) {
-              return Curry._1(partial_arg, Curry._1(encoder, param));
-            }),
+          /* persist */untypedCtx.persist,
           /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children)),
-          /* recovering */defaultTo(false, Js_primitive.null_undefined_to_opt(untypedCtx.recovering)),
-          /* logger */untypedCtx.log
+          /* recovering */Belt_Option.getWithDefault(Js_primitive.null_undefined_to_opt(untypedCtx.recovering), false)
         ];
 }
 
@@ -269,14 +128,11 @@ function mapSupervisionCtx(untypedCtx) {
         ];
 }
 
-function mapSupervisionFunction(optionalF, decoder) {
-  var decoder$1 = Js_option.getWithDefault((function (prim) {
-          return prim;
-        }), decoder);
+function mapSupervisionFunction(optionalF) {
   if (optionalF) {
     var f = optionalF[0];
     return (function (msg, err, ctx) {
-        return Curry._3(f, Curry._1(decoder$1, msg), err, mapSupervisionCtx(ctx)).then((function (decision) {
+        return Curry._3(f, msg, err, mapSupervisionCtx(ctx)).then((function (decision) {
                       var tmp;
                       switch (decision) {
                         case 0 : 
@@ -319,10 +175,10 @@ function useStatefulSupervisionPolicy(f, initialState) {
 function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    onCrash: mapSupervisionFunction(onCrash, /* None */0)
+    onCrash: mapSupervisionFunction(onCrash)
   };
   var f = function (possibleState, msg, ctx) {
-    var state = defaultTo(initialState, (possibleState == null) ? /* None */0 : [possibleState]);
+    var state = Belt_Option.getWithDefault((possibleState == null) ? /* None */0 : [possibleState], initialState);
     try {
       return Curry._3(func, state, msg, mapCtx(ctx));
     }
@@ -334,59 +190,53 @@ function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
   return /* ActorRef */[untypedRef];
 }
 
-function spawnStateless(name, shutdownAfter, onCrash, param, func) {
+function spawnStateless(name, shutdownAfter, param, func) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    onCrash: mapSupervisionFunction(onCrash, /* None */0)
+    onCrash: undefined
   };
   var f = function (msg, ctx) {
     try {
       return Curry._2(func, msg, mapCtx(ctx));
     }
-    catch (exn){
-      return Promise.resolve(/* () */0);
+    catch (raw_e){
+      return Promise.reject(Js_exn.internalToOCamlException(raw_e));
     }
   };
   var untypedRef = Nact.spawnStateless(param[0], f, Js_null_undefined.fromOption(name), options);
   return /* ActorRef */[untypedRef];
 }
 
-function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decoder, stateDecoder, stateEncoder, encoder, param, func, initialState) {
-  var decoder$1 = defaultTo((function (prim) {
+function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decoder, stateDecoder, encoder, stateEncoder, param, func, initialState) {
+  var decoder$1 = Belt_Option.getWithDefault(decoder, (function (prim) {
           return unsafeDecoder(prim);
-        }), decoder);
-  var match = Belt_Option.isSome(snapshotEvery);
-  var stateDecoder$1 = defaultTo(match ? (function (prim) {
-            return unsafeDecoder(prim);
-          }) : (function (prim) {
-            return prim;
-          }), stateDecoder);
-  var match$1 = Belt_Option.isSome(snapshotEvery);
-  var stateEncoder$1 = defaultTo(match$1 ? (function (prim) {
-            return unsafeEncoder(prim);
-          }) : (function (prim) {
-            return prim;
-          }), stateEncoder);
-  var encoder$1 = defaultTo((function (prim) {
+        }));
+  var stateDecoder$1 = Belt_Option.getWithDefault(stateDecoder, (function (prim) {
+          return unsafeDecoder(prim);
+        }));
+  var stateEncoder$1 = Belt_Option.getWithDefault(stateEncoder, (function (prim) {
           return unsafeEncoder(prim);
-        }), encoder);
+        }));
+  var encoder$1 = Belt_Option.getWithDefault(encoder, (function (prim) {
+          return unsafeEncoder(prim);
+        }));
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    onCrash: mapSupervisionFunction(onCrash, /* Some */[decoder$1]),
-    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery)
+    onCrash: mapSupervisionFunction(onCrash),
+    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery),
+    encoder: encoder$1,
+    decoder: decoder$1,
+    snapshotEncoder: stateEncoder$1,
+    snapshotDecoder: stateDecoder$1
   };
   var f = function (state, msg, ctx) {
-    var state$1 = (state == null) ? initialState : Curry._1(stateDecoder$1, state);
-    var tmp;
+    var state$1 = (state == null) ? initialState : state;
     try {
-      tmp = Curry._3(func, state$1, Curry._1(decoder$1, msg), mapPersistentCtx(ctx, encoder$1));
+      return Curry._3(func, state$1, msg, mapPersistentCtx(ctx));
     }
     catch (raw_err){
-      tmp = Promise.reject(Js_exn.internalToOCamlException(raw_err));
+      return Promise.reject(Js_exn.internalToOCamlException(raw_err));
     }
-    return tmp.then((function (result) {
-                  return Promise.resolve(Curry._1(stateEncoder$1, result));
-                }));
   };
   var untypedRef = Nact.spawnPersistent(param[0], f, key, Js_null_undefined.fromOption(name), options);
   return /* ActorRef */[untypedRef];
@@ -407,58 +257,32 @@ function nobody() {
 }
 
 function spawnAdapter(name, parent, mapping) {
+  var f = function (msg, _) {
+    return Promise.resolve(dispatch$1(parent, Curry._1(mapping, msg)));
+  };
   if (name) {
-    return spawnStateless(/* Some */[name[0]], /* None */0, /* None */0, parent, (function (msg, _) {
-                  return Promise.resolve(dispatch$1(parent, Curry._1(mapping, msg)));
-                }));
+    return spawnStateless(/* Some */[name[0]], /* None */0, parent, f);
   } else {
-    return spawnStateless(/* None */0, /* None */0, /* None */0, parent, (function (msg, _) {
-                  return Promise.resolve(dispatch$1(parent, Curry._1(mapping, msg)));
-                }));
+    return spawnStateless(/* None */0, /* None */0, parent, f);
   }
 }
 
-function start(name, persistenceEngine, logger, _) {
+function start(name, persistenceEngine, _) {
   var plugins = persistenceEngine ? /* :: */[
       Nact.configurePersistence(persistenceEngine[0]),
       /* [] */0
     ] : /* [] */0;
-  var plugins$1;
-  if (logger) {
-    var logger$1 = logger[0];
-    plugins$1 = /* :: */[
-      Nact.configureLogging((function (param) {
-              var loggingActorFunction = logger$1;
-              var system = param;
-              var loggerActor = Curry._1(loggingActorFunction, /* ActorRef */[system]);
-              return spawnAdapter(/* None */0, loggerActor, fromJsLog)[0];
-            })),
-      plugins
-    ];
-  } else {
-    plugins$1 = plugins;
-  }
-  var plugins$2 = name ? /* :: */[
+  var plugins$1 = name ? /* :: */[
       {
         name: name[0]
       },
-      plugins$1
-    ] : plugins$1;
-  if (plugins$2) {
-    var match = plugins$2[1];
-    var a = plugins$2[0];
+      plugins
+    ] : plugins;
+  if (plugins$1) {
+    var match = plugins$1[1];
+    var a = plugins$1[0];
     if (match) {
-      var match$1 = match[1];
-      var b = match[0];
-      if (match$1) {
-        if (match$1[1]) {
-          return /* ActorRef */[Nact.start()];
-        } else {
-          return /* ActorRef */[Nact.start(a, b, match$1[0])];
-        }
-      } else {
-        return /* ActorRef */[Nact.start(a, b)];
-      }
+      return /* ActorRef */[Nact.start(a, match[0])];
     } else {
       return /* ActorRef */[Nact.start(a)];
     }
@@ -503,19 +327,6 @@ var Operators = /* module */[
   /* <? */$less$unknown
 ];
 
-var Log = [
-  logLevelToString,
-  trace,
-  debug,
-  info,
-  warn,
-  error,
-  critical,
-  $$event,
-  exception_,
-  metric
-];
-
 var milliseconds = 1;
 
 var millisecond = 1;
@@ -530,7 +341,6 @@ var message = 1;
 
 exports.Interop = Interop;
 exports.ActorPath = ActorPath;
-exports.Log = Log;
 exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
 exports.spawn = spawn;
 exports.spawnStateless = spawnStateless;

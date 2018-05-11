@@ -6,7 +6,7 @@ open Nact.Operators;
 
 open Nact;
 
-external unsafeDecoder : Js.Json.t => 'a = "%identity";
+external unsafeDecoder : Js.Json.t => 'msg = "%identity";
 
 open Js.Global;
 
@@ -50,7 +50,7 @@ exception NumberLessThanZeroException(int);
 let resetIfNumberLessThanZeroException = (_, err, _) =>
   (
     switch (err) {
-    | NumberLessThanZeroException(__) => Reset
+    | NumberLessThanZeroException(_) => Reset
     | _ => Stop
     }
   )
@@ -77,16 +77,17 @@ let spawnBrokenCalculator = (policy, parent) =>
     0,
   );
 
-let spawnCalculator = parent =>
+let spawnCalculator = (~name="einstein", parent) =>
   spawn(
     parent,
+    ~name,
     (total, (sender, msg), _) =>
       (
         switch (msg) {
         | Add(number) => total + number
         | Subtract(number) => total - number
         | GetTotal =>
-          sender <-< total;
+          Nact.dispatch(sender, total);
           total;
         }
       )
@@ -126,7 +127,22 @@ describe("Stateless Actor", () => {
         )
       );
     let queryPromise = query(~timeout=30 * milliseconds, actor, echoHello);
-    queryPromise >=> (result => expect(result) |> toBe("hello") |> resolve);
+    queryPromise
+    >=> (result => expect(result) |> toEqual("hello") |> resolve);
+  });
+  test("can be created with name", () => {
+    let system = start();
+    let actor =
+      spawnStateless(~name="albert", system, ((sender, msg), _) =>
+        ?:(
+          switch (msg) {
+          | Echo(text) => text >-> sender
+          | Ignore => ()
+          }
+        )
+      );
+    let path = Nact.ActorPath.fromReference(actor);
+    expect(Nact.ActorPath.parts(path)) |> toEqual(["albert"]);
   });
   testPromise("shuts down automatically after timeout", () => {
     let system = start();
@@ -193,7 +209,7 @@ describe("Stateless Actor", () => {
     child <-< (loggerActor, Add(12));
     let queryPromise =
       child <? (temp => (temp, GetTotal), 30 * milliseconds);
-    queryPromise >=> (result => ?:(expect(result) |> toBe(12)));
+    queryPromise >=> (result => ?:(expect(result) |> toEqual(12)));
   });
   testPromise("does not terminate even after throwing an exception", () => {
     let system = start();
@@ -244,7 +260,7 @@ describe("Stateful Actor", () => {
     actor <-< (loggerActor, Add(10));
     let queryPromise =
       query(~timeout=30 * milliseconds, actor, temp => (temp, GetTotal));
-    queryPromise >=> (result => ?:(expect(result) |> toBe(15)));
+    queryPromise >=> (result => ?:(expect(result) |> toEqual(15)));
   });
   testPromise("can have children", () => {
     let system = start();
@@ -255,7 +271,11 @@ describe("Stateful Actor", () => {
           let childMsg = (sender, msg);
           let calcActor =
             try (StringMap.find(calc, children)) {
-            | _ => spawnCalculator(ctx.self)
+            | _ =>
+              spawnCalculator(
+                ~name="winterfrost" ++ string_of_int(Random.int(100000000)),
+                ctx.self,
+              )
             };
           calcActor <-< childMsg;
           ?:(StringMap.add(calc, calcActor, children));
@@ -270,7 +290,7 @@ describe("Stateful Actor", () => {
       query(~timeout=30 * milliseconds, parent, temp =>
         (temp, "b", GetTotal)
       );
-    queryPromise >=> (result => ?:(expect(result) |> toBe(15)));
+    queryPromise >=> (result => ?:(expect(result) |> toEqual(15)));
   });
   testPromise("can supervise children", () => {
     let system = start();
@@ -283,17 +303,26 @@ describe("Stateful Actor", () => {
     child <-< (loggerActor, Add(12));
     let queryPromise =
       query(~timeout=30 * milliseconds, child, temp => (temp, GetTotal));
-    queryPromise >=> (result => ?:(expect(result) |> toBe(12)));
+    queryPromise >=> (result => ?:(expect(result) |> toEqual(12)));
   });
 });
 
-describe("System", () =>
+describe("System", () => {
   test("Can name system", () => {
     let system = start(~name="albert", ());
     expect(ActorPath.systemName(ActorPath.fromReference(system)))
     |> toEqual("albert");
-  })
-);
+  });
+  test("Can name system and add persistence plugin", () => {
+    let result =
+      start(
+        ~name="albert",
+        ~persistenceEngine=createMockPersistenceEngine(),
+        (),
+      );
+    expect(result) |> toBeTruthy;
+  });
+});
 
 describe("Persistent Actor", () => {
   testPromise("allows queries to resolve", () => {
@@ -320,7 +349,7 @@ describe("Persistent Actor", () => {
     actor <-< (loggerActor, Add(10));
     let queryPromise =
       query(~timeout=30 * milliseconds, actor, temp => (temp, GetTotal));
-    queryPromise >=> (result => expect(result) |> toBe(15) |> resolve);
+    queryPromise >=> (result => expect(result) |> toEqual(15) |> resolve);
   });
   testPromise("can specify a custom decoder", () => {
     let decoder = json =>
@@ -329,28 +358,41 @@ describe("Persistent Actor", () => {
       | x => x
       };
     let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
-    let actor =
+    let actorF = () =>
       spawnPersistent(
         ~key="calculator",
         ~decoder,
+        ~encoder=id => Obj.magic(id),
         system,
-        (total, (sender, msg), _) =>
+        (total, (sender, msg), {recovering, persist}) =>
           switch (msg) {
-          | Add(number) => ?:(total + number)
-          | Subtract(number) => ?:(total - number)
+          | Add(number) =>
+            (recovering ? resolve() : persist((Nact.nobody(), msg)))
+            >=> (() => resolve(total + number))
+          | Subtract(number) =>
+            (recovering ? resolve() : persist((Nact.nobody(), msg)))
+            >=> (() => resolve(total - number))
           | GetTotal =>
             total >-> sender;
             ?:total;
           },
         0,
       );
+    let actor = actorF();
     let loggerActor =
       spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
     actor <-< (loggerActor, Add(5));
     actor <-< (loggerActor, Add(10));
-    let queryPromise =
-      query(~timeout=30 * milliseconds, actor, temp => (temp, GetTotal));
-    queryPromise >=> (result => expect(result) |> toBe(30) |> resolve);
+    delay(10)
+    >=> (
+      () => {
+        Nact.stop(actor);
+        let actor = actorF();
+        let queryPromise =
+          query(~timeout=30 * milliseconds, actor, temp => (temp, GetTotal));
+        queryPromise >=> (result => expect(result) |> toEqual(30) |> resolve);
+      }
+    );
   });
   testPromise("automatically snapshots", () => {
     let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
@@ -389,7 +431,7 @@ describe("Persistent Actor", () => {
           query(~timeout=30 * milliseconds, actorInstance2, temp =>
             (temp, GetTotal)
           );
-        queryPromise >=> (result => expect(result) |> toBe(15) |> resolve);
+        queryPromise >=> (result => expect(result) |> toEqual(25) |> resolve);
       }
     );
   });
@@ -427,7 +469,7 @@ describe("Persistent Actor", () => {
           query(~timeout=30 * milliseconds, actorInstance2, temp =>
             (temp, GetTotal)
           );
-        queryPromise >=> (result => ?:(expect(result) |> toBe(25)));
+        queryPromise >=> (result => ?:(expect(result) |> toEqual(25)));
       }
     );
   });
@@ -448,7 +490,7 @@ describe("Persistent Actor", () => {
     child <-< (loggerActor, Add(12));
     let queryPromise =
       query(~timeout=30 * milliseconds, child, temp => (temp, GetTotal));
-    queryPromise >=> (result => ?:(expect(result) |> toBe(12)));
+    queryPromise >=> (result => ?:(expect(result) |> toEqual(12)));
   });
   testPromise("raises fault after throwing an exception", () => {
     let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
@@ -677,10 +719,10 @@ describe("supervision policy", () => {
   });
 });
 
-describe("Adapter", () =>
+describe("Adapter", () => {
   testPromise("it should foward messages to parent", () => {
     let system = start();
-    let parent = spawnCalculator(system);
+    let parent = spawnCalculator(~name="fritz", system);
     let adapter = spawnAdapter(parent, msg => (nobody(), Add(msg)));
     adapter <-< 5;
     adapter <-< 5;
@@ -690,8 +732,16 @@ describe("Adapter", () =>
         query(~timeout=100 * milliseconds, parent, temp => (temp, GetTotal))
     )
     >=> (result => ?:(expect(result) |> toEqual(10)));
-  })
-);
+  });
+  test("it should be able to be named", () => {
+    let system = start();
+    let parent = spawnCalculator(~name="einstein", system);
+    let adapter =
+      spawnAdapter(~name="albert", parent, msg => (nobody(), Add(msg)));
+    let path = Nact.ActorPath.fromReference(adapter);
+    expect(Nact.ActorPath.parts(path)) |> toEqual(["einstein", "albert"]);
+  });
+});
 
 exception QueryShouldNeverResolve;
 
@@ -717,6 +767,6 @@ describe("ActorPath", () =>
     let expectedPath = "system:" ++ systemName ++ "//name";
     let actor = spawnStateless(system, ~name="name", (_, _) => ?:());
     let pathStr = ActorPath.fromReference(actor) |> ActorPath.toString;
-    expect(pathStr) |> toBe(expectedPath);
+    expect(pathStr) |> toEqual(expectedPath);
   })
 );

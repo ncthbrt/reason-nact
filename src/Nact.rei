@@ -2,6 +2,10 @@ type persistenceEngine;
 
 type systemMsg;
 
+type decoder('a) = Js.Json.t => 'a;
+
+type encoder('a) = 'a => Js.Json.t;
+
 type actorRef('msg);
 
 type untypedRef;
@@ -21,45 +25,12 @@ module ActorPath: {
   let parts: actorPath => list(string);
 };
 
-module Log: {
-  /* logEngine is an opaque type which dispatches messages to the logging actor */
-  type loggingEngine;
-  type name = string;
-  type logLevel =
-    | Off
-    | Trace
-    | Debug
-    | Info
-    | Warn
-    | Error
-    | Critical;
-  let logLevelToString: logLevel => string;
-  type t =
-    | Message(logLevel, string, Js.Date.t, actorPath)
-    | Error(exn, Js.Date.t, actorPath)
-    | Metric(name, Js.Json.t, Js.Date.t, actorPath)
-    | Event(name, Js.Json.t, Js.Date.t, actorPath)
-    | Unknown(Js.Json.t, Js.Date.t, actorPath);
-  type logger = actorRef(systemMsg) => actorRef(t);
-  let trace: (string, loggingEngine) => unit;
-  let debug: (string, loggingEngine) => unit;
-  let info: (string, loggingEngine) => unit;
-  let warn: (string, loggingEngine) => unit;
-  let error: (string, loggingEngine) => unit;
-  let critical: (string, loggingEngine) => unit;
-  let event:
-    (~name: string, ~properties: 'eventProperties, loggingEngine) => unit;
-  let exception_: (exn, loggingEngine) => unit;
-  let metric: (~name: string, ~values: 'values, loggingEngine) => unit;
-};
-
 type ctx('msg, 'parentMsg) = {
   parent: actorRef('parentMsg),
   path: actorPath,
   self: actorRef('msg),
   children: Belt.Set.String.t,
   name: string,
-  logger: Log.loggingEngine,
 };
 
 type persistentCtx('msg, 'parentMsg) = {
@@ -70,7 +41,6 @@ type persistentCtx('msg, 'parentMsg) = {
   persist: 'msg => Js.Promise.t(unit),
   children: Belt.Set.String.t,
   recovering: bool,
-  logger: Log.loggingEngine,
 };
 
 type supervisionCtx('msg, 'parentMsg) = {
@@ -125,7 +95,6 @@ let spawnStateless:
   (
     ~name: string=?,
     ~shutdownAfter: int=?,
-    ~onCrash: supervisionPolicy('msg, 'parentMsg)=?,
     actorRef('parentMsg),
     statelessActor('msg, 'parentMsg)
   ) =>
@@ -138,10 +107,10 @@ let spawnPersistent:
     ~shutdownAfter: int=?,
     ~snapshotEvery: int=?,
     ~onCrash: supervisionPolicy('msg, 'parentMsg)=?,
-    ~decoder: Js.Json.t => 'msg=?,
-    ~stateDecoder: Js.Json.t => 'state=?,
-    ~stateEncoder: 'state => Js.Json.t=?,
-    ~encoder: 'msg => Js.Json.t=?,
+    ~decoder: decoder('msg)=?,
+    ~stateDecoder: decoder('state)=?,
+    ~encoder: encoder('msg)=?,
+    ~stateEncoder: encoder('state)=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
     'state
@@ -153,12 +122,7 @@ let spawnAdapter:
   actorRef('msg);
 
 let start:
-  (
-    ~name: string=?,
-    ~persistenceEngine: persistenceEngine=?,
-    ~logger: Log.logger=?,
-    unit
-  ) =>
+  (~name: string=?, ~persistenceEngine: persistenceEngine=?, unit) =>
   actorRef(systemMsg);
 
 let stop: actorRef('msg) => unit;
