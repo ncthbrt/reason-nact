@@ -5,7 +5,6 @@ var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var Js_exn = require("bs-platform/lib/js/js_exn.js");
 var $$String = require("bs-platform/lib/js/string.js");
-var Js_option = require("bs-platform/lib/js/js_option.js");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Nact_jsMap = require("./Nact_jsMap.js");
 var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
@@ -243,16 +242,14 @@ function mapCtx(untypedCtx) {
         ];
 }
 
-function mapPersistentCtx(untypedCtx, encoder) {
+function mapPersistentCtx(untypedCtx) {
   var partial_arg = untypedCtx.persist;
   return /* record */[
           /* parent : ActorRef */[untypedCtx.parent],
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
-          /* persist */(function (param) {
-              return Curry._1(partial_arg, Curry._1(encoder, param));
-            }),
+          /* persist */Curry.__1(partial_arg),
           /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children)),
           /* recovering */defaultTo(false, Js_primitive.null_undefined_to_opt(untypedCtx.recovering)),
           /* logger */untypedCtx.log
@@ -269,14 +266,11 @@ function mapSupervisionCtx(untypedCtx) {
         ];
 }
 
-function mapSupervisionFunction(optionalF, decoder) {
-  var decoder$1 = Js_option.getWithDefault((function (prim) {
-          return prim;
-        }), decoder);
+function mapSupervisionFunction(optionalF) {
   if (optionalF) {
     var f = optionalF[0];
     return (function (msg, err, ctx) {
-        return Curry._3(f, Curry._1(decoder$1, msg), err, mapSupervisionCtx(ctx)).then((function (decision) {
+        return Curry._3(f, msg, err, mapSupervisionCtx(ctx)).then((function (decision) {
                       var tmp;
                       switch (decision) {
                         case 0 : 
@@ -319,7 +313,7 @@ function useStatefulSupervisionPolicy(f, initialState) {
 function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    onCrash: mapSupervisionFunction(onCrash, /* None */0)
+    onCrash: mapSupervisionFunction(onCrash)
   };
   var f = function (possibleState, msg, ctx) {
     var state = defaultTo(initialState, (possibleState == null) ? /* None */0 : [possibleState]);
@@ -337,7 +331,7 @@ function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
 function spawnStateless(name, shutdownAfter, onCrash, param, func) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    onCrash: mapSupervisionFunction(onCrash, /* None */0)
+    onCrash: mapSupervisionFunction(onCrash)
   };
   var f = function (msg, ctx) {
     try {
@@ -372,21 +366,21 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decod
         }), encoder);
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    onCrash: mapSupervisionFunction(onCrash, /* Some */[decoder$1]),
-    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery)
+    onCrash: mapSupervisionFunction(onCrash),
+    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery),
+    decoder: decoder$1,
+    encoder: encoder$1,
+    snapshotDecoder: stateDecoder$1,
+    snapshotEncoder: stateEncoder$1
   };
   var f = function (state, msg, ctx) {
-    var state$1 = (state == null) ? initialState : Curry._1(stateDecoder$1, state);
-    var tmp;
+    var state$1 = Belt_Option.getWithDefault((state == null) ? /* None */0 : [state], initialState);
     try {
-      tmp = Curry._3(func, state$1, Curry._1(decoder$1, msg), mapPersistentCtx(ctx, encoder$1));
+      return Curry._3(func, state$1, msg, mapPersistentCtx(ctx));
     }
     catch (raw_err){
-      tmp = Promise.reject(Js_exn.internalToOCamlException(raw_err));
+      return Promise.reject(Js_exn.internalToOCamlException(raw_err));
     }
-    return tmp.then((function (result) {
-                  return Promise.resolve(Curry._1(stateEncoder$1, result));
-                }));
   };
   var untypedRef = Nact.spawnPersistent(param[0], f, key, Js_null_undefined.fromOption(name), options);
   return /* ActorRef */[untypedRef];

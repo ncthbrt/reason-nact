@@ -208,17 +208,16 @@ let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
   logger: untypedCtx##log,
 };
 
-let mapPersist = (encoder, persist, msg) => persist(encoder(msg));
+let mapPersist = (persist, msg) => persist(msg);
 
-let mapPersistentCtx =
-    (untypedCtx: Nact_bindings.persistentCtx('incoming), encoder) => {
+let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
   name: untypedCtx##name,
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
   path: ActorPath(untypedCtx##path),
   recovering:
     untypedCtx##recovering |> Js.Nullable.toOption |> defaultTo(false),
-  persist: mapPersist(encoder, untypedCtx##persist),
+  persist: mapPersist(untypedCtx##persist),
   children:
     untypedCtx##children |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
   logger: untypedCtx##log,
@@ -232,7 +231,7 @@ type supervisionCtx('msg, 'parentMsg) = {
   children: Belt.Set.String.t,
 };
 
-let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
+let mapSupervisionCtx = untypedCtx => {
   name: untypedCtx##name,
   self: ActorRef(untypedCtx##self),
   parent: ActorRef(untypedCtx##parent),
@@ -257,13 +256,12 @@ type statefulSupervisionPolicy('msg, 'parentMsg, 'state) =
   ('msg, exn, 'state, supervisionCtx('msg, 'parentMsg)) =>
   ('state, Js.Promise.t(supervisionAction));
 
-let mapSupervisionFunction = (optionalF, decoder) => {
-  let decoder = decoder |> Js.Option.getWithDefault(magicDecoder);
+let mapSupervisionFunction = optionalF =>
   switch (optionalF) {
   | None => Js.Nullable.undefined
   | Some(f) =>
     Js.Nullable.return((msg, err, ctx) =>
-      f(decoder(msg), err, mapSupervisionCtx(ctx))
+      f(msg, err, mapSupervisionCtx(ctx))
       |> then_(decision =>
            resolve(
              switch (decision) {
@@ -278,7 +276,6 @@ let mapSupervisionFunction = (optionalF, decoder) => {
          )
     )
   };
-};
 
 type statefulActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, ctx('msg, 'parentMsg)) => Js.Promise.t('state);
@@ -307,9 +304,9 @@ let spawn =
       func,
       initialState,
     ) => {
-  let options = {
+  let options: Nact_bindings.actorOptions('msg, 'parentMsg) = {
     "shutdownAfter": fromOption(shutdownAfter),
-    "onCrash": mapSupervisionFunction(onCrash, None),
+    "onCrash": mapSupervisionFunction(onCrash),
   };
   let f = (possibleState: Js.nullable('state), msg: 'msg, ctx) => {
     let state =
@@ -326,7 +323,7 @@ let spawnStateless =
     (~name=?, ~shutdownAfter=?, ~onCrash=?, ActorRef(parent), func) => {
   let options = {
     "shutdownAfter": fromOption(shutdownAfter),
-    "onCrash": mapSupervisionFunction(onCrash, None),
+    "onCrash": mapSupervisionFunction(onCrash),
   };
   let f = (msg, ctx) =>
     try (func(msg, mapCtx(ctx))) {
@@ -354,35 +351,35 @@ let spawnPersistent =
         Js.Promise.t('state),
       initialState: 'state,
     ) => {
-  let decoder = decoder |> defaultTo(unsafeDecoder);
-  let stateDecoder =
+  let decoder: Js.Json.t => 'msg = decoder |> defaultTo(unsafeDecoder);
+  let stateDecoder: Js.Json.t => 'state =
     stateDecoder
     |> defaultTo(
          Belt.Option.isSome(snapshotEvery) ? unsafeDecoder : magicDecoder,
        );
-  let stateEncoder =
+  let stateEncoder: 'state => Js.Json.t =
     stateEncoder
     |> defaultTo(
          Belt.Option.isSome(snapshotEvery) ? unsafeEncoder : magicEncoder,
        );
-  let encoder = encoder |> defaultTo(unsafeEncoder);
-  let options: Nact_bindings.persistentActorOptions('msg, 'parentMsg) = {
+  let encoder: 'msg => Js.Json.t = encoder |> defaultTo(unsafeEncoder);
+  let options = {
     "shutdownAfter": fromOption(shutdownAfter),
-    "onCrash": mapSupervisionFunction(onCrash, Some(decoder)),
+    "onCrash": mapSupervisionFunction(onCrash),
     "snapshotEvery": fromOption(snapshotEvery),
+    "decoder": decoder,
+    "encoder": encoder,
+    "snapshotDecoder": stateDecoder,
+    "snapshotEncoder": stateEncoder,
   };
   let f = (state, msg, ctx) => {
-    let state =
-      switch (Js.Nullable.toOption(state)) {
-      | None => initialState
-      | Some(state) => stateDecoder(state)
-      };
-    (
-      try (func(state, decoder(msg), mapPersistentCtx(ctx, encoder))) {
-      | err => reject(err)
-      }
-    )
-    |> then_(result => resolve(stateEncoder(result)));
+    let state: 'state =
+      state
+      |. Js.Nullable.toOption
+      |. Belt.Option.getWithDefault(initialState);
+    try (func(state, msg, mapPersistentCtx(ctx))) {
+    | err => reject(err)
+    };
   };
   let untypedRef =
     Nact_bindings.spawnPersistent(parent, f, key, fromOption(name), options);

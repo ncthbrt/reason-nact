@@ -90,9 +90,8 @@ type statefulActor('state, 'msgType) =
 
 type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 
-type persistentActor('msgType) =
-  (Js.nullable(Js.Json.t), Js.Json.t, persistentCtx('msgType)) =>
-  Js.Promise.t(Js.Json.t);
+type persistentActor('msg, 'state) =
+  (Js.nullable('state), 'msg, persistentCtx('msg)) => Js.Promise.t('state);
 
 type supervisionAction;
 
@@ -111,20 +110,24 @@ type supervisionCtx = {
   "resume": supervisionAction,
 };
 
-type supervisionFunction('msg, 'parentMsg) =
-  (Js.Json.t, exn, supervisionCtx) => Js.Promise.t(supervisionAction);
+type supervisionFunction('msg) =
+  ('msg, exn, supervisionCtx) => Js.Promise.t(supervisionAction);
 
 type actorOptions('msg, 'parentMsg) = {
   .
   "shutdownAfter": Js.Nullable.t(int),
-  "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),
+  "onCrash": Js.Nullable.t(supervisionFunction('msg)),
 };
 
-type persistentActorOptions('msg, 'parentMsg) = {
+type persistentActorOptions('msg, 'state) = {
   .
   "shutdownAfter": Js.Nullable.t(int),
   "snapshotEvery": Js.Nullable.t(int),
-  "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),
+  "onCrash": Js.Nullable.t(supervisionFunction('msg)),
+  "decoder": Js.Json.t => 'msg,
+  "encoder": 'msg => Js.Json.t,
+  "snapshotEncoder": 'state => Js.Json.t,
+  "snapshotDecoder": Js.Json.t => 'state,
 };
 
 [@bs.module "nact"]
@@ -160,10 +163,10 @@ external nobody : unit => actorRef = "Nobody";
 external spawnPersistent :
   (
     actorRef,
-    persistentActor('msgType),
+    persistentActor('msg, 'state),
     string,
     Js.nullable(string),
-    persistentActorOptions('msgType, 'parentMsg)
+    persistentActorOptions('msg, 'state)
   ) =>
   actorRef =
   "";

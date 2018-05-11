@@ -323,13 +323,15 @@ describe("Persistent Actor", () => {
     queryPromise >=> (result => expect(result) |> toBe(15) |> resolve);
   });
   testPromise("can specify a custom decoder", () => {
-    let decoder = json =>
+    let decoder = json => {
+      Js.log2("HERRO", json);
       switch (json |> unsafeDecoder) {
       | (actor, Add(number)) => (actor, Add(number * 2))
       | x => x
       };
+    };
     let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
-    let actor =
+    let actorF = () =>
       spawnPersistent(
         ~key="calculator",
         ~decoder,
@@ -344,13 +346,20 @@ describe("Persistent Actor", () => {
           },
         0,
       );
+    let actor = actorF();
     let loggerActor =
       spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
     actor <-< (loggerActor, Add(5));
     actor <-< (loggerActor, Add(10));
+    Nact.stop(actor);
+    let actor = actorF();
     let queryPromise =
       query(~timeout=30 * milliseconds, actor, temp => (temp, GetTotal));
-    queryPromise >=> (result => expect(result) |> toBe(30) |> resolve);
+    delay(40)
+    >=> (
+      () =>
+        queryPromise >=> (result => expect(result) |> toBe(30) |> resolve)
+    );
   });
   testPromise("automatically snapshots", () => {
     let system = start(~persistenceEngine=createMockPersistenceEngine(), ());
@@ -380,6 +389,7 @@ describe("Persistent Actor", () => {
     actorInstance1 <-< (loggerActor, Add(5));
     actorInstance1 <-< (loggerActor, Add(10));
     actorInstance1 <-< (loggerActor, Add(10));
+    actorInstance1 <-< (loggerActor, Add(15));
     delay(30)
     >=> (
       (_) => {
@@ -389,7 +399,7 @@ describe("Persistent Actor", () => {
           query(~timeout=30 * milliseconds, actorInstance2, temp =>
             (temp, GetTotal)
           );
-        queryPromise >=> (result => expect(result) |> toBe(15) |> resolve);
+        queryPromise >=> (result => expect(result) |> toBe(25) |> resolve);
       }
     );
   });
