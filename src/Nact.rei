@@ -149,7 +149,8 @@ let spawnPersistent:
   actorRef('msg);
 
 let spawnAdapter:
-  (actorRef('parentMsg), 'msg => 'parentMsg) => actorRef('msg);
+  (~name: string=?, actorRef('parentMsg), 'msg => 'parentMsg) =>
+  actorRef('msg);
 
 let start:
   (

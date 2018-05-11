@@ -14,7 +14,7 @@ function createAdapterIfNotExists(parent, adapterOpt) {
   if (adapterOpt) {
     return adapterOpt[0];
   } else {
-    return Nact.spawnAdapter(parent, (function (param) {
+    return Nact.spawnAdapter(/* None */0, parent, (function (param) {
                   return /* Hello */[param[0]];
                 }));
   }

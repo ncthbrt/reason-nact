@@ -400,10 +400,16 @@ function nobody() {
   return /* ActorRef */[new References.Nobody()];
 }
 
-function spawnAdapter(parent, mapping) {
-  return spawnStateless(/* None */0, /* None */0, /* None */0, parent, (function (msg, _) {
-                return Promise.resolve(dispatch$1(parent, Curry._1(mapping, msg)));
-              }));
+function spawnAdapter(name, parent, mapping) {
+  if (name) {
+    return spawnStateless(/* Some */[name[0]], /* None */0, /* None */0, parent, (function (msg, _) {
+                  return Promise.resolve(dispatch$1(parent, Curry._1(mapping, msg)));
+                }));
+  } else {
+    return spawnStateless(/* None */0, /* None */0, /* None */0, parent, (function (msg, _) {
+                  return Promise.resolve(dispatch$1(parent, Curry._1(mapping, msg)));
+                }));
+  }
 }
 
 function start(name, persistenceEngine, logger, _) {
@@ -419,7 +425,7 @@ function start(name, persistenceEngine, logger, _) {
               var loggingActorFunction = logger$1;
               var system = param;
               var loggerActor = Curry._1(loggingActorFunction, /* ActorRef */[system]);
-              return spawnAdapter(loggerActor, fromJsLog)[0];
+              return spawnAdapter(/* None */0, loggerActor, fromJsLog)[0];
             })),
       plugins
     ];
