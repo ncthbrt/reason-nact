@@ -396,10 +396,17 @@ let dispatch = (ActorRef(recipient), msg) =>
 
 let nobody = () => ActorRef(Nact_bindings.nobody());
 
-let spawnAdapter = (parent, mapping) =>
-  spawnStateless(parent, (msg, _) =>
-    resolve(dispatch(parent, mapping(msg)))
-  );
+let spawnAdapter = (~name=?, parent, mapping) =>
+  switch (name) {
+  | Some(name) =>
+    spawnStateless(~name, parent, (msg, _) =>
+      resolve(dispatch(parent, mapping(msg)))
+    )
+  | None =>
+    spawnStateless(parent, (msg, _) =>
+      resolve(dispatch(parent, mapping(msg)))
+    )
+  };
 
 let mapLoggingActor = (loggingActorFunction: Log.logger, system) => {
   let loggerActor = loggingActorFunction(ActorRef(system));
