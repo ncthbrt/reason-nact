@@ -327,6 +327,14 @@ var Operators = /* module */[
   /* <? */$less$unknown
 ];
 
+function unsafeDecoder$1(prim) {
+  return unsafeDecoder(prim);
+}
+
+function unsafeEncoder$1(prim) {
+  return unsafeEncoder(prim);
+}
+
 var milliseconds = 1;
 
 var millisecond = 1;
@@ -339,6 +347,8 @@ var messages = 1;
 
 var message = 1;
 
+exports.unsafeDecoder = unsafeDecoder$1;
+exports.unsafeEncoder = unsafeEncoder$1;
 exports.Interop = Interop;
 exports.ActorPath = ActorPath;
 exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;

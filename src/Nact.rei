@@ -6,6 +6,10 @@ type decoder('a) = Js.Json.t => 'a;
 
 type encoder('a) = 'a => Js.Json.t;
 
+let unsafeDecoder: Js.Json.t => 'msg;
+
+let unsafeEncoder: 'msg => Js.Json.t;
+
 type actorRef('msg);
 
 type untypedRef;
