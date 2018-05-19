@@ -174,11 +174,11 @@ function useStatefulSupervisionPolicy(f, initialState) {
 
 function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
   var options = {
+    initialState: initialState,
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
     onCrash: mapSupervisionFunction(onCrash)
   };
-  var f = function (possibleState, msg, ctx) {
-    var state = Belt_Option.getWithDefault((possibleState == null) ? /* None */0 : [possibleState], initialState);
+  var f = function (state, msg, ctx) {
     try {
       return Curry._3(func, state, msg, mapCtx(ctx));
     }
@@ -193,6 +193,7 @@ function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
 function spawnStateless(name, shutdownAfter, param, func) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
+    initialState: undefined,
     onCrash: undefined
   };
   var f = function (msg, ctx) {
@@ -221,6 +222,7 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decod
           return unsafeEncoder(prim);
         }));
   var options = {
+    initialState: initialState,
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
     onCrash: mapSupervisionFunction(onCrash),
     snapshotEvery: Js_null_undefined.fromOption(snapshotEvery),
@@ -230,9 +232,8 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decod
     snapshotDecoder: stateDecoder$1
   };
   var f = function (state, msg, ctx) {
-    var state$1 = (state == null) ? initialState : state;
     try {
-      return Curry._3(func, state$1, msg, mapPersistentCtx(ctx));
+      return Curry._3(func, state, msg, mapPersistentCtx(ctx));
     }
     catch (raw_err){
       return Promise.reject(Js_exn.internalToOCamlException(raw_err));
@@ -240,6 +241,40 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decod
   };
   var untypedRef = Nact.spawnPersistent(param[0], f, key, Js_null_undefined.fromOption(name), options);
   return /* ActorRef */[untypedRef];
+}
+
+function persistentQuery(key, snapshotKey, cacheDuration, snapshotEvery, decoder, stateDecoder, encoder, stateEncoder, param, func, initialState) {
+  var decoder$1 = Belt_Option.getWithDefault(decoder, (function (prim) {
+          return unsafeDecoder(prim);
+        }));
+  var stateDecoder$1 = Belt_Option.getWithDefault(stateDecoder, (function (prim) {
+          return unsafeDecoder(prim);
+        }));
+  var stateEncoder$1 = Belt_Option.getWithDefault(stateEncoder, (function (prim) {
+          return unsafeEncoder(prim);
+        }));
+  var encoder$1 = Belt_Option.getWithDefault(encoder, (function (prim) {
+          return unsafeEncoder(prim);
+        }));
+  var options = {
+    initialState: initialState,
+    cacheDuration: Js_null_undefined.fromOption(cacheDuration),
+    snapshotEvery: Js_null_undefined.fromOption(snapshotEvery),
+    snapshotKey: Js_null_undefined.fromOption(snapshotKey),
+    encoder: encoder$1,
+    decoder: decoder$1,
+    snapshotEncoder: stateEncoder$1,
+    snapshotDecoder: stateDecoder$1
+  };
+  var f = function (state, msg) {
+    try {
+      return Curry._2(func, state, msg);
+    }
+    catch (raw_err){
+      return Promise.reject(Js_exn.internalToOCamlException(raw_err));
+    }
+  };
+  return Nact.persistentQuery(param[0], f, key, options);
 }
 
 function stop(param) {
@@ -355,6 +390,7 @@ exports.useStatefulSupervisionPolicy = useStatefulSupervisionPolicy;
 exports.spawn = spawn;
 exports.spawnStateless = spawnStateless;
 exports.spawnPersistent = spawnPersistent;
+exports.persistentQuery = persistentQuery;
 exports.spawnAdapter = spawnAdapter;
 exports.start = start;
 exports.stop = stop;

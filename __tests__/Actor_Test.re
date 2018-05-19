@@ -39,6 +39,16 @@ module StringMap = Map.Make(StringCompare);
 external createMockPersistenceEngine : unit => persistenceEngine =
   "MockPersistenceEngine";
 
+[@bs.module "nact/test/mock-persistence-engine"] [@bs.new]
+external createPersistenceEngineWithData : 'a => persistenceEngine =
+  "MockPersistenceEngine";
+
+let toPersistentEvents = (key, events) =>
+  events
+  |> Belt.Array.mapWithIndex(_, (i, e) =>
+       {"data": e, "sequenceNumber": i + 1, "key": key, "createdAt": i}
+     );
+
 let (?:) = v => resolve(v);
 
 let (>=>) = (promise1, promise2) => then_(promise2, promise1);
@@ -538,6 +548,105 @@ describe("Persistent Actor", () => {
         queryPromise >=> (result => ?:(expect(result) |> toEqual(true)));
       }
     );
+  });
+});
+
+describe("Persistent Query", () => {
+  testPromise("correctly replays events", () => {
+    let system =
+      start(
+        ~persistenceEngine=
+          createPersistenceEngineWithData(
+            Js.Dict.fromList([
+              (
+                "calculator",
+                toPersistentEvents(
+                  "calculator",
+                  [|`Add(10), `Subtract(2), `Add(3)|],
+                ),
+              ),
+            ]),
+          ),
+        (),
+      );
+    let query =
+      persistentQuery(
+        ~key="calculator",
+        system,
+        (total, msg) =>
+          resolve(
+            switch (msg) {
+            | `Add(number) => total + number
+            | `Subtract(number) => total - number
+            },
+          ),
+        0,
+      );
+    query() >=> (result => expect(result) |> toEqual(11) |> resolve);
+  });
+  testPromise("can specify a custom decoder", () => {
+    let decoder = json =>
+      switch (json |> unsafeDecoder) {
+      | `Add(number) => `Add(number * 2)
+      | x => x
+      };
+    let system =
+      start(
+        ~persistenceEngine=
+          createPersistenceEngineWithData(
+            Js.Dict.fromList([
+              (
+                "calculator",
+                toPersistentEvents(
+                  "calculator",
+                  [|`Add(10), `Subtract(2), `Add(3)|],
+                ),
+              ),
+            ]),
+          ),
+        (),
+      );
+    let query =
+      persistentQuery(
+        ~key="calculator",
+        ~decoder,
+        ~encoder=id => Obj.magic(id),
+        system,
+        total =>
+          fun
+          | `Add(number) => resolve(total + number)
+          | `Subtract(number) => resolve(total - number),
+        0,
+      );
+    query() >=> (result => expect(result) |> toEqual(24) |> resolve);
+  });
+  testPromise("rejects after throwing an exception", () => {
+    let system =
+      start(
+        ~persistenceEngine=
+          createPersistenceEngineWithData(
+            Js.Dict.fromList([
+              (
+                "calculator",
+                toPersistentEvents(
+                  "calculator",
+                  [|`Add(10), `Subtract(2), `Add(3)|],
+                ),
+              ),
+            ]),
+          ),
+        (),
+      );
+    let query =
+      persistentQuery(
+        ~key="calculator",
+        system,
+        ((), _) => raise(TragicException),
+        (),
+      );
+    query()
+    >=> (() => resolve(fail("This should have thrown")))
+    >/=> ((_) => resolve(pass));
   });
 });
 

@@ -59,12 +59,17 @@ type persistentCtx('msg) = {
 };
 
 type statefulActor('state, 'msgType) =
-  (Js.nullable('state), 'msgType, ctx) => Js.Promise.t('state);
+  ('state, 'msgType, ctx) => Js.Promise.t('state);
 
 type statelessActor('msgType) = ('msgType, ctx) => Js.Promise.t(unit);
 
 type persistentActor('msg, 'state) =
-  (Js.nullable('state), 'msg, persistentCtx('msg)) => Js.Promise.t('state);
+  ('state, 'msg, persistentCtx('msg)) => Js.Promise.t('state);
+
+type persistentQueryFunc('msg, 'state) =
+  ('state, 'msg) => Js.Promise.t('state);
+
+type persistentQuery('state) = unit => Js.Promise.t('state);
 
 type supervisionAction;
 
@@ -86,18 +91,32 @@ type supervisionCtx = {
 type supervisionFunction('msg, 'parentMsg) =
   ('msg, exn, supervisionCtx) => Js.Promise.t(supervisionAction);
 
-type actorOptions('msg, 'parentMsg) = {
+type actorOptions('msg, 'parentMsg, 'state) = {
   .
+  "initialState": Js.Nullable.t('state),
   "shutdownAfter": Js.Nullable.t(int),
   "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),
 };
 
 type persistentActorOptions('msg, 'parentMsg, 'state) = {
   .
+  "initialState": 'state,
   "shutdownAfter": Js.Nullable.t(int),
   "snapshotEvery": Js.Nullable.t(int),
   "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),
   "decoder": Js.Json.t => 'msg,
+  "encoder": 'msg => Js.Json.t,
+  "snapshotEncoder": 'state => Js.Json.t,
+  "snapshotDecoder": Js.Json.t => 'state,
+};
+
+type persistentQueryOptions('msg, 'state) = {
+  .
+  "initialState": 'state,
+  "cacheDuration": Js.Nullable.t(int),
+  "snapshotEvery": Js.Nullable.t(int),
+  "decoder": Js.Json.t => 'msg,
+  "snapshotKey": Js.Nullable.t(string),
   "encoder": 'msg => Js.Json.t,
   "snapshotEncoder": 'state => Js.Json.t,
   "snapshotDecoder": Js.Json.t => 'state,
@@ -109,7 +128,7 @@ external spawn :
     actorRef,
     statefulActor('state, 'msgType),
     Js.nullable(string),
-    actorOptions('msgType, 'parentMsg)
+    actorOptions('msgType, 'parentMsg, 'state)
   ) =>
   actorRef =
   "";
@@ -120,7 +139,7 @@ external spawnStateless :
     actorRef,
     statelessActor('msgType),
     Js.nullable(string),
-    actorOptions('msgType, 'parentMsg)
+    actorOptions('msgType, 'parentMsg, unit)
   ) =>
   actorRef =
   "";
@@ -142,6 +161,17 @@ external spawnPersistent :
     persistentActorOptions('msgType, 'parentMsg, 'state)
   ) =>
   actorRef =
+  "";
+
+[@bs.module "nact"]
+external persistentQuery :
+  (
+    actorRef,
+    persistentQueryFunc('msgType, 'state),
+    string,
+    persistentQueryOptions('msgType, 'state)
+  ) =>
+  persistentQuery('state) =
   "";
 
 type plugin = actorRef => unit;
