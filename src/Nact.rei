@@ -121,6 +121,24 @@ let spawnPersistent:
   ) =>
   actorRef('msg);
 
+type persistentQuery('state) = unit => Js.Promise.t('state);
+
+let persistentQuery:
+  (
+    ~key: string,
+    ~snapshotKey: string=?,
+    ~cacheDuration: int=?,
+    ~snapshotEvery: int=?,
+    ~decoder: decoder('msg)=?,
+    ~stateDecoder: decoder('state)=?,
+    ~encoder: encoder('msg)=?,
+    ~stateEncoder: encoder('state)=?,
+    actorRef('parent),
+    ('state, 'msg) => Js.Promise.t('state),
+    'state
+  ) =>
+  persistentQuery('state);
+
 let spawnAdapter:
   (~name: string=?, actorRef('parentMsg), 'msg => 'parentMsg) =>
   actorRef('msg);

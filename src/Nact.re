@@ -182,6 +182,8 @@ type statelessActor('msg, 'parentMsg) =
 type persistentActor('state, 'msg, 'parentMsg) =
   ('state, 'msg, persistentCtx('msg, 'parentMsg)) => Js.Promise.t('state);
 
+type persistentQuery('state) = unit => Js.Promise.t('state);
+
 let useStatefulSupervisionPolicy = (f, initialState) => {
   let state = ref(initialState);
   (msg, err, ctx) => {
@@ -201,18 +203,14 @@ let spawn =
       initialState,
     ) => {
   let options = {
+    "initialState": Js.Nullable.return(initialState),
     "shutdownAfter": fromOption(shutdownAfter),
     "onCrash": mapSupervisionFunction(onCrash),
   };
-  let f = (possibleState: Js.nullable('state), msg: 'msg, ctx) => {
-    let state =
-      possibleState
-      |. Js.Nullable.toOption
-      |. Belt.Option.getWithDefault(initialState);
+  let f = (state, msg: 'msg, ctx) =>
     try (func(state, msg, mapCtx(ctx))) {
     | err => reject(err)
     };
-  };
   let untypedRef = Nact_bindings.spawn(parent, f, fromOption(name), options);
   ActorRef(untypedRef);
 };
@@ -220,6 +218,7 @@ let spawn =
 let spawnStateless = (~name=?, ~shutdownAfter=?, ActorRef(parent), func) => {
   let options = {
     "shutdownAfter": fromOption(shutdownAfter),
+    "initialState": Js.Nullable.undefined,
     "onCrash": mapSupervisionFunction(None),
   };
   let f = (msg, ctx) =>
@@ -253,6 +252,7 @@ let spawnPersistent =
     stateEncoder |. Belt.Option.getWithDefault(unsafeEncoder);
   let encoder = encoder |. Belt.Option.getWithDefault(unsafeEncoder);
   let options: Nact_bindings.persistentActorOptions('msg, 'parentMsg, 'state) = {
+    "initialState": initialState,
     "shutdownAfter": fromOption(shutdownAfter),
     "onCrash": mapSupervisionFunction(onCrash),
     "snapshotEvery": fromOption(snapshotEvery),
@@ -261,19 +261,50 @@ let spawnPersistent =
     "snapshotEncoder": stateEncoder,
     "snapshotDecoder": stateDecoder,
   };
-  let f = (state, msg, ctx) => {
-    let state =
-      switch (Js.Nullable.toOption(state)) {
-      | None => initialState
-      | Some(state) => state
-      };
+  let f = (state, msg, ctx) =>
     try (func(state, msg, mapPersistentCtx(ctx))) {
     | err => reject(err)
     };
-  };
   let untypedRef =
     Nact_bindings.spawnPersistent(parent, f, key, fromOption(name), options);
   ActorRef(untypedRef);
+};
+
+let persistentQuery =
+    (
+      ~key,
+      ~snapshotKey=?,
+      ~cacheDuration=?,
+      ~snapshotEvery=?,
+      ~decoder=?,
+      ~stateDecoder=?,
+      ~encoder=?,
+      ~stateEncoder=?,
+      ActorRef(actor),
+      func,
+      initialState,
+    ) => {
+  let decoder = decoder |. Belt.Option.getWithDefault(unsafeDecoder);
+  let stateDecoder =
+    stateDecoder |. Belt.Option.getWithDefault(unsafeDecoder);
+  let stateEncoder =
+    stateEncoder |. Belt.Option.getWithDefault(unsafeEncoder);
+  let encoder = encoder |. Belt.Option.getWithDefault(unsafeEncoder);
+  let options: Nact_bindings.persistentQueryOptions('msg, 'state) = {
+    "initialState": initialState,
+    "cacheDuration": fromOption(cacheDuration),
+    "snapshotEvery": fromOption(snapshotEvery),
+    "snapshotKey": fromOption(snapshotKey),
+    "encoder": encoder,
+    "decoder": decoder,
+    "snapshotEncoder": stateEncoder,
+    "snapshotDecoder": stateDecoder,
+  };
+  let f = (state, msg) =>
+    try (func(state, msg)) {
+    | err => reject(err)
+    };
+  Nact_bindings.persistentQuery(actor, f, key, options);
 };
 
 let stop = (ActorRef(reference)) => Nact_bindings.stop(reference);
