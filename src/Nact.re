@@ -13,6 +13,7 @@ module Interop = {
   let fromUntypedRef = reference => ActorRef(reference);
   let toUntypedRef = (ActorRef(reference)) => reference;
   let dispatch = Nact_bindings.dispatch;
+  let dispatchWithSender = Nact_bindings.dispatchWithSender;
 };
 
 type actorPath =
@@ -84,6 +85,8 @@ type ctx('msg, 'parentMsg) = {
   self: actorRef('msg),
   children: Belt.Set.String.t,
   name: string,
+  /* Sender added for interop purposes. Not to be used for reason only code */
+  sender: Js.nullable(untypedRef),
 };
 
 type persistentCtx('msg, 'parentMsg) = {
@@ -94,6 +97,8 @@ type persistentCtx('msg, 'parentMsg) = {
   persist: 'msg => Js.Promise.t(unit),
   children: Belt.Set.String.t,
   recovering: bool,
+  /* Sender added for interop purposes. Not to be used for reason only code */
+  sender: Js.nullable(untypedRef),
 };
 
 let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
@@ -103,6 +108,7 @@ let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
   path: ActorPath(untypedCtx##path),
   children:
     untypedCtx##children |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
+  sender: untypedCtx##sender,
 };
 
 let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
@@ -117,6 +123,7 @@ let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx('incoming)) => {
   persist: untypedCtx##persist,
   children:
     untypedCtx##children |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
+  sender: untypedCtx##sender,
 };
 
 type supervisionCtx('msg, 'parentMsg) = {
@@ -125,6 +132,7 @@ type supervisionCtx('msg, 'parentMsg) = {
   self: actorRef('msg),
   name: string,
   children: Belt.Set.String.t,
+  sender: Js.nullable(untypedRef),
 };
 
 let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
@@ -134,6 +142,7 @@ let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
   path: ActorPath(untypedCtx##path),
   children:
     untypedCtx##children |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
+  sender: untypedCtx##sender,
 };
 
 type supervisionAction =

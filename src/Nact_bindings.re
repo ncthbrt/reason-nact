@@ -45,6 +45,7 @@ type ctx = {
   "self": actorRef,
   "name": string,
   "children": Nact_jsMap.t(string, actorRef),
+  "sender": Js.nullable(actorRef),
 };
 
 type persistentCtx('msg) = {
@@ -56,6 +57,7 @@ type persistentCtx('msg) = {
   "children": Nact_jsMap.t(string, actorRef),
   "persist": 'msg => Js.Promise.t(unit),
   "recovering": Js.Nullable.t(bool),
+  "sender": Js.nullable(actorRef),
 };
 
 type statefulActor('state, 'msgType) =
@@ -86,6 +88,7 @@ type supervisionCtx = {
   "reset": supervisionAction,
   "resetAll": supervisionAction,
   "resume": supervisionAction,
+  "sender": Js.nullable(actorRef),
 };
 
 type supervisionFunction('msg, 'parentMsg) =
@@ -185,6 +188,9 @@ external configurePersistence : persistenceEngine => plugin = "";
 external start : array(plugin) => actorRef = "";
 
 [@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "";
+
+[@bs.module "nact"]
+external dispatchWithSender : (actorRef, 'msgType, actorRef) => unit = "";
 
 [@bs.module "nact"]
 external query :

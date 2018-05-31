@@ -27,10 +27,16 @@ function dispatch(prim, prim$1) {
   return /* () */0;
 }
 
+function dispatchWithSender(prim, prim$1, prim$2) {
+  Nact.dispatchWithSender(prim, prim$1, prim$2);
+  return /* () */0;
+}
+
 var Interop = /* module */[
   /* fromUntypedRef */fromUntypedRef,
   /* toUntypedRef */toUntypedRef,
-  /* dispatch */dispatch
+  /* dispatch */dispatch,
+  /* dispatchWithSender */dispatchWithSender
 ];
 
 function fromReference(param) {
@@ -102,7 +108,8 @@ function mapCtx(untypedCtx) {
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children)),
-          /* name */untypedCtx.name
+          /* name */untypedCtx.name,
+          /* sender */untypedCtx.sender
         ];
 }
 
@@ -114,7 +121,8 @@ function mapPersistentCtx(untypedCtx) {
           /* name */untypedCtx.name,
           /* persist */untypedCtx.persist,
           /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children)),
-          /* recovering */Belt_Option.getWithDefault(Js_primitive.null_undefined_to_opt(untypedCtx.recovering), false)
+          /* recovering */Belt_Option.getWithDefault(Js_primitive.null_undefined_to_opt(untypedCtx.recovering), false),
+          /* sender */untypedCtx.sender
         ];
 }
 
@@ -124,7 +132,8 @@ function mapSupervisionCtx(untypedCtx) {
           /* path : ActorPath */[untypedCtx.path],
           /* self : ActorRef */[untypedCtx.self],
           /* name */untypedCtx.name,
-          /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children))
+          /* children */Belt_SetString.fromArray(Nact_jsMap.keys(untypedCtx.children)),
+          /* sender */untypedCtx.sender
         ];
 }
 

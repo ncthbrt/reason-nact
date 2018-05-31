@@ -12,7 +12,7 @@
 
 Any and all feedback, comments and suggestions are welcome. Please open an issue if you find anything unclear or misleading in the documentation. 
 
-This is the repository for the ReasonML bindings for nact. If you'd like to view the javascript implementation, please head to https://github.com/ncthbrt/nact
+This is the repository for the ReasonML bindings for Nact. If you'd like to view the javascript implementation, please head to https://github.com/ncthbrt/nact
 
 # Sponsored by 
 [![Root Logo](https://raw.githubusercontent.com/ncthbrt/nact/master/root-logo.svg?sanitize=true)](https://root.co.za)
@@ -21,14 +21,14 @@ This is the repository for the ReasonML bindings for nact. If you'd like to view
 
 Servers today are very different from those even 10 years ago. So why are we still programming like it's the 90s?
 
-Inspired by the approaches taken by Akka and Erlang, nact is an open source Node.js framework which enables you to take control of your state to:
+Inspired by the approaches taken by Akka and Erlang, Nact is an open source Node.js framework which enables you to take control of your state to:
          
 - more effectively use memory
 - improve application resiliance
 - increase performance
 - reduce coupling 
 
-With out of the box support for event sourcing, and a considered implementation of the actor model, nact can work across a wide variety of domains.
+With out of the box support for event sourcing, and a considered implementation of the actor model, Nact can work across a wide variety of domains.
 
 Nact is no silver bullet, but it is evolving to tackle ever more demanding use cases. Perhaps one of them is yours?
 

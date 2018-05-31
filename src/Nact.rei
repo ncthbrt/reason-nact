@@ -20,6 +20,7 @@ module Interop: {
   let fromUntypedRef: untypedRef => actorRef('msg);
   let toUntypedRef: actorRef('msg) => untypedRef;
   let dispatch: (untypedRef, 'msg) => unit;
+  let dispatchWithSender: (untypedRef, 'msg, untypedRef) => unit;
 };
 
 module ActorPath: {
@@ -35,6 +36,7 @@ type ctx('msg, 'parentMsg) = {
   self: actorRef('msg),
   children: Belt.Set.String.t,
   name: string,
+  sender: Js.nullable(untypedRef),
 };
 
 type persistentCtx('msg, 'parentMsg) = {
@@ -45,6 +47,7 @@ type persistentCtx('msg, 'parentMsg) = {
   persist: 'msg => Js.Promise.t(unit),
   children: Belt.Set.String.t,
   recovering: bool,
+  sender: Js.nullable(untypedRef),
 };
 
 type supervisionCtx('msg, 'parentMsg) = {
@@ -53,6 +56,7 @@ type supervisionCtx('msg, 'parentMsg) = {
   self: actorRef('msg),
   name: string,
   children: Belt.Set.String.t,
+  sender: Js.nullable(untypedRef),
 };
 
 type supervisionAction =
