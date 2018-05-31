@@ -20,7 +20,7 @@ module Interop: {
   let fromUntypedRef: untypedRef => actorRef('msg);
   let toUntypedRef: actorRef('msg) => untypedRef;
   let dispatch: (untypedRef, 'msg) => unit;
-  let dispatchWithSender: (untypedRef, 'msg, untypedRef) => unit;
+  let dispatchWithSender: (untypedRef, 'msg, Js.nullable(untypedRef)) => unit;
 };
 
 module ActorPath: {
