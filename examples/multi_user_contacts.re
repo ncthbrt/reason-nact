@@ -98,7 +98,7 @@ let createContactsService = (parent, userId) =>
         }
       )
       |> Js.Promise.resolve,
-    {contacts: ContactIdMap.empty, seqNumber: 0},
+    (_) => Js.Promise.resolve({contacts: ContactIdMap.empty, seqNumber: 0}),
   );
 
 let contactsService =
@@ -121,7 +121,7 @@ let contactsService =
         },
       );
     },
-    StringMap.empty,
+    () => Js.Promise.resolve(StringMap.empty),
   );
 
 let createErlich =

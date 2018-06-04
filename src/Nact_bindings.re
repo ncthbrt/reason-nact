@@ -96,14 +96,14 @@ type supervisionFunction('msg, 'parentMsg) =
 
 type actorOptions('msg, 'parentMsg, 'state) = {
   .
-  "initialState": Js.Nullable.t('state),
+  "initialState": Js.Nullable.t(ctx => 'state),
   "shutdownAfter": Js.Nullable.t(int),
   "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),
 };
 
 type persistentActorOptions('msg, 'parentMsg, 'state) = {
   .
-  "initialState": 'state,
+  "initialState": persistentCtx('msg) => 'state,
   "shutdownAfter": Js.Nullable.t(int),
   "snapshotEvery": Js.Nullable.t(int),
   "onCrash": Js.Nullable.t(supervisionFunction('msg, 'parentMsg)),

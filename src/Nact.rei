@@ -95,7 +95,7 @@ let spawn:
     ~onCrash: supervisionPolicy('msg, 'parentMsg)=?,
     actorRef('parentMsg),
     statefulActor('state, 'msg, 'parentMsg),
-    'state
+    ctx('msg, 'parentMsg) => 'state
   ) =>
   actorRef('msg);
 
@@ -121,7 +121,7 @@ let spawnPersistent:
     ~stateEncoder: encoder('state)=?,
     actorRef('parentMsg),
     persistentActor('state, 'msg, 'parentMsg),
-    'state
+    persistentCtx('msg, 'parentMsg) => 'state
   ) =>
   actorRef('msg);
 

@@ -1,6 +1,6 @@
 {
   "name": "reason-nact",
-  "version": "4.2.2",
+  "version": "5.0.0",
   "description": "let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed",
   "repository": "https://github.com/ncthbrt/reason-nact",
   "author": "Nick Cuthbert (https://github.com/ncthbrt)",
@@ -44,7 +44,7 @@
     "nyc": "^11.3.0"
   },
   "dependencies": {
-    "nact": "^7.1.2",
+    "nact": "^7.2.0",
     "npm": "^6.1.0"
   }
 }

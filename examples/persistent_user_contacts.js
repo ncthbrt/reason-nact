@@ -135,10 +135,12 @@ function createContactsService(parent, userId) {
                               }
                               return Promise.resolve(tmp);
                             }));
-              }), /* record */[
-              /* contacts */ContactIdMap[/* empty */0],
-              /* seqNumber */0
-            ]);
+              }), (function () {
+                return /* record */[
+                        /* contacts */ContactIdMap[/* empty */0],
+                        /* seqNumber */0
+                      ];
+              }));
 }
 
 var contactsService = Nact.spawn(/* None */0, /* None */0, /* None */0, system, (function (children, param, ctx) {
@@ -168,7 +170,9 @@ var contactsService = Nact.spawn(/* None */0, /* None */0, /* None */0, system, 
           tmp = Curry._3(StringMap[/* add */3], userId, child, children);
         }
         return Promise.resolve(tmp);
-      }), StringMap[/* empty */0]);
+      }), (function () {
+        return StringMap[/* empty */0];
+      }));
 
 var createErlich = Nact.query(Caml_int32.imul(100, Nact.milliseconds), contactsService, (function (tempReference) {
         return /* tuple */[

@@ -28,7 +28,7 @@ function dispatch(prim, prim$1) {
 }
 
 function dispatchWithSender(prim, prim$1, prim$2) {
-  Nact.dispatchWithSender(prim, prim$1, prim$2);
+  Nact.dispatch(prim, prim$1, prim$2);
   return /* () */0;
 }
 
@@ -183,7 +183,9 @@ function useStatefulSupervisionPolicy(f, initialState) {
 
 function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
   var options = {
-    initialState: initialState,
+    initialState: (function (ctx) {
+        return Curry._1(initialState, mapCtx(ctx));
+      }),
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
     onCrash: mapSupervisionFunction(onCrash)
   };
@@ -231,7 +233,9 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decod
           return unsafeEncoder(prim);
         }));
   var options = {
-    initialState: initialState,
+    initialState: (function (ctx) {
+        return Curry._1(initialState, mapPersistentCtx(ctx));
+      }),
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
     onCrash: mapSupervisionFunction(onCrash),
     snapshotEvery: Js_null_undefined.fromOption(snapshotEvery),

@@ -16,6 +16,8 @@ exception ValueIsNone;
 
 exception DecodingError;
 
+let initialState = (value, _) => value;
+
 let raiseIfNone = value =>
   switch (value) {
   | Some(x) => x
@@ -84,7 +86,7 @@ let spawnBrokenCalculator = (policy, parent) =>
         total >-> sender;
         resolve(total);
       },
-    0,
+    initialState(0),
   );
 
 let spawnCalculator = (~name="einstein", parent) =>
@@ -102,7 +104,7 @@ let spawnCalculator = (~name="einstein", parent) =>
         }
       )
       |> resolve,
-    0,
+    initialState(0),
   );
 
 type statelessTestActorMsgType =
@@ -262,7 +264,7 @@ describe("Stateful Actor", () => {
               total;
             }
           ),
-        0,
+        initialState(0),
       );
     let loggerActor =
       spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
@@ -290,7 +292,7 @@ describe("Stateful Actor", () => {
           calcActor <-< childMsg;
           ?:(StringMap.add(calc, calcActor, children));
         },
-        StringMap.empty,
+        initialState(StringMap.empty),
       );
     let loggerActor = spawnLoggerActor(system);
     parent <-< (loggerActor, "a", Add(5));
@@ -304,7 +306,7 @@ describe("Stateful Actor", () => {
   });
   testPromise("can supervise children", () => {
     let system = start();
-    let parent = spawn(system, ((), (), _) => resolve(), ());
+    let parent = spawn(system, ((), (), _) => resolve(), initialState());
     let child =
       spawnBrokenCalculator(resetIfNumberLessThanZeroException, parent);
     let loggerActor = spawnLoggerActor(system);
@@ -351,7 +353,7 @@ describe("Persistent Actor", () => {
               total;
             }
           ),
-        0,
+        initialState(0),
       );
     let loggerActor =
       spawnStateless(system, (msg, _) => print_int(msg) |> resolve);
@@ -386,7 +388,7 @@ describe("Persistent Actor", () => {
             total >-> sender;
             ?:total;
           },
-        0,
+        initialState(0),
       );
     let actor = actorF();
     let loggerActor =
@@ -424,7 +426,7 @@ describe("Persistent Actor", () => {
             total >-> sender;
             ?:total;
           },
-        0,
+        initialState(0),
       );
     let actorInstance1 = spawnActor();
     let loggerActor =
@@ -463,7 +465,7 @@ describe("Persistent Actor", () => {
             total >-> sender;
             ?:total;
           },
-        0,
+        initialState(0),
       );
     let actorInstance1 = spawnActor();
     let loggerActor = spawnStateless(system, (msg, _) => ?:(print_int(msg)));
@@ -490,7 +492,7 @@ describe("Persistent Actor", () => {
         ~key="parent",
         system,
         (__, (), _) => resolve(true),
-        true,
+        initialState(true),
       );
     let child =
       spawnBrokenCalculator(resetIfNumberLessThanZeroException, parent);
@@ -520,7 +522,7 @@ describe("Persistent Actor", () => {
             | ChildHasFaulted => true
             },
           ),
-        false,
+        initialState(false),
       );
     let child =
       spawnPersistent(
@@ -534,7 +536,7 @@ describe("Persistent Actor", () => {
             | Raise => raise(TragicException)
             }
           ),
-        (),
+        initialState(),
       );
     let loggerActor = spawnLoggerActor(system);
     child <-< (loggerActor, Raise);
@@ -661,7 +663,7 @@ describe("useStatefulSupervisionPolicy", () =>
         ),
         0,
       );
-    let parent = spawn(system, (__, (), _) => resolve(true), true);
+    let parent = spawn(system, (__, (), _) => resolve(true), (_) => true);
     let child =
       spawnBrokenCalculator(resetIfFailureHasOcurredMoreThanOnce, parent);
     let loggerActor = spawnLoggerActor(system);
@@ -698,14 +700,14 @@ describe("supervision policy", () => {
               grandchildHasFaulted;
             },
           ),
-        false,
+        initialState(false),
       );
     let parent =
       spawn(
         ~onCrash=dispatchToParentThatChildHasFaulted,
         grandparent,
         ((), (), _) => resolve(),
-        (),
+        (_) => (),
       );
     let child = spawnBrokenCalculator(escalate, parent);
     let loggerActor = spawnLoggerActor(system);
@@ -749,7 +751,7 @@ describe("supervision policy", () => {
             sender <-< grandchildHasFaulted;
             ?:grandchildHasFaulted;
           },
-        false,
+        initialState(false),
       );
     let child = spawnBrokenCalculator(stop, parent);
     let loggerActor = spawnLoggerActor(system);
@@ -786,7 +788,7 @@ describe("supervision policy", () => {
   testPromise("can reset", () => {
     let reset = (_, _, _) => resolve(Reset);
     let system = start();
-    let parent = spawn(system, ((), (), _) => resolve(), ());
+    let parent = spawn(system, ((), (), _) => resolve(), initialState());
     let child = spawnBrokenCalculator(reset, parent);
     let loggerActor = spawnLoggerActor(system);
     child <-< (loggerActor, Add(5));
