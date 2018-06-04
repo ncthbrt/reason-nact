@@ -192,7 +192,7 @@ external start : array(plugin) => actorRef = "";
 [@bs.module "nact"]
 external dispatchWithSender :
   (actorRef, 'msgType, Js.nullable(actorRef)) => unit =
-  "";
+  "dispatch";
 
 [@bs.module "nact"]
 external query :
