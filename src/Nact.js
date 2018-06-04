@@ -183,7 +183,7 @@ function useStatefulSupervisionPolicy(f, initialState) {
 
 function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
   var options = {
-    initialState: (function (ctx) {
+    initialStateFunc: (function (ctx) {
         return Curry._1(initialState, mapCtx(ctx));
       }),
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
@@ -204,7 +204,7 @@ function spawn(name, shutdownAfter, onCrash, param, func, initialState) {
 function spawnStateless(name, shutdownAfter, param, func) {
   var options = {
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),
-    initialState: undefined,
+    initialStateFunc: undefined,
     onCrash: undefined
   };
   var f = function (msg, ctx) {
@@ -233,7 +233,7 @@ function spawnPersistent(key, name, shutdownAfter, snapshotEvery, onCrash, decod
           return unsafeEncoder(prim);
         }));
   var options = {
-    initialState: (function (ctx) {
+    initialStateFunc: (function (ctx) {
         return Curry._1(initialState, mapPersistentCtx(ctx));
       }),
     shutdownAfter: Js_null_undefined.fromOption(shutdownAfter),

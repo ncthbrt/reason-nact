@@ -212,7 +212,7 @@ let spawn =
       initialState,
     ) => {
   let options = {
-    "initialState": Js.Nullable.return(ctx => initialState(mapCtx(ctx))),
+    "initialStateFunc": Js.Nullable.return(ctx => initialState(mapCtx(ctx))),
     "shutdownAfter": fromOption(shutdownAfter),
     "onCrash": mapSupervisionFunction(onCrash),
   };
@@ -227,7 +227,7 @@ let spawn =
 let spawnStateless = (~name=?, ~shutdownAfter=?, ActorRef(parent), func) => {
   let options = {
     "shutdownAfter": fromOption(shutdownAfter),
-    "initialState": Js.Nullable.undefined,
+    "initialStateFunc": Js.Nullable.undefined,
     "onCrash": mapSupervisionFunction(None),
   };
   let f = (msg, ctx) =>
@@ -261,7 +261,7 @@ let spawnPersistent =
     stateEncoder |. Belt.Option.getWithDefault(unsafeEncoder);
   let encoder = encoder |. Belt.Option.getWithDefault(unsafeEncoder);
   let options: Nact_bindings.persistentActorOptions('msg, 'parentMsg, 'state) = {
-    "initialState": ctx => initialState(mapPersistentCtx(ctx)),
+    "initialStateFunc": ctx => initialState(mapPersistentCtx(ctx)),
     "shutdownAfter": fromOption(shutdownAfter),
     "onCrash": mapSupervisionFunction(onCrash),
     "snapshotEvery": fromOption(snapshotEvery),
