@@ -24,7 +24,7 @@ let statefulGreeter =
         [name, ...state] |> Js.Promise.resolve;
       };
     },
-    [],
+    (_) => [],
   );
 
 open Nact.Operators;

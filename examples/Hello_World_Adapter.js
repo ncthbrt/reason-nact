@@ -25,7 +25,9 @@ var hello = Nact.spawn(/* Some */["hello"], /* None */0, /* None */0, system, (f
         Pervasives.print_string("Hello ");
         Nact.Operators[/* <-< */0](param[0], /* World */[adapter]);
         return Promise.resolve(/* Some */[adapter]);
-      }), /* None */0);
+      }), (function () {
+        return /* None */0;
+      }));
 
 Nact.Operators[/* <-< */0](hello, /* Hello */[world]);
 

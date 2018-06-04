@@ -117,10 +117,12 @@ var contactsService = Nact.spawn(/* Some */["contacts"], /* None */0, /* None */
           
         }
         return Promise.resolve(tmp);
-      }), /* record */[
-      /* contacts */ContactIdMap[/* empty */0],
-      /* seqNumber */0
-    ]);
+      }), (function () {
+        return /* record */[
+                /* contacts */ContactIdMap[/* empty */0],
+                /* seqNumber */0
+              ];
+      }));
 
 var createErlich = Nact.query(100, contactsService, (function (tempReference) {
         return /* tuple */[

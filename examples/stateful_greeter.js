@@ -20,7 +20,9 @@ var statefulGreeter = Nact.spawn(/* Some */["stateful-greeter"], /* None */0, /*
                       state
                     ]);
         }
-      }), /* [] */0);
+      }), (function () {
+        return /* [] */0;
+      }));
 
 Nact.Operators[/* <-< */0](statefulGreeter, /* record */[/* name */"Erlich"]);
 

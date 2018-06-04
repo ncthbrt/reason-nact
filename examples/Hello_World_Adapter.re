@@ -36,7 +36,7 @@ let hello =
       sender <-< World(adapter);
       Js.Promise.resolve(Some(adapter));
     },
-    None,
+    (_) => None,
   );
 
 hello <-< Hello(world);
