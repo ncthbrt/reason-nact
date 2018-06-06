@@ -86,7 +86,7 @@ let spawnBrokenCalculator = (policy, parent) =>
         total >-> sender;
         resolve(total);
       },
-    initialState(0),
+    (_) => 0,
   );
 
 let spawnCalculator = (~name="einstein", parent) =>
@@ -104,7 +104,7 @@ let spawnCalculator = (~name="einstein", parent) =>
         }
       )
       |> resolve,
-    initialState(0),
+    (_) => 0,
   );
 
 type statelessTestActorMsgType =
@@ -220,7 +220,7 @@ describe("Stateless Actor", () => {
     child <-< (loggerActor, Add(-5));
     child <-< (loggerActor, Add(12));
     let queryPromise =
-      child <? (temp => (temp, GetTotal), 30 * milliseconds);
+      child <? (temp => (temp, GetTotal), 50 * milliseconds);
     queryPromise >=> (result => ?:(expect(result) |> toEqual(12)));
   });
   testPromise("does not terminate even after throwing an exception", () => {
@@ -401,7 +401,7 @@ describe("Persistent Actor", () => {
         Nact.stop(actor);
         let actor = actorF();
         let queryPromise =
-          query(~timeout=30 * milliseconds, actor, temp => (temp, GetTotal));
+          query(~timeout=50 * milliseconds, actor, temp => (temp, GetTotal));
         queryPromise >=> (result => expect(result) |> toEqual(30) |> resolve);
       }
     );
