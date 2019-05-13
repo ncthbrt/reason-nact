@@ -15,7 +15,7 @@ Any and all feedback, comments and suggestions are welcome. Please open an issue
 This is the repository for the ReasonML bindings for Nact. If you'd like to view the javascript implementation, please head to https://github.com/ncthbrt/nact
 
 # Sponsored by 
-[![Root Logo](https://raw.githubusercontent.com/ncthbrt/nact/master/root-logo.svg?sanitize=true)](https://root.co.za)
+## *YOUR COMPANY HERE*
 
 ## Nact is redux but for the server
 
