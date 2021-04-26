@@ -1,6 +1,6 @@
 open Jest;
 
-open ExpectJs;
+open Expect;
 
 open Nact.Operators;
 
@@ -332,7 +332,7 @@ describe("System", () => {
         ~persistenceEngine=createMockPersistenceEngine(),
         (),
       );
-    expect(result) |> toBeTruthy;
+    expect(result) |> ExpectJs.toBeTruthy;
   });
 });
 
