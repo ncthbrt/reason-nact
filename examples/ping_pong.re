@@ -29,4 +29,4 @@ let pong: actorRef(msgType) =
 
 ping <-< Msg(pong, "hello");
 
-Js.Global.setTimeout(() => stop(system), 100);
+Js.Global.setTimeout(() => stop(system), 100)|>ignore;

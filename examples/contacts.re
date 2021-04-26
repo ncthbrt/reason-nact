@@ -127,4 +127,4 @@ createErlich
     Js.log(result);
     Js.Promise.resolve();
   }
-);
+)|>ignore;

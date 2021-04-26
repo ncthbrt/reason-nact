@@ -13,11 +13,11 @@
       "type": "dev"
     }
   ],
-  "refmt": 3,
   "package-specs": {
     "module": "commonjs",
     "in-source": true
   },
+  "suffix": ".bs.js",
   "bs-dependencies": [],
   "bs-dev-dependencies": [
     "@glennsl/bs-jest",
