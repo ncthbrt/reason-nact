@@ -371,7 +371,7 @@ function start(name, persistenceEngine, param) {
   }
 }
 
-var QueryTimeout = Caml_exceptions.create("Nact.QueryTimeout");
+var QueryTimeout = /* @__PURE__ */Caml_exceptions.create("Nact.QueryTimeout");
 
 function query(timeout, recipient, msgF) {
   var f = function (tempReference) {
