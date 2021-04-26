@@ -163,14 +163,13 @@ let createDinesh = (_) =>
     )
   );
 
-// open Nact.Operators;
+open Nact.Operators;
 
 let findContact = (userId, contactId, tempReference) => (
   tempReference,
   userId,
   FindContact(contactId),
 );
-open Nact.Operators;
 
 let findDinsheh = ((contactId, _)) =>
   contactsService <? (findContact("1", contactId), 100 * milliseconds);
