@@ -183,4 +183,4 @@ createErlich
     stop(system);
     Js.Promise.resolve(1);
   }
-);
+)|>ignore;

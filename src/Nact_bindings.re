@@ -134,7 +134,7 @@ external spawn :
     actorOptions('msgType, 'parentMsg, 'state)
   ) =>
   actorRef =
-  "";
+  "spawn";
 
 [@bs.module "nact"]
 external spawnStateless :
@@ -145,7 +145,7 @@ external spawnStateless :
     actorOptions('msgType, 'parentMsg, unit)
   ) =>
   actorRef =
-  "";
+  "spawnStateless";
 
 type actor;
 
@@ -164,7 +164,7 @@ external spawnPersistent :
     persistentActorOptions('msgType, 'parentMsg, 'state)
   ) =>
   actorRef =
-  "";
+  "spawnPersistent";
 
 [@bs.module "nact"]
 external persistentQuery :
@@ -175,19 +175,19 @@ external persistentQuery :
     persistentQueryOptions('msgType, 'state)
   ) =>
   persistentQuery('state) =
-  "";
+  "persistentQuery";
 
 type plugin = actorRef => unit;
 
 [@bs.module "nact"]
-external configurePersistence : persistenceEngine => plugin = "";
+external configurePersistence : persistenceEngine => plugin = "configurePersistence";
 
-[@bs.module "nact"] external stop : actorRef => unit = "";
+[@bs.module "nact"] external stop : actorRef => unit = "stop";
 
 [@bs.module "nact"] [@bs.splice]
-external start : array(plugin) => actorRef = "";
+external start : array(plugin) => actorRef = "start";
 
-[@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "";
+[@bs.module "nact"] external dispatch : (actorRef, 'msgType) => unit = "dispatch";
 
 [@bs.module "nact"]
 external dispatchWithSender :
@@ -197,4 +197,4 @@ external dispatchWithSender :
 [@bs.module "nact"]
 external query :
   (actorRef, actorRef => 'msgType, int) => Js.Promise.t('expectedResult) =
-  "";
+  "query";

@@ -4,7 +4,7 @@ type iterator('value);
 
 module Bindings = {
   [@bs.send] external keys : t('key, 'value) => iterator(string) = "keys";
-  [@bs.val "Array.from"] external toArray : iterator('value) => array('value) = "";
+  [@bs.val "Array.from"] external toArray : iterator('value) => array('value) = "toArray";
 };
 
 let keys: t('key, 'value) => array('key) = (map) => map |> Bindings.keys |> Bindings.toArray;

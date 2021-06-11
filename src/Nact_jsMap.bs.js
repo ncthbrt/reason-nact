@@ -1,7 +1,7 @@
 'use strict';
 
 
-var Bindings = /* module */[];
+var Bindings = {};
 
 function keys(map) {
   return Array.from(map.keys());
