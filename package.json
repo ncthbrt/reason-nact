@@ -16,15 +16,12 @@
     "url": "https://github.com/cometkim/rescript-nact/issues"
   },
   "scripts": {
+    "prepare": "husky install",
     "postinstall": "rescript build -with-deps",
     "build": "rescript build",
     "start": "rescript build -w",
     "clean": "rescript clean",
-    "test": "jest",
-    "test-coverage": "jest --coverage && coveralls < coverage/lcov.info",
-    "test-watch": "jest --watch",
-    "pretest": "yarn run build",
-    "prepush": "yarn run build && yarn run test",
+    "test": "yarn run build && jest",
     "prepack": "yarn run clean && yarn run build"
   },
   "keywords": [
@@ -56,7 +53,7 @@
     "@glennsl/bs-jest": "^0.7.0",
     "@glennsl/bs-json": "^5.0.2",
     "coveralls": "^3.1.1",
-    "husky": "^6.0.0",
+    "husky": "^7.0.1",
     "jest": "^27.0.6",
     "rescript": "^9.1.4"
   }
