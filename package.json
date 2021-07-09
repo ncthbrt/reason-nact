@@ -2,11 +2,17 @@
   "name": "rescript-nact",
   "version": "5.0.0",
   "description": "let rescript-nact = (node.js, rescript, actors) ⇒ your µ services have never been so typed",
-  "repository": "https://github.com/cometkim/rescript-nact",
-  "author": "Nick Cuthbert (https://github.com/ncthbrt)",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cometkim/rescript-nact.git"
+  },
+  "author": {
+    "name": "Nick Cuthbert",
+    "homepage": "https://github.com/ncthbrt"
+  },
   "bugs": {
-    "url": "http://github.com/cometkim/rescript-nact/issues"
+    "url": "https://github.com/cometkim/rescript-nact/issues"
   },
   "scripts": {
     "build": "rescript build",
@@ -20,7 +26,7 @@
     "prepack": "yarn run clean && yarn run build"
   },
   "keywords": [
-    "ReScript",
+    "rescript",
     "nact",
     "actors",
     "actor-model",
