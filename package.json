@@ -15,6 +15,7 @@
     "url": "https://github.com/cometkim/rescript-nact/issues"
   },
   "scripts": {
+    "postinstall": "rescript build -with-deps",
     "build": "rescript build",
     "start": "rescript build -w",
     "clean": "rescript clean",
@@ -46,7 +47,6 @@
     "jest": "^27.0.6"
   },
   "dependencies": {
-    "bs-express": "^1.0.2",
     "nact": "^7.6.0",
     "rescript": "^9.1.4"
   }
