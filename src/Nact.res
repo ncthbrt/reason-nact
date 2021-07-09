@@ -1,7 +1,3 @@
-open Js.Promise
-
-open Js.Nullable
-
 type persistenceEngine = Nact_bindings.persistenceEngine
 
 type untypedRef = Nact_bindings.actorRef
@@ -18,13 +14,11 @@ module Interop = {
 type actorPath = ActorPath(Nact_bindings.actorPath)
 
 module ActorPath = {
-  let fromReference = (ActorRef(actor)) => ActorPath(actor["path"])
-  let systemName = (ActorPath(path)) => path["system"]
+  let fromReference = (ActorRef(actor)) => ActorPath(actor.path)
+  let systemName = (ActorPath(path)) => path.system
   let toString = (ActorPath(path)) =>
-    "system:" ++
-    (path["system"] ++
-    ("//" ++ String.concat("/", Belt.List.fromArray(path["parts"]))))
-  let parts = (ActorPath(path)) => Belt.List.fromArray(path["parts"])
+    "system:" ++ (path.system ++ ("//" ++ String.concat("/", Belt.List.fromArray(path.parts))))
+  let parts = (ActorPath(path)) => Belt.List.fromArray(path.parts)
 }
 
 type systemMsg
@@ -82,7 +76,7 @@ type ctx<'msg, 'parentMsg> = {
   children: Belt.Set.String.t,
   name: string,
   /* Sender added for interop purposes. Not to be used for reason only code */
-  sender: Js.nullable<untypedRef>,
+  sender: option<untypedRef>,
 }
 
 type persistentCtx<'msg, 'parentMsg> = {
@@ -94,27 +88,27 @@ type persistentCtx<'msg, 'parentMsg> = {
   children: Belt.Set.String.t,
   recovering: bool,
   /* Sender added for interop purposes. Not to be used for reason only code */
-  sender: Js.nullable<untypedRef>,
+  sender: option<untypedRef>,
 }
 
 let mapCtx = (untypedCtx: Nact_bindings.ctx) => {
-  name: untypedCtx["name"],
-  self: ActorRef(untypedCtx["self"]),
-  parent: ActorRef(untypedCtx["parent"]),
-  path: ActorPath(untypedCtx["path"]),
-  children: untypedCtx["children"] |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
-  sender: untypedCtx["sender"],
+  name: untypedCtx.name,
+  self: ActorRef(untypedCtx.self),
+  parent: ActorRef(untypedCtx.parent),
+  path: ActorPath(untypedCtx.path),
+  children: untypedCtx.children |> Js.Dict.keys |> Belt.Set.String.fromArray,
+  sender: untypedCtx.sender,
 }
 
 let mapPersistentCtx = (untypedCtx: Nact_bindings.persistentCtx<'incoming>) => {
-  name: untypedCtx["name"],
-  self: ActorRef(untypedCtx["self"]),
-  parent: ActorRef(untypedCtx["parent"]),
-  path: ActorPath(untypedCtx["path"]),
-  recovering: untypedCtx["recovering"]->Js.Nullable.toOption->Belt.Option.getWithDefault(false),
-  persist: untypedCtx["persist"],
-  children: untypedCtx["children"] |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
-  sender: untypedCtx["sender"],
+  name: untypedCtx.name,
+  self: ActorRef(untypedCtx.self),
+  parent: ActorRef(untypedCtx.parent),
+  path: ActorPath(untypedCtx.path),
+  recovering: untypedCtx.recovering->Belt.Option.getWithDefault(false),
+  persist: untypedCtx.persist,
+  children: untypedCtx.children |> Js.Dict.keys |> Belt.Set.String.fromArray,
+  sender: untypedCtx.sender,
 }
 
 type supervisionCtx<'msg, 'parentMsg> = {
@@ -123,16 +117,16 @@ type supervisionCtx<'msg, 'parentMsg> = {
   self: actorRef<'msg>,
   name: string,
   children: Belt.Set.String.t,
-  sender: Js.nullable<untypedRef>,
+  sender: option<untypedRef>,
 }
 
 let mapSupervisionCtx = (untypedCtx: Nact_bindings.supervisionCtx) => {
-  name: untypedCtx["name"],
-  self: ActorRef(untypedCtx["self"]),
-  parent: ActorRef(untypedCtx["parent"]),
-  path: ActorPath(untypedCtx["path"]),
-  children: untypedCtx["children"] |> Nact_jsMap.keys |> Belt.Set.String.fromArray,
-  sender: untypedCtx["sender"],
+  name: untypedCtx.name,
+  self: ActorRef(untypedCtx.self),
+  parent: ActorRef(untypedCtx.parent),
+  path: ActorPath(untypedCtx.path),
+  children: untypedCtx.children |> Js.Dict.keys |> Belt.Set.String.fromArray,
+  sender: untypedCtx.sender,
 }
 
 type supervisionAction =
@@ -158,21 +152,22 @@ type statefulSupervisionPolicy<'msg, 'parentMsg, 'state> = (
 
 let mapSupervisionFunction = optionalF =>
   switch optionalF {
-  | None => Js.Nullable.undefined
+  | None => None
   | Some(f) =>
-    Js.Nullable.return((msg, err, ctx) =>
-      f(msg, err, mapSupervisionCtx(ctx)) |> then_(decision =>
-        resolve(
-          switch decision {
-          | Stop => ctx["stop"]
-          | StopAll => ctx["stopAll"]
-          | Reset => ctx["reset"]
-          | ResetAll => ctx["resetAll"]
-          | Escalate => ctx["escalate"]
-          | Resume => ctx["resume"]
-          },
-        )
-      )
+    Some(
+      (msg, err, ctx) =>
+        f(msg, err, mapSupervisionCtx(ctx)) |> Js.Promise.then_(decision =>
+          Js.Promise.resolve(
+            switch decision {
+            | Stop => ctx.stop
+            | StopAll => ctx.stopAll
+            | Reset => ctx.reset
+            | ResetAll => ctx.resetAll
+            | Escalate => ctx.escalate
+            | Resume => ctx.resume
+            },
+          )
+        ),
     )
   }
 
@@ -202,30 +197,32 @@ let useStatefulSupervisionPolicy = (f, initialState) => {
 }
 
 let spawn = (~name=?, ~shutdownAfter=?, ~onCrash=?, ActorRef(parent), func, initialState) => {
+  open Nact_bindings
   let options = {
-    "initialStateFunc": Js.Nullable.return((. ctx) => initialState(mapCtx(ctx))),
-    "shutdownAfter": fromOption(shutdownAfter),
-    "onCrash": mapSupervisionFunction(onCrash),
+    initialStateFunc: Some((. ctx) => initialState(mapCtx(ctx))),
+    shutdownAfter: shutdownAfter,
+    onCrash: mapSupervisionFunction(onCrash),
   }
   let f = (state, msg: 'msg, ctx) =>
     try func(state, msg, mapCtx(ctx)) catch {
-    | err => reject(err)
+    | err => Js.Promise.reject(err)
     }
-  let untypedRef = Nact_bindings.spawn(parent, f, fromOption(name), options)
+  let untypedRef = Nact_bindings.spawn(parent, f, name, options)
   ActorRef(untypedRef)
 }
 
 let spawnStateless = (~name=?, ~shutdownAfter=?, ActorRef(parent), func) => {
+  open Nact_bindings
   let options = {
-    "shutdownAfter": fromOption(shutdownAfter),
-    "initialStateFunc": Js.Nullable.undefined,
-    "onCrash": mapSupervisionFunction(None),
+    initialStateFunc: None,
+    shutdownAfter: shutdownAfter,
+    onCrash: mapSupervisionFunction(None),
   }
   let f = (msg, ctx) =>
     try func(msg, mapCtx(ctx)) catch {
-    | e => reject(e)
+    | err => Js.Promise.reject(err)
     }
-  let untypedRef = Nact_bindings.spawnStateless(parent, f, fromOption(name), options)
+  let untypedRef = Nact_bindings.spawnStateless(parent, f, name, options)
   ActorRef(untypedRef)
 }
 
@@ -248,20 +245,20 @@ let spawnPersistent = (
   let stateEncoder = stateEncoder->Belt.Option.getWithDefault(unsafeEncoder)
   let encoder = encoder->Belt.Option.getWithDefault(unsafeEncoder)
   let options: Nact_bindings.persistentActorOptions<'msg, 'parentMsg, 'state> = {
-    "initialStateFunc": (. ctx) => initialState(mapPersistentCtx(ctx)),
-    "shutdownAfter": fromOption(shutdownAfter),
-    "onCrash": mapSupervisionFunction(onCrash),
-    "snapshotEvery": fromOption(snapshotEvery),
-    "encoder": encoder,
-    "decoder": decoder,
-    "snapshotEncoder": stateEncoder,
-    "snapshotDecoder": stateDecoder,
+    initialStateFunc: (. ctx) => initialState(mapPersistentCtx(ctx)),
+    shutdownAfter: shutdownAfter,
+    onCrash: mapSupervisionFunction(onCrash),
+    snapshotEvery: snapshotEvery,
+    encoder: encoder,
+    decoder: decoder,
+    snapshotEncoder: stateEncoder,
+    snapshotDecoder: stateDecoder,
   }
   let f = (state, msg, ctx) =>
     try func(state, msg, mapPersistentCtx(ctx)) catch {
-    | err => reject(err)
+    | err => Js.Promise.reject(err)
     }
-  let untypedRef = Nact_bindings.spawnPersistent(parent, f, key, fromOption(name), options)
+  let untypedRef = Nact_bindings.spawnPersistent(parent, f, key, name, options)
   ActorRef(untypedRef)
 }
 
@@ -283,18 +280,18 @@ let persistentQuery = (
   let stateEncoder = stateEncoder->Belt.Option.getWithDefault(unsafeEncoder)
   let encoder = encoder->Belt.Option.getWithDefault(unsafeEncoder)
   let options: Nact_bindings.persistentQueryOptions<'msg, 'state> = {
-    "initialState": initialState,
-    "cacheDuration": fromOption(cacheDuration),
-    "snapshotEvery": fromOption(snapshotEvery),
-    "snapshotKey": fromOption(snapshotKey),
-    "encoder": encoder,
-    "decoder": decoder,
-    "snapshotEncoder": stateEncoder,
-    "snapshotDecoder": stateDecoder,
+    initialState: initialState,
+    cacheDuration: cacheDuration,
+    snapshotEvery: snapshotEvery,
+    snapshotKey: snapshotKey,
+    encoder: encoder,
+    decoder: decoder,
+    snapshotEncoder: stateEncoder,
+    snapshotDecoder: stateDecoder,
   }
   let f = (state, msg) =>
     try func(state, msg) catch {
-    | err => reject(err)
+    | err => Js.Promise.reject(err)
     }
   Nact_bindings.persistentQuery(actor, f, key, options)
 }
@@ -306,7 +303,7 @@ let dispatch = (ActorRef(recipient), msg) => Nact_bindings.dispatch(recipient, m
 let nobody = () => ActorRef(Nact_bindings.nobody())
 
 let spawnAdapter = (~name=?, parent, mapping) => {
-  let f = (msg, _) => resolve(dispatch(parent, mapping(msg)))
+  let f = (msg, _) => parent->dispatch(mapping(msg))->Js.Promise.resolve
   switch name {
   | Some(name) => spawnStateless(~name, parent, f)
   | None => spawnStateless(parent, f)
@@ -333,7 +330,9 @@ exception QueryTimeout(int)
 
 let query = (~timeout: int, ActorRef(recipient), msgF) => {
   let f = tempReference => msgF(ActorRef(tempReference))
-  Nact_bindings.query(recipient, f, timeout) |> catch(_ => reject(QueryTimeout(timeout)))
+  Nact_bindings.query(recipient, f, timeout) |> Js.Promise.catch(_ =>
+    Js.Promise.reject(QueryTimeout(timeout))
+  )
 }
 
 let milliseconds = 1
@@ -354,6 +353,7 @@ let messages = 1
 
 let message = 1
 
+// Keep for reason compatibility
 module Operators = {
   let \"<-<" = (actorRef, msg) => dispatch(actorRef, msg)
   let \">->" = (msg, actorRef) => dispatch(actorRef, msg)
