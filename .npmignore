@@ -1,6 +1,0 @@
-*.log
-.merlin/
-examples/
-coverage/
-__tests/
-.vscode/

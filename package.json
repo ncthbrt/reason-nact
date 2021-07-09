@@ -9,6 +9,7 @@
   },
   "author": {
     "name": "Nick Cuthbert",
+    "email": "nick@cuthbert.co.za",
     "homepage": "https://github.com/ncthbrt"
   },
   "bugs": {
@@ -38,6 +39,12 @@
     "erlang",
     "event sourcing",
     "distributed-systems"
+  ],
+  "files": [
+    "src/*.res",
+    "bsconfig.json",
+    "README",
+    "LICENSE"
   ],
   "peerDependencies": {
     "rescript": "^9.1.4"
