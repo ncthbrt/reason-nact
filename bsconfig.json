@@ -1,5 +1,5 @@
 {
-  "name": "reason-nact",
+  "name": "rescript-nact",
   "sources": [
     {
       "dir": "src"
