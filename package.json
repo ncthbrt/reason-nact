@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cometkim/rescript-nact.git"
+    "url": "git+https://github.com/ncthbrt/rescript-nact.git"
   },
   "author": {
     "name": "Nick Cuthbert",
@@ -13,7 +13,7 @@
     "homepage": "https://github.com/ncthbrt"
   },
   "bugs": {
-    "url": "https://github.com/cometkim/rescript-nact/issues"
+    "url": "https://github.com/ncthbrt/rescript-nact/issues"
   },
   "scripts": {
     "prepare": "husky install",
