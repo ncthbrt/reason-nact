@@ -39,15 +39,18 @@
     "event sourcing",
     "distributed-systems"
   ],
+  "peerDependencies": {
+    "rescript": "^9.1.4"
+  },
+  "dependencies": {
+    "nact": "^7.6.0"
+  },
   "devDependencies": {
     "@glennsl/bs-jest": "^0.7.0",
     "@glennsl/bs-json": "^5.0.2",
     "coveralls": "^3.1.1",
     "husky": "^6.0.0",
-    "jest": "^27.0.6"
-  },
-  "dependencies": {
-    "nact": "^7.6.0",
+    "jest": "^27.0.6",
     "rescript": "^9.1.4"
   }
 }
