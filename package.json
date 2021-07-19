@@ -1,28 +1,31 @@
 {
-  "name": "reason-nact",
+  "name": "rescript-nact",
   "version": "5.0.0",
-  "description": "let reason-nact = (node.js, reason, actors) ⇒ your µ services have never been so typed",
-  "repository": "https://github.com/ncthbrt/reason-nact",
-  "author": "Nick Cuthbert (https://github.com/ncthbrt)",
+  "description": "let rescript-nact = (node.js, rescript, actors) ⇒ your µ services have never been so typed",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncthbrt/rescript-nact.git"
+  },
+  "author": {
+    "name": "Nick Cuthbert",
+    "email": "nick@cuthbert.co.za",
+    "homepage": "https://github.com/ncthbrt"
+  },
   "bugs": {
-    "url": "http://github.com/ncthbrt/reason-nact/issues"
+    "url": "https://github.com/ncthbrt/rescript-nact/issues"
   },
   "scripts": {
-    "build": "bsb -make-world",
-    "start": "bsb -make-world -w",
-    "clean": "bsb -clean-world",
-    "local-test": "jest --coverage",
-    "test": "jest --coverage && yarn run coverage",
-    "test-watch": "jest --coverage --watch",
-    "coverage": "nyc report --temp-directory=coverage --reporter=text-lcov | coveralls",
-    "pretest": "yarn run build",
-    "prepush": "yarn run build && yarn run local-test",
-    "prepare": "yarn run clean && yarn run build"
+    "prepare": "husky install",
+    "postinstall": "rescript build -with-deps",
+    "build": "rescript build",
+    "start": "rescript build -w",
+    "clean": "rescript clean",
+    "test": "yarn run build && jest",
+    "prepack": "yarn run clean && yarn run build"
   },
   "keywords": [
-    "BuckleScript",
-    "Reason",
+    "rescript",
     "nact",
     "actors",
     "actor-model",
@@ -34,18 +37,24 @@
     "event sourcing",
     "distributed-systems"
   ],
+  "files": [
+    "src/*.res",
+    "bsconfig.json",
+    "README",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "rescript": "^9.1.4"
+  },
+  "dependencies": {
+    "nact": "^7.6.0"
+  },
   "devDependencies": {
     "@glennsl/bs-jest": "^0.7.0",
     "@glennsl/bs-json": "^5.0.2",
-    "bs-platform": "^9.0.2",
-    "coveralls": "^3.1.0",
-    "husky": "^6.0.0",
-    "jest": "^26.6.3",
-    "nyc": "^15.1.0"
-  },
-  "dependencies": {
-    "bs-express": "^1.0.2",
-    "nact": "^7.6.0",
-    "npm": "^7.11.1"
+    "coveralls": "^3.1.1",
+    "husky": "^7.0.1",
+    "jest": "^27.0.6",
+    "rescript": "^9.1.4"
   }
 }

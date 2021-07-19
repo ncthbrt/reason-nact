@@ -1,11 +1,8 @@
 .DS_Store
 .merlin
-npm-debug.log
-/lib/bs/
-/lib/ocaml/
-/node_modules/
-coverage/
-/lib/**/*.js
-/__tests__/**/*.js
 *.log
-/examples/**/*.js
+*.bs.js
+
+/lib/
+node_modules/
+coverage/
