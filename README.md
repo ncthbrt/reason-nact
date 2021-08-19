@@ -52,7 +52,7 @@ node examples/stateful_greeter.bs.js
 ```
 
 ## How are you using Nact?
-We would love to hear how you're using Nact. If you'd like to send feedback (bad or good) please email Nick Cuthbert at  github@ncthbrt.com or join the [Discord](https://discordapp.com/invite/QyfuN3).
+We would love to hear how you're using Nact. If you'd like to send feedback (bad or good) please email Natalie Cuthbert at github@ncthbrt.com or join the [Discord](https://discordapp.com/invite/QyfuN3).
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fncthbrt%2Freason-nact?ref=badge_large)
